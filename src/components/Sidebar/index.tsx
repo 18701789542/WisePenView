@@ -8,7 +8,7 @@ import {
   RiAddCircleFill,
   RiFileTextLine,
   RiGroupFill,
-  RiArrowDownSLine,
+  RiPenNibFill,
 } from 'react-icons/ri';
 
 import styles from './style.module.less';
@@ -32,6 +32,11 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
       icon: <RiAddCircleFill size={18} />, 
       label: '新聊天',
       onClick: () => console.log('Create New Chat'),
+    },
+    {
+      key: '/app/editor',
+      icon: <RiPenNibFill size={18} />,
+      label: '新建笔记',
     },
     {
       key: '/app/drive',

@@ -17,7 +17,7 @@ import Register from '@/views/auth/Register';
 import ResetPassword from '@/views/auth/ResetPassword';
 import NewPassword from '@/views/auth/NewPassword';
 import VerifyEmail from '@/views/auth/VerifyEmail';
-// import Editor from '@/views/editor';   // 编辑器页
+import Editor from '@/views/editor/Editor';   // 编辑器页
 
 const router = createBrowserRouter([
   // ==============================
@@ -89,6 +89,10 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <Navigate to="/app/drive" replace />,
+      },
+      {
+        path: 'editor',
+        element: <Editor />,
       },
       // 文档与云盘页
       {
