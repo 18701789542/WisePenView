@@ -1,6 +1,8 @@
 export { ResourceServices } from './ResourceServices';
 export type {
   GetUserResourcesRequest,
+  UpdateResourcePathRequest,
+  UpdateResourceTagsRequest,
   TagQueryLogicMode,
   ResourceSortBy,
   ResourceSortDir,

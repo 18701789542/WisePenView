@@ -36,7 +36,15 @@ export interface RenameResourceRequest {
   newName: string;
 }
 
-/** 更新资源标签请求参数（OpenAPI updateTags） */
+/** 更新资源归属路径（移动文件到文件夹） */
+export interface UpdateResourcePathRequest {
+  resourceId: string;
+  /** 目标路径，如 '/' 或 '/documents/notes' */
+  path: string;
+  groupId?: string;
+}
+
+/** 更新资源用户标签（仅用户可见 tag） */
 export interface UpdateResourceTagsRequest {
   resourceId: string;
   tagIds: string[];
