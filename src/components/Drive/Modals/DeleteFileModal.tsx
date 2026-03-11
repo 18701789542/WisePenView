@@ -2,16 +2,19 @@ import React, { useState } from 'react';
 import { Modal, Button, Alert, message } from 'antd';
 import { ResourceServices } from '@/services/Resource';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
+import { useRecentFilesStore } from '@/store/useRecentFilesStore';
 import type { DeleteFileModalProps } from './index.type';
 
 const DeleteFileModal: React.FC<DeleteFileModalProps> = ({ open, onCancel, onSuccess, file }) => {
   const [loading, setLoading] = useState(false);
+  const removeFile = useRecentFilesStore((s) => s.removeFile);
 
   const handleConfirm = async () => {
     if (!file) return;
     try {
       setLoading(true);
       await ResourceServices.deleteResource(file.resourceId);
+      removeFile(file.resourceId);
       message.success('文件已删除');
       onSuccess?.();
       onCancel();

@@ -1,16 +1,20 @@
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { ResourceItem } from '@/types/resource';
+import { useRecentFilesStore } from '@/store/useRecentFilesStore';
 
 /**
  * 根据资源类型决定打开方式：NOTE 跳转编辑器，其他类型预览
+ * 点击文件会加入最近使用列表
  */
 export const useClickFile = () => {
   const navigate = useNavigate();
+  const addFile = useRecentFilesStore((s) => s.addFile);
 
   const openResource = useCallback(
     (item: ResourceItem) => {
-      const { resourceId, resourceType, preview } = item;
+      const { resourceId, resourceName, resourceType, preview } = item;
+      addFile({ resourceId, resourceName, resourceType });
       if (resourceType === 'NOTE') {
         navigate(`/app/editor/${resourceId}`);
       } else {
@@ -20,7 +24,7 @@ export const useClickFile = () => {
         // TODO: 其他类型的预览逻辑
       }
     },
-    [navigate]
+    [navigate, addFile]
   );
 
   return openResource;
