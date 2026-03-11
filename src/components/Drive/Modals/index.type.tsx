@@ -36,3 +36,10 @@ export interface DeleteFileModalProps {
   onSuccess?: () => void;
   file: ResourceItem | null;
 }
+
+export interface AddTagModalProps {
+  open: boolean;
+  onCancel: () => void;
+  onSuccess?: () => void;
+  file: ResourceItem | null;
+}
