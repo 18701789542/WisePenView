@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import clsx from 'clsx';
 import { useParams } from 'react-router-dom';
 import { Avatar, Button, Divider, Spin, message } from 'antd';
 import { AiOutlineEdit, AiOutlineDelete, AiOutlineLogout } from 'react-icons/ai';
+import FlatViewDrive from '@/components/Drive/FlatViewDrive';
 import MemberList from '@/components/Group/MemberList';
 import { getPermissionConfig } from '@/components/Group/MemberList/PermissionConfig';
 import {
@@ -102,6 +104,16 @@ const GroupDetail: React.FC = () => {
       <div style={{ marginBottom: 24 }}>
         <h3 className={styles.sectionTitle}>小组描述</h3>
         <p className={styles.sectionContent}>{description || '暂无描述'}</p>
+      </div>
+
+      <Divider />
+
+      <div className={styles.fileSectionWrapper}>
+        <h3 className={styles.sectionTitle}>小组文件</h3>
+        <p className={clsx(styles.sectionContent, styles.fileSectionIntro)}>
+          按标签管理小组内的文件
+        </p>
+        <FlatViewDrive groupId={groupId} />
       </div>
 
       <Divider />
