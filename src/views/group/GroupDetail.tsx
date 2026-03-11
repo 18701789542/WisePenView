@@ -106,7 +106,7 @@ const GroupDetail: React.FC = () => {
             label: '文件',
             children: (
               <div className={styles.tabPane}>
-                <FlatViewDrive groupId={groupId} defaultFilterCollapsed={false} />
+                <FlatViewDrive groupId={groupId} />
               </div>
             ),
           },

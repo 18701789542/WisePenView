@@ -4,18 +4,18 @@ import { AiOutlineTag, AiOutlineCloudUpload } from 'react-icons/ai';
 import { TagManager } from '@/components/Tag';
 import FlatViewDrive from '@/components/Drive/FlatViewDrive';
 import FolderViewDrive from '@/components/Drive/FolderViewDrive';
+import { useDrivePreferencesStore, type DriveViewMode } from '@/store/useDrivePreferencesStore';
 
 import styles from './style.module.less';
 
-type ViewMode = 'flat' | 'folder';
-
-const VIEW_TABS = [
-  { key: 'folder' as ViewMode, label: '文件夹管理' },
-  { key: 'flat' as ViewMode, label: '按标签管理' },
+const VIEW_TABS: { key: DriveViewMode; label: string }[] = [
+  { key: 'folder', label: '文件夹管理' },
+  { key: 'flat', label: '按标签管理' },
 ];
 
 const Drive: React.FC = () => {
-  const [viewMode, setViewMode] = useState<ViewMode>('folder');
+  const viewMode = useDrivePreferencesStore((s) => s.viewMode);
+  const setViewMode = useDrivePreferencesStore((s) => s.setViewMode);
   const [tagModalOpen, setTagModalOpen] = useState(false);
 
   return (
@@ -38,7 +38,7 @@ const Drive: React.FC = () => {
       <div className={styles.tabsWithSearch}>
         <Tabs
           activeKey={viewMode}
-          onChange={(k) => setViewMode(k as ViewMode)}
+          onChange={(k) => setViewMode(k as DriveViewMode)}
           items={VIEW_TABS}
           style={{ marginBottom: -1 }}
         />
