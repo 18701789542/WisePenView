@@ -10,6 +10,7 @@ import {
   LuChevronLeft,
   LuChevronRight,
   LuFolderPlus,
+  LuFolderInput,
 } from 'react-icons/lu';
 import { formatSize } from '@/utils/format';
 import { getPathSegments, getFolderDisplayName } from '@/utils/path';
@@ -24,7 +25,9 @@ import {
   DeleteFolderModal,
   RenameFileModal,
   DeleteFileModal,
+  MoveToFolderModal,
 } from '@/components/Drive/Modals';
+import type { MoveToFolderTarget } from '@/components/Drive/Modals';
 import { useClickFile } from '@/hooks/drive';
 import styles from './style.module.less';
 
@@ -54,12 +57,14 @@ const FolderViewDrive: React.FC = () => {
   const [deleteFolderModalOpen, setDeleteFolderModalOpen] = useState(false);
   const [renameFileModalOpen, setRenameFileModalOpen] = useState(false);
   const [deleteFileModalOpen, setDeleteFileModalOpen] = useState(false);
+  const [moveToFolderModalOpen, setMoveToFolderModalOpen] = useState(false);
 
   // 模态框目标
   const [renameFolderTarget, setRenameFolderTarget] = useState<TagTreeNode | null>(null);
   const [deleteFolderTarget, setDeleteFolderTarget] = useState<TagTreeNode | null>(null);
   const [renameFileTarget, setRenameFileTarget] = useState<ResourceItem | null>(null);
   const [deleteFileTarget, setDeleteFileTarget] = useState<ResourceItem | null>(null);
+  const [moveToFolderTarget, setMoveToFolderTarget] = useState<MoveToFolderTarget | null>(null);
 
   // 列表状态
   const [folders, setFolders] = useState<TagTreeNode[]>([]);
@@ -235,6 +240,18 @@ const FolderViewDrive: React.FC = () => {
   const handleDeleteFileModalClose = useCallback(() => {
     setDeleteFileModalOpen(false);
     setDeleteFileTarget(null);
+  }, []);
+
+  // 处理移动到文件夹
+  const handleMoveToFolder = useCallback((target: MoveToFolderTarget) => {
+    setMoveToFolderTarget(target);
+    setMoveToFolderModalOpen(true);
+  }, []);
+
+  // 处理移动到文件夹模态框关闭
+  const handleMoveToFolderModalClose = useCallback(() => {
+    setMoveToFolderModalOpen(false);
+    setMoveToFolderTarget(null);
   }, []);
 
   // 处理拖拽文件到文件夹
@@ -448,6 +465,16 @@ const FolderViewDrive: React.FC = () => {
           record._type === 'folder'
             ? [
                 {
+                  key: 'move',
+                  label: '移动到文件夹',
+                  icon: <LuFolderInput size={14} />,
+                  onClick: (info: Parameters<NonNullable<MenuProps['onClick']>>[0]) => {
+                    info.domEvent.stopPropagation();
+                    setOpenDropdownKey(null);
+                    handleMoveToFolder({ type: 'folder', data: record.data });
+                  },
+                },
+                {
                   key: 'rename',
                   label: '重命名',
                   icon: <LuPencil size={14} />,
@@ -470,6 +497,16 @@ const FolderViewDrive: React.FC = () => {
                 },
               ]
             : [
+                {
+                  key: 'move',
+                  label: '移动到文件夹',
+                  icon: <LuFolderInput size={14} />,
+                  onClick: (info: Parameters<NonNullable<MenuProps['onClick']>>[0]) => {
+                    info.domEvent.stopPropagation();
+                    setOpenDropdownKey(null);
+                    handleMoveToFolder({ type: 'file', data: record.data });
+                  },
+                },
                 {
                   key: 'rename',
                   label: '重命名',
@@ -626,6 +663,13 @@ const FolderViewDrive: React.FC = () => {
         onCancel={handleDeleteFileModalClose}
         onSuccess={refresh}
         file={deleteFileTarget}
+      />
+
+      <MoveToFolderModal
+        open={moveToFolderModalOpen}
+        onCancel={handleMoveToFolderModalClose}
+        onSuccess={refresh}
+        target={moveToFolderTarget}
       />
     </>
   );

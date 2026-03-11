@@ -45,3 +45,15 @@ export interface EditTagModalProps {
   /** 小组 ID，不传则使用个人标签树 */
   groupId?: string;
 }
+
+/** 移动到文件夹的目标：文件或文件夹 */
+export type MoveToFolderTarget =
+  | { type: 'file'; data: ResourceItem }
+  | { type: 'folder'; data: TagTreeNode };
+
+export interface MoveToFolderModalProps {
+  open: boolean;
+  onCancel: () => void;
+  onSuccess?: () => void;
+  target: MoveToFolderTarget | null;
+}

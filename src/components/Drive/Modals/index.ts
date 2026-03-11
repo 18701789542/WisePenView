@@ -4,6 +4,7 @@ export { default as DeleteFolderModal } from './DeleteFolderModal';
 export { default as RenameFileModal } from './RenameFileModal';
 export { default as DeleteFileModal } from './DeleteFileModal';
 export { default as EditTagModal } from './EditTagModal';
+export { default as MoveToFolderModal } from './MoveToFolderModal';
 export type {
   NewFolderModalProps,
   RenameFolderModalProps,
@@ -11,4 +12,6 @@ export type {
   RenameFileModalProps,
   DeleteFileModalProps,
   EditTagModalProps,
+  MoveToFolderModalProps,
+  MoveToFolderTarget,
 } from './index.type';
