@@ -155,14 +155,10 @@ const FileList: React.FC<FileListProps> = ({ filter }) => {
     fetchList();
   }, [fetchList]);
 
+  const filterTagIdsKey = filter.tagIds.join(',');
   useEffect(() => {
     setPage(1);
-  }, [
-    filter.tagIds.join(','),
-    filter.tagQueryLogicMode,
-    filter.sortBy,
-    filter.sortDir,
-  ]);
+  }, [filterTagIdsKey, filter.tagQueryLogicMode, filter.sortBy, filter.sortDir]);
 
   const handleRenameFile = useCallback((file: ResourceItem) => {
     setRenameFileTarget(file);
