@@ -63,3 +63,8 @@ export interface GetUserResourcesRequest {
   /** 标签查询逻辑：OR=包含任意，AND=包含全部 */
   tagQueryLogicMode?: TagQueryLogicMode;
 }
+
+/** 获取小组资源列表请求参数（groupId 必填） */
+export type GetGroupResourceRequest = GetUserResourcesRequest & {
+  groupId: string;
+};

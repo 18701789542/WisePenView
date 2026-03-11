@@ -1,5 +1,6 @@
 import type { ResourceListPage } from '@/types/resource';
 import type {
+  GetGroupResourceRequest,
   GetUserResourcesRequest,
   RenameResourceRequest,
   UpdateResourcePathRequest,
@@ -15,7 +16,9 @@ import {
 
 const USE_RESOURCE_MOCK = true;
 
-const getUserResources = async (params: GetUserResourcesRequest): Promise<ResourceListPage> => {
+const getUserResources = async (
+  params: GetUserResourcesRequest | GetGroupResourceRequest
+): Promise<ResourceListPage> => {
   if (USE_RESOURCE_MOCK) return getUserResourcesMock(params);
   return {
     list: [],

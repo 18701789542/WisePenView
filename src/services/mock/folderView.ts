@@ -3,7 +3,10 @@
  * 用于前端独立开发，不依赖后端 getTagTree / getUserResources
  */
 import type { ResourceItem, ResourceListPage } from '@/types/resource';
-import type { GetUserResourcesRequest } from '@/services/Resource/index.type';
+import type {
+  GetUserResourcesRequest,
+  GetGroupResourceRequest,
+} from '@/services/Resource/index.type';
 import type { TagTreeResponse } from '@/services/Tag/index.type';
 import type { FolderListByPathResponse } from '@/types/folder';
 import { getFolderDisplayName } from '@/utils/path';
@@ -328,11 +331,21 @@ const buildTagIdToNameMap = (nodes: TagTreeResponse[], map: Map<string, string>)
 /**
  * Mock flat 视图：获取用户资源列表（聚合所有路径下的文件，按用户 tagIds 筛选、分页）
  * tagIds 为用户可见 tag，与 path 区分
+ * groupId 有值时返回空（mock 暂不支持小组资源）
  */
 export const getUserResourcesMock = async (
-  params: GetUserResourcesRequest
+  params: GetUserResourcesRequest | GetGroupResourceRequest
 ): Promise<ResourceListPage> => {
   await delay(MOCK_DELAY_MS);
+  if ('groupId' in params && params.groupId) {
+    return {
+      list: [],
+      total: 0,
+      page: params.page,
+      size: params.size,
+      totalPage: 0,
+    };
+  }
   const list: ResourceItem[] = [];
   const seen = new Set<string>();
   for (const pathList of Object.values(filesByPath)) {
