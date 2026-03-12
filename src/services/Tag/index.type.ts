@@ -3,6 +3,21 @@
  * 与 resource.openapi.json 中 Tag 相关 schema 对齐
  */
 
+import type { FolderListByPathResponse } from '@/types/folder';
+
+/** TagService 接口：供依赖注入使用 */
+export interface ITagService {
+  getUserTagTree(params?: GetTagTreeRequest): Promise<TagTreeNode[]>;
+  getPathTagTree(): Promise<TagTreeNode[]>;
+  getPathTagNode(path: string): Promise<TagTreeNode | null>;
+  getListByPath(params: GetListByPathRequest): Promise<FolderListByPathResponse>;
+  updateTag(params: UpdateTagRequest): Promise<void>;
+  addTag(params: AddTagRequest): Promise<string>;
+  changeTag(params: ChangeTagRequest): Promise<void>;
+  removeTag(params: RemoveTagRequest): Promise<void>;
+  moveTag(params: MoveTagRequest): Promise<void>;
+}
+
 /** 标签树节点（递归结构，与 OpenAPI TagTreeResponse 一致） */
 export interface TagTreeNode {
   /** 标签 ID */

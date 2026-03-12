@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Input, message } from 'antd';
-import { FolderServices } from '@/services/Folder';
+import { useFolderService } from '@/contexts/ServicesContext';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import { getFolderDisplayName } from '@/utils/path';
 import type { RenameFolderModalProps } from './index.type';
@@ -11,6 +11,7 @@ const RenameFolderModal: React.FC<RenameFolderModalProps> = ({
   onSuccess,
   folder,
 }) => {
+  const folderService = useFolderService();
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -29,7 +30,7 @@ const RenameFolderModal: React.FC<RenameFolderModalProps> = ({
     }
     try {
       setLoading(true);
-      await FolderServices.renameFolder(folder, trimmed);
+      await folderService.renameFolder(folder, trimmed);
       message.success('重命名成功');
       onSuccess?.();
       onCancel();

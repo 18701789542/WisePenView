@@ -14,6 +14,7 @@ import type {
   UpdateMemberRoleRequest,
   KickMembersRequest,
 } from './index.type';
+import type { IGroupService } from './index.type';
 
 const fetchGroupList = async (
   params: FetchGroupListRequest
@@ -75,7 +76,6 @@ const fetchMyRoleInGroup = async (groupId: string): Promise<'OWNER' | 'ADMIN' | 
     params: { groupId: toNumberIds(groupId) },
   })) as ApiResponse<number | { role: number }>;
   checkResponse(res);
-  // 兼容 data 直接为数字（OpenAPI schema）或 { role: number }（example 格式）
   const roleNum = typeof res.data === 'number' ? res.data : res.data?.role;
   if (roleNum == null || roleNum < 0) throw new Error('获取角色失败');
   return API_MY_ROLE_MAP[roleNum] ?? 'MEMBER';
@@ -101,7 +101,7 @@ const kickMembers = async (params: KickMembersRequest) => {
   checkResponse(res);
 };
 
-export const GroupServices = {
+export const GroupServicesImpl: IGroupService = {
   fetchGroupList,
   fetchGroupInfo,
   createGroup,

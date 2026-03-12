@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Input, message } from 'antd';
-import { FolderServices } from '@/services/Folder';
+import { useFolderService } from '@/contexts/ServicesContext';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import type { NewFolderModalProps } from './index.type';
 import { getFolderDisplayName } from '@/utils/path';
@@ -11,6 +11,7 @@ const NewFolderModal: React.FC<NewFolderModalProps> = ({
   onSuccess,
   parentPath,
 }) => {
+  const folderService = useFolderService();
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -26,7 +27,7 @@ const NewFolderModal: React.FC<NewFolderModalProps> = ({
     }
     try {
       setLoading(true);
-      await FolderServices.createFolder(parentPath, trimmed);
+      await folderService.createFolder(parentPath, trimmed);
       message.success('新建成功');
       onSuccess?.();
       onCancel();

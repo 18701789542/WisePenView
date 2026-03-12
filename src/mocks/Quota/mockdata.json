@@ -1,0 +1,14 @@
+{
+  "userGroupQuotas": [
+    {
+      "groupId": "1",
+      "groupName": "示例小组",
+      "quotaLimit": 1000,
+      "quotaUsed": 100
+    }
+  ],
+  "groupQuotaInfo": {
+    "used": 100,
+    "limit": 1000
+  }
+}

@@ -1,4 +1,4 @@
-export { GroupServices } from './GroupServices';
+export type { IGroupService } from './index.type';
 export type {
   FetchGroupListRequest,
   FetchGroupListResponse,

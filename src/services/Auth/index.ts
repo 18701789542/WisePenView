@@ -1,4 +1,4 @@
-export { AuthServices } from './AuthServices';
+export type { IAuthService } from './index.type';
 export type {
   LoginRequest,
   RegisterRequest,

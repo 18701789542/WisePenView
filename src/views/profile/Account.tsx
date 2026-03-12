@@ -14,7 +14,7 @@ import {
   Spin,
 } from 'antd';
 import { RiCheckLine, RiCloseLine, RiErrorWarningLine, RiPencilLine } from 'react-icons/ri';
-import { UserServices } from '@/services/User';
+import { useUserService } from '@/contexts/ServicesContext';
 import type {
   GetUserInfoResponse,
   SendEmailVerifyRequest,
@@ -44,6 +44,7 @@ interface VerifyEmailFormValues {
 }
 
 const Account: React.FC = () => {
+  const userService = useUserService();
   const [user, setUser] = useState<GetUserInfoResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -56,7 +57,7 @@ const Account: React.FC = () => {
     const loadUser = async () => {
       try {
         setLoading(true);
-        const data = await UserServices.fetchUserInfo();
+        const data = await userService.getFullUserInfo();
         setUser(data);
         form.setFieldsValue({
           nickname: data.nickname,
@@ -101,7 +102,7 @@ const Account: React.FC = () => {
         degreeLevel: fieldConfig.degreeLevel ? values.degreeLevel : user?.degreeLevel,
         academicTitle: fieldConfig.academicTitle ? values.academicTitle : user?.academicTitle,
       };
-      const updated = await UserServices.updateUserProfile(params);
+      const updated = await userService.updateUserProfile(params);
       setUser(updated);
       setEditMode(false);
       message.success('保存成功');
@@ -144,7 +145,7 @@ const Account: React.FC = () => {
     try {
       const values = await verifyForm.validateFields();
       const params: SendEmailVerifyRequest = { suffixType: values.suffixType };
-      await UserServices.sendEmailVerify(params);
+      await userService.sendEmailVerify(params);
       message.success('验证邮件已发送，请前往学工号邮箱查收');
       verifyForm.resetFields();
       setVerifyModalOpen(false);

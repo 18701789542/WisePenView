@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Avatar, Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import clsx from 'clsx';
 import { useNavigate } from 'react-router-dom';
-import { useUserStore } from '@/store/useUserStore';
+import { useUserService } from '@/contexts/ServicesContext';
+import type { User } from '@/types/user';
 import { getIdentityTypeLabel } from '@/constants/user';
 
 import {
@@ -25,7 +26,12 @@ interface UserProfileProps {
 
 const UserProfile: React.FC<UserProfileProps> = ({ collapsed }) => {
   const navigate = useNavigate();
-  const user = useUserStore((s) => s.user);
+  const userService = useUserService();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    void userService.getUserInfo().then(setUser);
+  }, [userService]);
 
   const displayName = user?.nickname || user?.username || '未登录';
   const identityLabel =
@@ -52,7 +58,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ collapsed }) => {
         console.log('打开主题设置');
         break;
       case 'logout':
-        useUserStore.getState().clearUser();
+        userService.clearUserCache();
         navigate('/login', { replace: true });
         break;
       default:

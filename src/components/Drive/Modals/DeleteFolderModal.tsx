@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Modal, Button, Alert, message } from 'antd';
-import { FolderServices } from '@/services/Folder';
+import { useFolderService } from '@/contexts/ServicesContext';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import { getFolderDisplayName } from '@/utils/path';
 import type { DeleteFolderModalProps } from './index.type';
@@ -11,13 +11,14 @@ const DeleteFolderModal: React.FC<DeleteFolderModalProps> = ({
   onSuccess,
   folder,
 }) => {
+  const folderService = useFolderService();
   const [loading, setLoading] = useState(false);
 
   const handleConfirm = async () => {
     if (!folder) return;
     try {
       setLoading(true);
-      await FolderServices.deleteFolder(folder);
+      await folderService.deleteFolder(folder);
       message.success('文件夹已删除');
       onSuccess?.();
       onCancel();

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Input, message } from 'antd';
-import { ResourceServices } from '@/services/Resource';
+import { useResourceService } from '@/contexts/ServicesContext';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import { useRecentFilesStore } from '@/store/useRecentFilesStore';
 import type { RenameFileModalProps } from './index.type';
 
 const RenameFileModal: React.FC<RenameFileModalProps> = ({ open, onCancel, onSuccess, file }) => {
+  const resourceService = useResourceService();
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const updateFileName = useRecentFilesStore((s) => s.updateFileName);
@@ -25,7 +26,7 @@ const RenameFileModal: React.FC<RenameFileModalProps> = ({ open, onCancel, onSuc
     }
     try {
       setLoading(true);
-      await ResourceServices.renameResource({
+      await resourceService.renameResource({
         resourceId: file.resourceId,
         newName: trimmed,
       });

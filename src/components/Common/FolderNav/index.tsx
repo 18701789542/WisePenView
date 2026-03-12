@@ -4,7 +4,7 @@ import type { DataNode } from 'antd/es/tree';
 import { AiOutlineFolder } from 'react-icons/ai';
 import FileTypeIcon from '@/components/Common/FileTypeIcon';
 import { LuFolderPlus, LuChevronDown } from 'react-icons/lu';
-import { TagServices } from '@/services/Tag';
+import { useTagService } from '@/contexts/ServicesContext';
 import type { TagTreeNode } from '@/services/Tag/index.type';
 import type { ResourceItem } from '@/types/resource';
 import { getFolderDisplayName } from '@/utils/path';
@@ -130,6 +130,7 @@ const FolderNav: React.FC<FolderNavProps> = ({
   rootPath = ROOT_PATH,
   className,
 }) => {
+  const tagService = useTagService();
   const [treeData, setTreeData] = useState<DataNode[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedKey, setSelectedKey] = useState<React.Key | null>(null);
@@ -139,14 +140,17 @@ const FolderNav: React.FC<FolderNavProps> = ({
   const itemMapRef = useRef<ItemMap>(new Map());
 
   /** 拉取某路径下的子节点 */
-  const fetchChildren = useCallback(async (path: string): Promise<DataNode[]> => {
-    const res = await TagServices.getListByPath({
-      path,
-      filePage: 1,
-      filePageSize: FOLDER_NAV_FILE_PAGE_SIZE,
-    });
-    return toDataNodes(itemMapRef.current, path, res.folders, res.files, res.totalFiles);
-  }, []);
+  const fetchChildren = useCallback(
+    async (path: string): Promise<DataNode[]> => {
+      const res = await tagService.getListByPath({
+        path,
+        filePage: 1,
+        filePageSize: FOLDER_NAV_FILE_PAGE_SIZE,
+      });
+      return toDataNodes(itemMapRef.current, path, res.folders, res.files, res.totalFiles);
+    },
+    [tagService]
+  );
 
   /** 拉取根节点（与子节点拉取共用 fetchChildren，根多一层 createFolderNode 包装） */
   const fetchRoot = useCallback(async () => {

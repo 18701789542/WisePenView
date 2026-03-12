@@ -1,6 +1,6 @@
 import React from 'react';
 import { Modal, Button, Form, Input, message } from 'antd';
-import { GroupServices } from '@/services/Group';
+import { useGroupService } from '@/contexts/ServicesContext';
 import type { JoinGroupRequest } from '@/services/Group';
 import type { JoinGroupModalProps } from './index.type';
 import styles from './style.module.less';
@@ -8,13 +8,14 @@ import styles from './style.module.less';
 const INVITE_CODE_LENGTH = 6;
 
 const JoinGroupModal: React.FC<JoinGroupModalProps> = ({ open, onCancel, onSuccess }) => {
+  const groupService = useGroupService();
   const [form] = Form.useForm<JoinGroupRequest>();
   const isConfirmDisabled = Form.useWatch('inviteCode', form)?.trim().length !== INVITE_CODE_LENGTH;
 
   const handleConfirm = async () => {
     try {
       const params = (await form.validateFields()) as JoinGroupRequest;
-      await GroupServices.joinGroup(params);
+      await groupService.joinGroup(params);
       message.success('加入小组成功');
       form.resetFields();
       onSuccess?.();

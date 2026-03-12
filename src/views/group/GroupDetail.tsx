@@ -10,12 +10,13 @@ import {
   DissolveGroupModal,
   ExitGroupModal,
 } from '@/components/Group/GroupModals';
-import { GroupServices } from '@/services/Group';
+import { useGroupService } from '@/contexts/ServicesContext';
 import type { Group } from '@/types/group';
 import { GROUP_TYPE, getGroupTypeLabel } from '@/constants/group';
 import styles from './style.module.less';
 
 const GroupDetail: React.FC = () => {
+  const groupService = useGroupService();
   const { id } = useParams<{ id: string }>();
   const [group, setGroup] = useState<Group | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<'OWNER' | 'ADMIN' | 'MEMBER'>('MEMBER');
@@ -30,8 +31,8 @@ const GroupDetail: React.FC = () => {
     setLoading(true);
     try {
       const [groupData, role] = await Promise.all([
-        GroupServices.fetchGroupInfo(id),
-        GroupServices.fetchMyRoleInGroup(id),
+        groupService.fetchGroupInfo(id),
+        groupService.fetchMyRoleInGroup(id),
       ]);
       setGroup(groupData);
       setCurrentUserRole(role);
@@ -41,7 +42,7 @@ const GroupDetail: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [groupService, id]);
 
   useEffect(() => {
     loadGroup();

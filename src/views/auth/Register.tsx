@@ -3,12 +3,13 @@ import { Checkbox, Form, Typography, Input, Button, Modal, message as antMessage
 import { RiUserLine, RiLockLine } from 'react-icons/ri';
 import { Link, useNavigate } from 'react-router-dom';
 import ServiceAgreement from '@/components/ServiceAgreement/index';
-import { AuthServices } from '@/services/Auth';
+import { useAuthService } from '@/contexts/ServicesContext';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import styles from './Auth.module.less';
 import type { RegisterRequest } from '@/services/Auth';
 
 const Register: React.FC = () => {
+  const authService = useAuthService();
   const [agreement, setAgreement] = useState(false);
   const [contractOpen, setContractOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -26,7 +27,7 @@ const Register: React.FC = () => {
 
     setLoading(true);
     try {
-      await AuthServices.register(values);
+      await authService.register(values);
       setSuccessModalOpen(true);
     } catch (err) {
       messageApi.error(parseErrorMessage(err, '注册失败'));

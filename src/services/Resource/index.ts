@@ -1,7 +1,8 @@
-export { ResourceServices } from './ResourceServices';
+export type { IResourceService } from './index.type';
 export type {
   GetGroupResourceRequest,
   GetUserResourcesRequest,
+  RenameResourceRequest,
   UpdateResourcePathRequest,
   UpdateResourceTagsRequest,
   TagQueryLogicMode,

@@ -5,7 +5,7 @@ import type { GroupMember } from '@/types/group';
 import type { MemberListPaginationConfig, MemberListTableProps } from './index.type';
 import { getColumns } from './TableConfig';
 import styles from './style.module.less';
-import { GroupServices } from '@/services/Group';
+import { useGroupService } from '@/contexts/ServicesContext';
 
 type TableRowSelection<T extends object = object> = TableProps<T>['rowSelection'];
 
@@ -21,6 +21,7 @@ const MemberListTable: React.FC<MemberListTableProps> = ({
   refreshTrigger,
   mockMembers,
 }) => {
+  const groupService = useGroupService();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(pagination?.defaultPageSize ?? 5);
   const [loading, setLoading] = useState(false);
@@ -33,7 +34,7 @@ const MemberListTable: React.FC<MemberListTableProps> = ({
     if (mockMembers != null) return;
     try {
       setLoading(true);
-      const { members: newMembers, total: newTotal } = await GroupServices.fetchGroupMembers(
+      const { members: newMembers, total: newTotal } = await groupService.fetchGroupMembers(
         groupId,
         page,
         size

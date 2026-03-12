@@ -1,33 +1,37 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import QuotaByGroup from '@/components/Profile/QuotaByGroup';
 import type { UserGroupQuota } from '@/types/quota';
-import { QuotaServices } from '@/services/Quota';
+import { useQuotaService } from '@/contexts/ServicesContext';
 import styles from './style.module.less';
 
 const Usage: React.FC = () => {
+  const quotaService = useQuotaService();
   const [quotas, setQuotas] = useState<UserGroupQuota[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  const fetchQuotas = useCallback(async (currentPage: number, currentPageSize: number) => {
-    try {
-      setLoading(true);
-      const { quotas: list, total: totalCount } = await QuotaServices.fetchUserGroupQuotas(
-        currentPage,
-        currentPageSize
-      );
-      setQuotas(list);
-      setTotal(totalCount);
-    } catch (error) {
-      console.error('获取配额数据失败:', error);
-      setQuotas([]);
-      setTotal(0);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const fetchQuotas = useCallback(
+    async (currentPage: number, currentPageSize: number) => {
+      try {
+        setLoading(true);
+        const { quotas: list, total: totalCount } = await quotaService.fetchUserGroupQuotas(
+          currentPage,
+          currentPageSize
+        );
+        setQuotas(list);
+        setTotal(totalCount);
+      } catch (error) {
+        console.error('获取配额数据失败:', error);
+        setQuotas([]);
+        setTotal(0);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [quotaService]
+  );
 
   useEffect(() => {
     fetchQuotas(page, pageSize);

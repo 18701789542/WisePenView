@@ -6,7 +6,7 @@ import FileTypeIcon from '@/components/Common/FileTypeIcon';
 import { LuEllipsisVertical, LuPencil, LuTrash2, LuTag } from 'react-icons/lu';
 import { formatSize } from '@/utils/format';
 import type { ResourceItem } from '@/types/resource';
-import { ResourceServices } from '@/services/Resource';
+import { useResourceService } from '@/contexts/ServicesContext';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import { RenameFileModal, DeleteFileModal, EditTagModal } from '@/components/Drive/Modals';
 import { useClickFile } from '@/hooks/drive';
@@ -134,6 +134,7 @@ const buildColumns = (props: ColumnBuildProps): ColumnsType<ResourceItem> => [
 ];
 
 const FileList: React.FC<FileListProps> = ({ groupId, filter }) => {
+  const resourceService = useResourceService();
   const clickFile = useClickFile();
   const [openDropdownKey, setOpenDropdownKey] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -151,7 +152,7 @@ const FileList: React.FC<FileListProps> = ({ groupId, filter }) => {
   const fetchList = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await ResourceServices.getUserResources({
+      const res = await resourceService.getUserResources({
         page,
         size: pageSize,
         sortBy: filter.sortBy,
@@ -170,6 +171,7 @@ const FileList: React.FC<FileListProps> = ({ groupId, filter }) => {
       setLoading(false);
     }
   }, [
+    resourceService,
     page,
     pageSize,
     groupId,

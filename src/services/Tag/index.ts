@@ -1,4 +1,4 @@
-export { TagServices } from './TagServices';
+export type { ITagService } from './index.type';
 export type {
   GetTagTreeRequest,
   GetListByPathRequest,

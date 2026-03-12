@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, Button, Form, Input, Select, Upload, message } from 'antd';
 import type { UploadFile } from 'antd';
 import { LuUpload } from 'react-icons/lu';
-import { GroupServices } from '@/services/Group';
+import { useGroupService, useUserService } from '@/contexts/ServicesContext';
 import type { CreateGroupRequest } from '@/services/Group';
-import { useUserStore } from '@/store/useUserStore';
 import { GROUP_TYPE, GROUP_TYPE_LABELS, ALLOWED_GROUP_TYPES_MAP } from '@/constants/group';
 import type { CreateGroupModalProps } from './index.type';
 import styles from './style.module.less';
@@ -18,10 +17,16 @@ const groupTypeOptionsBase = Object.entries(GROUP_TYPE_LABELS).map(([value, labe
 }));
 
 const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ open, onCancel, onSuccess }) => {
+  const groupService = useGroupService();
+  const userService = useUserService();
   const [form] = Form.useForm<CreateGroupRequest>();
   const [submitting, setSubmitting] = useState(false);
+  const [identityType, setIdentityType] = useState<number | undefined>();
 
-  const identityType = useUserStore((state) => state.user?.identityType);
+  useEffect(() => {
+    void userService.getUserInfo().then((u) => setIdentityType(u.identityType));
+  }, [userService]);
+
   const allowedGroupTypes = ALLOWED_GROUP_TYPES_MAP[identityType ?? 3];
   const groupTypeOptions = groupTypeOptionsBase.filter((opt) =>
     allowedGroupTypes.includes(opt.value)
@@ -39,7 +44,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ open, onCancel, onS
     try {
       const values = (await form.validateFields()) as CreateGroupRequest;
       setSubmitting(true);
-      await GroupServices.createGroup({
+      await groupService.createGroup({
         groupName: values.groupName,
         groupType: values.groupType,
         groupDesc: values.groupDesc,

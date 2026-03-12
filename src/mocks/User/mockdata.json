@@ -1,0 +1,23 @@
+{
+  "userInfo": {
+    "id": 1,
+    "username": "mockuser",
+    "nickname": "Mock User",
+    "avatar": "",
+    "identityType": 1,
+    "realName": "张三",
+    "campusNo": "20300000000",
+    "academicTitle": "学生",
+    "className": "计算机1班",
+    "college": "计算机科学技术学院",
+    "createTime": "2024-01-01T00:00:00.000Z",
+    "degreeLevel": 1,
+    "email": "mock@example.com",
+    "enrollmentYear": "2023",
+    "major": "计算机科学与技术",
+    "mobile": "13800138000",
+    "sex": 1,
+    "status": 1,
+    "university": "复旦大学"
+  }
+}

@@ -1,3 +1,11 @@
+/** AuthService 接口：供依赖注入使用 */
+export interface IAuthService {
+  login(params: LoginRequest): Promise<void>;
+  register(params: RegisterRequest): Promise<void>;
+  resetPassword(params: ResetPasswordRequest): Promise<void>;
+  newPassword(params: NewPasswordRequest): Promise<void>;
+}
+
 /** 登录请求参数 */
 export interface LoginRequest {
   account: string;

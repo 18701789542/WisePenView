@@ -1,3 +1,18 @@
+import type { User } from '@/types/user';
+
+/** UserService 接口：供依赖注入使用 */
+export interface IUserService {
+  /** 获取用户信息（带缓存，信息为空或 forceRefresh 时重新拉取） */
+  getUserInfo(options?: { forceRefresh?: boolean }): Promise<User>;
+  /** 全量拉取用户信息（含敏感字段），不缓存，需展示 realName/campusNo 等时调用 */
+  getFullUserInfo(): Promise<GetUserInfoResponse>;
+  sendEmailVerify(params: SendEmailVerifyRequest): Promise<void>;
+  confirmEmailVerify(params: ConfirmEmailVerifyRequest): Promise<void>;
+  updateUserProfile(params: UpdateUserProfileRequest): Promise<GetUserInfoResponse>;
+  /** 退出登录时清理缓存 */
+  clearUserCache(): void;
+}
+
 /** 确认邮箱验证请求参数 */
 export interface ConfirmEmailVerifyRequest {
   token: string;

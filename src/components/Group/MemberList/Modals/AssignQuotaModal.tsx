@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, InputNumber, Form, Alert, message } from 'antd';
-import { QuotaServices } from '@/services/Quota';
+import { useQuotaService } from '@/contexts/ServicesContext';
 import { useMemberEditGuard } from './useMemberEditGuard';
 import type { AssignQuotaModalProps } from './index.type';
 import { toNumberIds } from '@/utils/number';
@@ -16,6 +16,7 @@ const AssignQuotaModal: React.FC<AssignQuotaModalProps> = ({
   members,
   permissionConfig,
 }) => {
+  const quotaService = useQuotaService();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [groupQuota, setGroupQuotaState] = useState<{ used: number; limit: number }>({
@@ -33,11 +34,12 @@ const AssignQuotaModal: React.FC<AssignQuotaModalProps> = ({
   useEffect(() => {
     if (open) {
       form.resetFields();
-      QuotaServices.fetchGroupQuota(groupId)
+      quotaService
+        .fetchGroupQuota(groupId)
         .then(setGroupQuotaState)
         .catch(() => setGroupQuotaState({ used: 0, limit: 0 }));
     }
-  }, [open, form, groupId]);
+  }, [open, form, groupId, quotaService]);
 
   const handleConfirm = async () => {
     try {
@@ -51,7 +53,7 @@ const AssignQuotaModal: React.FC<AssignQuotaModalProps> = ({
         return;
       }
       setLoading(true);
-      await QuotaServices.setGroupQuota({
+      await quotaService.setGroupQuota({
         groupId: toNumberIds(groupId),
         targetUserIds: memberIds,
         newTokenLimit: Math.floor(value),

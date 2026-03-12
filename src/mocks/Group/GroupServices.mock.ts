@@ -1,0 +1,76 @@
+import type { IGroupService } from '@/services/Group';
+import type { Group, GroupMember } from '@/types/group';
+import mockdata from './mockdata.json';
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const groups = mockdata.groups as Group[];
+const groupDetail = mockdata.groupDetail as Group;
+const members = mockdata.members as GroupMember[];
+const myRole = mockdata.myRole as 'OWNER' | 'ADMIN' | 'MEMBER';
+
+const fetchGroupList = async (): Promise<{ groups: Group[]; total: number }> => {
+  await delay(200);
+  return { groups, total: groups.length };
+};
+
+const fetchGroupInfo = async (_groupId: string): Promise<Group> => {
+  await delay(200);
+  return groupDetail;
+};
+
+const createGroup = async (): Promise<void> => {
+  await delay(200);
+};
+
+const editGroup = async (): Promise<void> => {
+  await delay(200);
+};
+
+const deleteGroup = async (): Promise<void> => {
+  await delay(200);
+};
+
+const fetchGroupMembers = async (
+  _groupId: string | number,
+  _page: number,
+  _size: number
+): Promise<{ members: GroupMember[]; total: number }> => {
+  await delay(200);
+  return { members, total: members.length };
+};
+
+const fetchMyRoleInGroup = async (_groupId: string): Promise<'OWNER' | 'ADMIN' | 'MEMBER'> => {
+  await delay(100);
+  return myRole;
+};
+
+const joinGroup = async (): Promise<void> => {
+  await delay(200);
+};
+
+const quitGroup = async (): Promise<void> => {
+  await delay(200);
+};
+
+const updateMemberRole = async (): Promise<void> => {
+  await delay(200);
+};
+
+const kickMembers = async (): Promise<void> => {
+  await delay(200);
+};
+
+export const GroupServicesMock: IGroupService = {
+  fetchGroupList,
+  fetchGroupInfo,
+  createGroup,
+  editGroup,
+  deleteGroup,
+  fetchGroupMembers,
+  fetchMyRoleInGroup,
+  joinGroup,
+  quitGroup,
+  updateMemberRole,
+  kickMembers,
+};

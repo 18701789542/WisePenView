@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { Form, Typography, Input, Button, Modal, message as antMessage } from 'antd';
 import { RiLockLine } from 'react-icons/ri';
 import { Link, useNavigate } from 'react-router-dom';
-import { AuthServices } from '@/services/Auth';
+import { useAuthService } from '@/contexts/ServicesContext';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import styles from './Auth.module.less';
 import type { NewPasswordRequest } from '@/services/Auth';
 
 const NewPassword: React.FC = () => {
+  const authService = useAuthService();
   const [loading, setLoading] = useState(false);
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [form] = Form.useForm<Pick<NewPasswordRequest, 'newPassword'>>();
@@ -27,7 +28,7 @@ const NewPassword: React.FC = () => {
 
     setLoading(true);
     try {
-      await AuthServices.newPassword({ newPassword: values.newPassword, token });
+      await authService.newPassword({ newPassword: values.newPassword, token });
       setSuccessModalOpen(true);
     } catch (err) {
       messageApi.error(parseErrorMessage(err, '设置失败'));

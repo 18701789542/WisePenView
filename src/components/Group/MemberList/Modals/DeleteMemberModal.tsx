@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Modal, Button, Alert, message } from 'antd';
-import { GroupServices } from '@/services/Group';
+import { useGroupService } from '@/contexts/ServicesContext';
 import type { KickMembersRequest } from '@/services/Group';
 import { useMemberEditGuard } from './useMemberEditGuard';
 import type { DeleteMemberModalProps } from './index.type';
@@ -16,6 +16,7 @@ const DeleteMemberModal: React.FC<DeleteMemberModalProps> = ({
   groupId,
   permissionConfig,
 }) => {
+  const groupService = useGroupService();
   const [loading, setLoading] = useState(false);
 
   const { memberContainsOwner, canEdit, confirmDisabled } = useMemberEditGuard(
@@ -31,7 +32,7 @@ const DeleteMemberModal: React.FC<DeleteMemberModalProps> = ({
         groupId: toNumberIds(groupId),
         targetUserIds: memberIds,
       };
-      await GroupServices.kickMembers(params);
+      await groupService.kickMembers(params);
       message.success(`已删除 ${memberIds.length} 位成员`);
       onSuccess?.();
       onCancel();

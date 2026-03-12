@@ -16,7 +16,7 @@ import {
 import type { DataNode } from 'antd/es/tree';
 import type { TreeProps } from 'antd';
 import { LuPlus, LuChevronDown } from 'react-icons/lu';
-import { TagServices } from '@/services/Tag';
+import { useTagService } from '@/contexts/ServicesContext';
 import type { CreateTagRequest, UpdateTagRequest, TagTreeNode } from '@/services/Tag';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import type { TagManagerProps } from './index.type';
@@ -74,6 +74,7 @@ const toTreeDataNode = (node: TagTreeNode): DataNode | null => {
 };
 
 const TagManager: React.FC<TagManagerProps> = ({ groupId }) => {
+  const tagService = useTagService();
   const [selectedTag, setSelectedTag] = useState<TagTreeNode | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [treeLoading, setTreeLoading] = useState(true);
@@ -98,7 +99,7 @@ const TagManager: React.FC<TagManagerProps> = ({ groupId }) => {
     const fetch = async () => {
       setTreeLoading(true);
       try {
-        const list = await TagServices.getUserTagTree(groupId ? { groupId } : undefined);
+        const list = await tagService.getUserTagTree(groupId ? { groupId } : undefined);
         setRawList(list);
         const nodes = list.map(toTreeDataNode).filter((n): n is DataNode => n != null);
         setTreeData(nodes);
@@ -111,7 +112,7 @@ const TagManager: React.FC<TagManagerProps> = ({ groupId }) => {
       }
     };
     fetch();
-  }, [groupId, refreshTrigger]);
+  }, [groupId, refreshTrigger, tagService]);
 
   useEffect(() => {
     if (selectedTag) {
@@ -145,7 +146,7 @@ const TagManager: React.FC<TagManagerProps> = ({ groupId }) => {
 
     setDropLoading(true);
     try {
-      await TagServices.moveTag({
+      await tagService.moveTag({
         targetTagId,
         newParentId,
         ...(groupId ? { groupId } : {}),
@@ -165,7 +166,7 @@ const TagManager: React.FC<TagManagerProps> = ({ groupId }) => {
     try {
       const values = await addRootForm.validateFields();
       setAddRootLoading(true);
-      await TagServices.addTag({
+      await tagService.addTag({
         tagName: values.tagName,
         tagDesc: values.tagDesc,
         ...(groupId ? { groupId } : {}),
@@ -186,7 +187,7 @@ const TagManager: React.FC<TagManagerProps> = ({ groupId }) => {
     try {
       const values = await editForm.validateFields();
       setUpdateLoading(true);
-      await TagServices.updateTag({
+      await tagService.updateTag({
         targetTagId: selectedTag.tagId,
         tagName: values.tagName ?? '',
         tagDesc: values.tagDesc,
@@ -205,7 +206,7 @@ const TagManager: React.FC<TagManagerProps> = ({ groupId }) => {
     if (!selectedTag?.tagId) return;
     try {
       setDeleteLoading(true);
-      await TagServices.removeTag({
+      await tagService.removeTag({
         targetTagId: selectedTag.tagId,
         ...(groupId ? { groupId } : {}),
       });
@@ -225,7 +226,7 @@ const TagManager: React.FC<TagManagerProps> = ({ groupId }) => {
     try {
       const values = await addChildForm.validateFields();
       setAddChildLoading(true);
-      await TagServices.addTag({
+      await tagService.addTag({
         tagName: values.tagName,
         parentId: selectedTag.tagId,
         tagDesc: values.tagDesc,

@@ -7,6 +7,7 @@ import type {
   ResetPasswordRequest,
   NewPasswordRequest,
 } from './index.type';
+import type { IAuthService } from './index.type';
 
 const login = async (params: LoginRequest) => {
   const res = (await Axios.post('/auth/login', params)) as ApiResponse;
@@ -28,7 +29,7 @@ const newPassword = async (params: NewPasswordRequest) => {
   checkResponse(res);
 };
 
-export const AuthServices = {
+export const AuthServicesImpl: IAuthService = {
   login,
   register,
   resetPassword,

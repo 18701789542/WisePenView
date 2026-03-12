@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Alert, Form, Typography, Button, Modal, message as antMessage } from 'antd';
 import { Link, useNavigate } from 'react-router-dom';
-import { UserServices } from '@/services/User';
+import { useUserService } from '@/contexts/ServicesContext';
 import type { ConfirmEmailVerifyRequest } from '@/services/User';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import styles from './Auth.module.less';
 
 const VerifyEmail: React.FC = () => {
+  const userService = useUserService();
   const [loading, setLoading] = useState(false);
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [form] = Form.useForm();
@@ -29,7 +30,7 @@ const VerifyEmail: React.FC = () => {
     setLoading(true);
     try {
       const params: ConfirmEmailVerifyRequest = { token };
-      await UserServices.confirmEmailVerify(params);
+      await userService.confirmEmailVerify(params);
       messageApi.success('邮箱绑定成功');
       setSuccessModalOpen(true);
     } catch (err) {

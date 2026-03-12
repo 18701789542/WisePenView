@@ -5,6 +5,7 @@ import type { ApiResponse } from '@/types/api';
 import type { UserGroupQuota } from '@/types/quota';
 import type { GroupQuotaInfo } from '@/types/quota';
 import type { SetGroupQuotaRequest } from './index.type';
+import type { IQuotaService } from './index.type';
 
 const fetchUserGroupQuotas = async (
   page: number,
@@ -44,7 +45,7 @@ const setGroupQuota = async (params: SetGroupQuotaRequest) => {
   checkResponse(res);
 };
 
-export const QuotaServices = {
+export const QuotaServicesImpl: IQuotaService = {
   fetchUserGroupQuotas,
   fetchGroupQuota,
   setGroupQuota,

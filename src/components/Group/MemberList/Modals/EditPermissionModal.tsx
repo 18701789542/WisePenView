@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Modal, Button, Select, Alert, message } from 'antd';
-import { GroupServices } from '@/services/Group';
+import { useGroupService } from '@/contexts/ServicesContext';
 import type { UpdateMemberRoleRequest } from '@/services/Group';
 import { useMemberEditGuard } from './useMemberEditGuard';
 import type { EditPermissionModalProps } from './index.type';
@@ -20,6 +20,7 @@ const EditPermissionModal: React.FC<EditPermissionModalProps> = ({
   members,
   permissionConfig,
 }) => {
+  const groupService = useGroupService();
   const [selectedPermission, setSelectedPermission] = useState<string>('MEMBER');
   const [loading, setLoading] = useState(false);
 
@@ -39,7 +40,7 @@ const EditPermissionModal: React.FC<EditPermissionModalProps> = ({
         targetUserIds: memberIds,
         role,
       };
-      await GroupServices.updateMemberRole(params);
+      await groupService.updateMemberRole(params);
       message.success(`已修改 ${memberIds.length} 位成员的权限`);
       onSuccess?.();
       onCancel();

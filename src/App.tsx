@@ -4,16 +4,19 @@ import { RouterProvider } from 'react-router-dom';
 import router from './router';
 import zhCN from 'antd/locale/zh_CN';
 
+import { ServicesProvider } from '@/contexts/ServicesContext';
 import appTheme from './theme';
 
 const App: React.FC = () => {
   return (
-    <ConfigProvider
-      locale={zhCN}
-      theme={appTheme} // 2. 在这里直接传入对象
-    >
-      <RouterProvider router={router} />
-    </ConfigProvider>
+    <ServicesProvider>
+      <ConfigProvider
+        locale={zhCN}
+        theme={appTheme} // 2. 在这里直接传入对象
+      >
+        <RouterProvider router={router} />
+      </ConfigProvider>
+    </ServicesProvider>
   );
 };
 

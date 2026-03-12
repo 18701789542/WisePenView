@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, Button, Alert, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { GroupServices } from '@/services/Group';
+import { useGroupService } from '@/contexts/ServicesContext';
 import type { QuitGroupRequest } from '@/services/Group';
 import { toNumberIds } from '@/utils/number';
 import type { ExitGroupModalProps } from './index.type';
@@ -14,6 +14,7 @@ const ExitGroupModal: React.FC<ExitGroupModalProps> = ({
   groupId,
   onSuccess,
 }) => {
+  const groupService = useGroupService();
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -25,7 +26,7 @@ const ExitGroupModal: React.FC<ExitGroupModalProps> = ({
     try {
       setLoading(true);
       const params: QuitGroupRequest = { groupId: toNumberIds(groupId) };
-      await GroupServices.quitGroup(params);
+      await groupService.quitGroup(params);
       message.success('已退出小组');
       onSuccess?.();
       onCancel();

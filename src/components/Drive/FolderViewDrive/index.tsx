@@ -17,8 +17,7 @@ import { formatSize } from '@/utils/format';
 import { getPathSegments, getFolderDisplayName } from '@/utils/path';
 import type { ResourceItem } from '@/types/resource';
 import type { TagTreeNode } from '@/services/Tag/index.type';
-import { ResourceServices } from '@/services/Resource';
-import { TagServices } from '@/services/Tag';
+import { useResourceService, useTagService } from '@/contexts/ServicesContext';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import {
   NewFolderModal,
@@ -43,6 +42,8 @@ type RowItem =
   | { key: string; _type: 'file'; data: ResourceItem };
 
 const FolderViewDrive: React.FC = () => {
+  const resourceService = useResourceService();
+  const tagService = useTagService();
   const clickFile = useClickFile();
 
   // 路径状态
@@ -84,37 +85,40 @@ const FolderViewDrive: React.FC = () => {
   const isDraggingRef = useRef(false);
 
   // 获取文件夹列表
-  const fetchFolderList = useCallback(async (path: string, filePage = 1, append = false) => {
-    if (filePage === 1) {
-      setFolderLoading(true);
-    } else {
-      setFolderLoadingMore(true);
-    }
-    try {
-      const res = await TagServices.getListByPath({
-        path,
-        filePage,
-        filePageSize: FOLDER_FILE_PAGE_SIZE,
-      });
-      setFolders(res.folders);
-      setTotalFolderFiles(res.totalFiles);
-      if (append) {
-        setFolderFiles((prev) => [...prev, ...res.files]);
+  const fetchFolderList = useCallback(
+    async (path: string, filePage = 1, append = false) => {
+      if (filePage === 1) {
+        setFolderLoading(true);
       } else {
-        setFolderFiles(res.files);
+        setFolderLoadingMore(true);
       }
-    } catch (err) {
-      message.error(parseErrorMessage(err, '获取列表失败'));
-      if (!append) {
-        setFolders([]);
-        setFolderFiles([]);
-        setTotalFolderFiles(0);
+      try {
+        const res = await tagService.getListByPath({
+          path,
+          filePage,
+          filePageSize: FOLDER_FILE_PAGE_SIZE,
+        });
+        setFolders(res.folders);
+        setTotalFolderFiles(res.totalFiles);
+        if (append) {
+          setFolderFiles((prev) => [...prev, ...res.files]);
+        } else {
+          setFolderFiles(res.files);
+        }
+      } catch (err) {
+        message.error(parseErrorMessage(err, '获取列表失败'));
+        if (!append) {
+          setFolders([]);
+          setFolderFiles([]);
+          setTotalFolderFiles(0);
+        }
+      } finally {
+        setFolderLoading(false);
+        setFolderLoadingMore(false);
       }
-    } finally {
-      setFolderLoading(false);
-      setFolderLoadingMore(false);
-    }
-  }, []);
+    },
+    [tagService]
+  );
 
   // 刷新列表
   const refresh = useCallback(() => {
@@ -260,7 +264,7 @@ const FolderViewDrive: React.FC = () => {
     async (file: ResourceItem, targetFolder: TagTreeNode) => {
       const targetPath = targetFolder.tagName ?? '/';
       try {
-        await ResourceServices.updateResourcePath({
+        await resourceService.updateResourcePath({
           resourceId: file.resourceId,
           path: targetPath,
         });
@@ -270,14 +274,14 @@ const FolderViewDrive: React.FC = () => {
         message.error(parseErrorMessage(err, '移动失败'));
       }
     },
-    [refresh]
+    [resourceService, refresh]
   );
 
   // 处理拖拽文件夹到文件夹
   const handleDropFolder = useCallback(
     async (folder: TagTreeNode, targetFolder: TagTreeNode) => {
       try {
-        await TagServices.moveTag({
+        await tagService.moveTag({
           targetTagId: folder.tagId,
           newParentId: targetFolder.tagId,
         });
@@ -287,7 +291,7 @@ const FolderViewDrive: React.FC = () => {
         message.error(parseErrorMessage(err, '移动失败'));
       }
     },
-    [refresh]
+    [tagService, refresh]
   );
 
   // 处理加载更多

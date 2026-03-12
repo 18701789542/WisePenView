@@ -1,0 +1,55 @@
+{
+  "groups": [
+    {
+      "groupId": "1",
+      "groupName": "示例小组",
+      "groupDesc": "这是一个 mock 小组",
+      "groupCoverUrl": "",
+      "groupType": 1,
+      "ownerId": "1",
+      "ownerInfo": {
+        "nickname": "Mock User",
+        "realName": "张三",
+        "avatar": "",
+        "identityType": 1
+      },
+      "memberCount": 5,
+      "createTime": "2024-01-01T00:00:00.000Z",
+      "inviteCode": "ABC123",
+      "tokenUsed": 100,
+      "tokenBalance": 900
+    }
+  ],
+  "groupDetail": {
+    "groupId": "1",
+    "groupName": "示例小组",
+    "groupDesc": "这是一个 mock 小组",
+    "groupCoverUrl": "",
+    "groupType": 1,
+    "ownerId": "1",
+    "ownerInfo": {
+      "nickname": "Mock User",
+      "realName": "张三",
+      "avatar": "",
+      "identityType": 1
+    },
+    "memberCount": 5,
+    "createTime": "2024-01-01T00:00:00.000Z",
+    "inviteCode": "ABC123",
+    "tokenUsed": 100,
+    "tokenBalance": 900
+  },
+  "members": [
+    {
+      "userId": 1,
+      "realname": "张三",
+      "nickname": "Mock User",
+      "role": 1,
+      "joinTime": "2024-01-01T00:00:00.000Z",
+      "avatar": "",
+      "limit": 1000,
+      "used": 100
+    }
+  ],
+  "myRole": "OWNER"
+}

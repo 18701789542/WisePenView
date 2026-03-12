@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Tree, Spin, Empty, message, Tag } from 'antd';
 import type { DataNode } from 'antd/es/tree';
-import { TagServices } from '@/services/Tag';
+import { useTagService } from '@/contexts/ServicesContext';
 import type { TagTreeNode } from '@/services/Tag';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import type { TagTreeProps } from './index.type';
@@ -49,6 +49,7 @@ const TagTree: React.FC<TagTreeProps> = ({
   editable = true,
   defaultExpandAll = true,
 }) => {
+  const tagService = useTagService();
   const [loading, setLoading] = useState(true);
   const [treeData, setTreeData] = useState<DataNode[]>([]);
   const [rawList, setRawList] = useState<TagTreeNode[]>([]);
@@ -57,7 +58,7 @@ const TagTree: React.FC<TagTreeProps> = ({
     const fetch = async () => {
       setLoading(true);
       try {
-        const list = await TagServices.getUserTagTree(groupId ? { groupId } : undefined);
+        const list = await tagService.getUserTagTree(groupId ? { groupId } : undefined);
         setRawList(list);
         const nodes = list.map(toTreeDataNode).filter((n): n is DataNode => n != null);
         setTreeData(nodes);
@@ -71,7 +72,7 @@ const TagTree: React.FC<TagTreeProps> = ({
     };
 
     fetch();
-  }, [groupId, refreshTrigger]);
+  }, [groupId, refreshTrigger, tagService]);
 
   const handleSelect = (selectedKeys: React.Key[], info: { node: { key: React.Key } }) => {
     if (selectedKeys.length === 0) {

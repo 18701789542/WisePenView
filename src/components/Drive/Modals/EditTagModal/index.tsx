@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Modal, Button, Tag, message } from 'antd';
 import { LuX } from 'react-icons/lu';
-import { TagServices } from '@/services/Tag';
+import { useResourceService, useTagService } from '@/contexts/ServicesContext';
 import type { TagTreeNode } from '@/services/Tag';
-import { ResourceServices } from '@/services/Resource';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import TagTree from '@/components/Common/TagTree';
 import type { EditTagModalProps } from '../index.type';
@@ -25,6 +24,8 @@ const EditTagModal: React.FC<EditTagModalProps> = ({
   file,
   groupId,
 }) => {
+  const resourceService = useResourceService();
+  const tagService = useTagService();
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [tagNames, setTagNames] = useState<string[]>([]);
   const [tagMap, setTagMap] = useState<Map<string, string>>(new Map());
@@ -35,7 +36,7 @@ const EditTagModal: React.FC<EditTagModalProps> = ({
     if (!file || !open) return;
     setInitDone(false);
     try {
-      const userTagTree = await TagServices.getUserTagTree(groupId ? { groupId } : undefined);
+      const userTagTree = await tagService.getUserTagTree(groupId ? { groupId } : undefined);
       const nameToId = new Map<string, string>();
       buildTagNameToIdMap(userTagTree, nameToId);
       setTagMap(nameToId);
@@ -54,7 +55,7 @@ const EditTagModal: React.FC<EditTagModalProps> = ({
     } finally {
       setInitDone(true);
     }
-  }, [file, open, groupId]);
+  }, [file, open, groupId, tagService]);
 
   useEffect(() => {
     if (open && file) {
@@ -99,7 +100,7 @@ const EditTagModal: React.FC<EditTagModalProps> = ({
     if (!file) return;
     try {
       setLoading(true);
-      await ResourceServices.updateResourceTags({
+      await resourceService.updateResourceTags({
         resourceId: file.resourceId,
         tagIds,
         ...(groupId ? { groupId } : {}),

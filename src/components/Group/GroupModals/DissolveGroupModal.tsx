@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Input, Alert, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { GroupServices } from '@/services/Group';
+import { useGroupService } from '@/contexts/ServicesContext';
 import type { DeleteGroupRequest } from '@/services/Group';
 import { toNumberIds } from '@/utils/number';
 import type { DissolveGroupModalProps } from './index.type';
@@ -14,6 +14,7 @@ const DissolveGroupModal: React.FC<DissolveGroupModalProps> = ({
   groupId,
   onSuccess,
 }) => {
+  const groupService = useGroupService();
   const [loading, setLoading] = useState(false);
   const [confirmName, setConfirmName] = useState('');
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ const DissolveGroupModal: React.FC<DissolveGroupModalProps> = ({
     try {
       setLoading(true);
       const params: DeleteGroupRequest = { groupId: toNumberIds(groupId) };
-      await GroupServices.deleteGroup(params);
+      await groupService.deleteGroup(params);
       message.success('已解散小组');
       setConfirmName('');
       onSuccess?.();

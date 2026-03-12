@@ -3,13 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { Tabs, Button, Row, Col, Pagination, Empty, Spin, message } from 'antd';
 import { AiOutlinePlus, AiOutlineUserAdd } from 'react-icons/ai';
 import GroupCard from '@/components/Group/GroupCard';
-import { GroupServices, type FetchGroupListRequest } from '@/services/Group';
+import { useGroupService } from '@/contexts/ServicesContext';
+import type { FetchGroupListRequest } from '@/services/Group';
 import type { Group } from '@/types/group';
 import { RELATION_TYPE_MAP } from '@/constants/group';
 import { JoinGroupModal, CreateGroupModal } from '@/components/Group/GroupModals';
 import styles from './style.module.less';
 
 const MyGroup: React.FC = () => {
+  const groupService = useGroupService();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<string>('joined');
   const [page, setPage] = useState(1);
@@ -30,7 +32,7 @@ const MyGroup: React.FC = () => {
         page,
         pageSize,
       };
-      const { groups: list, total: totalCount } = await GroupServices.fetchGroupList(params);
+      const { groups: list, total: totalCount } = await groupService.fetchGroupList(params);
       setGroups(list);
       setTotal(totalCount);
     } catch (error) {
@@ -41,7 +43,7 @@ const MyGroup: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [relationType, page, pageSize]);
+  }, [groupService, relationType, page, pageSize]);
 
   useEffect(() => {
     fetchGroups();

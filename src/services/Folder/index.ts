@@ -1,1 +1,1 @@
-export { FolderServices } from './FolderServices';
+export type { IFolderService } from './index.type';

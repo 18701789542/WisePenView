@@ -3,7 +3,18 @@
  * 与 resource.openapi.json 对齐
  */
 
-// 以下枚举字段没有放入 type/constants，原因是他们只是请求参数的一部分，不涉及业务逻辑，放置在这里更内聚，便于维护
+import type { ResourceListPage } from '@/types/resource';
+
+/** ResourceService 接口：供依赖注入使用 */
+export interface IResourceService {
+  getUserResources(
+    params: GetUserResourcesRequest | GetGroupResourceRequest
+  ): Promise<ResourceListPage>;
+  renameResource(params: RenameResourceRequest): Promise<void>;
+  deleteResource(resourceId: string): Promise<void>;
+  updateResourcePath(params: UpdateResourcePathRequest): Promise<void>;
+  updateResourceTags(params: UpdateResourceTagsRequest): Promise<void>;
+}
 
 /** 排序字段枚举 */
 export const RESOURCE_SORT_BY = {

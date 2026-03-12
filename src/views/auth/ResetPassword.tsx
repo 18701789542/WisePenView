@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { Alert, Form, Typography, Input, Button, message as antMessage } from 'antd';
 import { RiMailLine } from 'react-icons/ri';
 import { Link } from 'react-router-dom';
-import { AuthServices } from '@/services/Auth';
+import { useAuthService } from '@/contexts/ServicesContext';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import styles from './Auth.module.less';
 import type { ResetPasswordRequest } from '@/services/Auth';
 
 const ResetPassword: React.FC = () => {
+  const authService = useAuthService();
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm<ResetPasswordRequest>();
   const [messageApi, contextHolder] = antMessage.useMessage();
@@ -16,7 +17,7 @@ const ResetPassword: React.FC = () => {
     if (loading) return;
     setLoading(true);
     try {
-      await AuthServices.resetPassword(values);
+      await authService.resetPassword(values);
       messageApi.info('邮件将发送至您的学工号邮箱，请注意查收。');
     } catch (err) {
       messageApi.error(parseErrorMessage(err, '发送失败'));

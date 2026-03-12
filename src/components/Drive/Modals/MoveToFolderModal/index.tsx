@@ -2,8 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Modal, Button, message } from 'antd';
 import type { TagTreeNode } from '@/services/Tag/index.type';
 import type { ResourceItem } from '@/types/resource';
-import { ResourceServices } from '@/services/Resource';
-import { TagServices } from '@/services/Tag';
+import { useResourceService, useTagService } from '@/contexts/ServicesContext';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import { isValidFolderMove } from '@/utils/path';
 import FolderNav from '@/components/Common/FolderNav';
@@ -16,6 +15,8 @@ const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
   onSuccess,
   target,
 }) => {
+  const resourceService = useResourceService();
+  const tagService = useTagService();
   const [selectedFolder, setSelectedFolder] = useState<TagTreeNode | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -42,7 +43,7 @@ const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
     try {
       if (target.type === 'file') {
         const targetPath = selectedFolder.tagName ?? '/';
-        await ResourceServices.updateResourcePath({
+        await resourceService.updateResourcePath({
           resourceId: target.data.resourceId,
           path: targetPath,
         });
@@ -50,7 +51,7 @@ const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
       } else {
         const sourceName = target.data.tagName;
         const destName = selectedFolder.tagName || '~';
-        await TagServices.moveTag({
+        await tagService.moveTag({
           targetTagId: target.data.tagId,
           newParentId: selectedFolder.tagId === 'path-root' ? undefined : selectedFolder.tagId,
         });
@@ -63,7 +64,7 @@ const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
     } finally {
       setSubmitting(false);
     }
-  }, [target, selectedFolder, onSuccess, onCancel]);
+  }, [resourceService, tagService, target, selectedFolder, onSuccess, onCancel]);
 
   const handleCancel = useCallback(() => {
     setSelectedFolder(null);

@@ -1,0 +1,25 @@
+{
+  "login": {
+    "sampleRequest": {
+      "account": "test@example.com",
+      "password": "********"
+    }
+  },
+  "register": {
+    "sampleRequest": {
+      "username": "testuser",
+      "password": "********"
+    }
+  },
+  "resetPassword": {
+    "sampleRequest": {
+      "campusNum": "12345678"
+    }
+  },
+  "newPassword": {
+    "sampleRequest": {
+      "newPassword": "********",
+      "token": "reset-token-from-email"
+    }
+  }
+}

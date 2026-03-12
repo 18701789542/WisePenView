@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Input, Upload, message } from 'antd';
 import type { UploadFile } from 'antd';
 import { LuUpload } from 'react-icons/lu';
-import { GroupServices } from '@/services/Group';
+import { useGroupService } from '@/contexts/ServicesContext';
 import type { EditGroupRequest } from '@/services/Group';
 import { GROUP_TYPE } from '@/constants/group';
 import { toNumberIds } from '@/utils/number';
@@ -26,6 +26,7 @@ const EditGroupInfoModal: React.FC<EditGroupInfoModalProps> = ({
   groupType = GROUP_TYPE.NORMAL,
   onSuccess,
 }) => {
+  const groupService = useGroupService();
   const [form] = Form.useForm<EditGroupFormValues>();
   const [loading, setLoading] = useState(false);
 
@@ -50,7 +51,7 @@ const EditGroupInfoModal: React.FC<EditGroupInfoModalProps> = ({
         groupCoverUrl: cover ?? '',
         groupType,
       };
-      await GroupServices.editGroup(params);
+      await groupService.editGroup(params);
       message.success('小组信息已更新');
       form.resetFields();
       onSuccess?.();

@@ -3,13 +3,13 @@ import { Form, Typography, Input, Button, message as antMessage } from 'antd';
 import { RiUserLine, RiLockLine } from 'react-icons/ri';
 import { Link, useNavigate } from 'react-router-dom';
 import ServiceAgreement from '@/components/ServiceAgreement/index';
-import { useUserStore } from '@/store/useUserStore';
-import { AuthServices } from '@/services/Auth';
+import { useAuthService } from '@/contexts/ServicesContext';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import styles from './Auth.module.less';
 import type { LoginRequest } from '@/services/Auth';
 
 const Login: React.FC = () => {
+  const authService = useAuthService();
   const [contractOpen, setContractOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm<LoginRequest>();
@@ -20,12 +20,7 @@ const Login: React.FC = () => {
     if (loading) return;
     setLoading(true);
     try {
-      await AuthServices.login(values);
-      await useUserStore.getState().fetchUserInfo();
-      if (!useUserStore.getState().user) {
-        messageApi.error(parseErrorMessage(undefined, '登录失败'));
-        return;
-      }
+      await authService.login(values);
       navigate('/app/drive');
     } catch (err) {
       messageApi.error(parseErrorMessage(err, '登录失败'));

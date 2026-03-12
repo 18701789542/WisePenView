@@ -1,0 +1,29 @@
+{
+  "resourceListPage": {
+    "list": [
+      {
+        "resourceId": "res-001",
+        "resourceName": "示例文档.pdf",
+        "resourceType": "file",
+        "ownerId": "1",
+        "preview": "",
+        "size": 102400,
+        "path": "/",
+        "tagNames": ["笔记"]
+      },
+      {
+        "resourceId": "res-002",
+        "resourceName": "报告.docx",
+        "resourceType": "file",
+        "ownerId": "1",
+        "size": 51200,
+        "path": "/documents",
+        "tagNames": []
+      }
+    ],
+    "total": 2,
+    "page": 1,
+    "size": 20,
+    "totalPage": 1
+  }
+}

@@ -1,4 +1,23 @@
-import type { Group } from '@/types/group';
+import type { Group, GroupMember } from '@/types/group';
+
+/** GroupService 接口：供依赖注入使用 */
+export interface IGroupService {
+  fetchGroupList(params: FetchGroupListRequest): Promise<{ groups: Group[]; total: number }>;
+  fetchGroupInfo(groupId: string): Promise<Group>;
+  createGroup(params: CreateGroupRequest): Promise<void>;
+  editGroup(params: EditGroupRequest): Promise<void>;
+  deleteGroup(params: DeleteGroupRequest): Promise<void>;
+  fetchGroupMembers(
+    groupId: string | number,
+    page: number,
+    size: number
+  ): Promise<{ members: GroupMember[]; total: number }>;
+  fetchMyRoleInGroup(groupId: string): Promise<'OWNER' | 'ADMIN' | 'MEMBER'>;
+  joinGroup(params: JoinGroupRequest): Promise<void>;
+  quitGroup(params: QuitGroupRequest): Promise<void>;
+  updateMemberRole(params: UpdateMemberRoleRequest): Promise<void>;
+  kickMembers(params: KickMembersRequest): Promise<void>;
+}
 
 /** 获取小组列表响应 */
 export interface FetchGroupListResponse {
