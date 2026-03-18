@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Tree, Spin, Empty, Button, message } from 'antd';
+import type { TreeProps } from 'antd';
 import type { DataNode } from 'antd/es/tree';
 import { AiOutlineFolder, AiOutlineTag } from 'react-icons/ai';
 import FileTypeIcon from '@/components/Common/FileTypeIcon';
@@ -70,27 +71,55 @@ function createFolderNode(
   };
 }
 
-/** 将 TagTreeNode 转为 DataNode（仅 tag 结构，无文件），并写入 itemMap */
-function tagTreeNodeToDataNode(node: TagTreeNode, itemMap: ItemMap): DataNode {
+/** 与原 TagTree 一致：排除无 tagId 或空名的节点 */
+function isValidTagNavNode(node: TagTreeNode): boolean {
+  return Boolean(node?.tagId && (node.tagName ?? '').trim());
+}
+
+/** 将 TagTreeNode 转为 DataNode（仅 tag 结构），并写入 itemMap */
+function tagTreeNodeToDataNode(node: TagTreeNode, itemMap: ItemMap): DataNode | null {
+  if (!isValidTagNavNode(node)) return null;
+  const childNodes =
+    node.children
+      ?.map((c) => tagTreeNodeToDataNode(c, itemMap))
+      .filter((n): n is DataNode => n != null) ?? [];
   const key = node.tagId;
   itemMap.set(key, { type: 'folder', data: node as Folder });
-  const children = node.children?.map((c) => tagTreeNodeToDataNode(c, itemMap)) ?? [];
+  const hasChildren = childNodes.length > 0;
   return {
     key,
     title: (
       <span className={styles.nodeTitle}>
         <AiOutlineTag size={14} color="var(--ant-color-primary)" />
-        {node.tagName || '未命名'}
+        {node.tagName}
       </span>
     ),
-    isLeaf: children.length === 0,
-    children: children.length > 0 ? children : undefined,
+    isLeaf: !hasChildren,
+    children: hasChildren ? childNodes : undefined,
   };
 }
 
 /** 将全量 tag 树转为 DataNode[] */
 function tagTreeToDataNodes(nodes: TagTreeNode[], itemMap: ItemMap): DataNode[] {
-  return nodes.map((node) => tagTreeNodeToDataNode(node, itemMap));
+  return nodes
+    .map((node) => tagTreeNodeToDataNode(node, itemMap))
+    .filter((n): n is DataNode => n != null);
+}
+
+/** 在树中查找某节点的父节点 tagId，根下节点返回 undefined */
+function findParentTagId(
+  nodes: TagTreeNode[],
+  childTagId: string,
+  parentTagId?: string
+): string | undefined {
+  for (const node of nodes) {
+    if (node.tagId === childTagId) return parentTagId;
+    if (node.children?.length) {
+      const found = findParentTagId(node.children, childTagId, node.tagId);
+      if (found !== undefined) return found;
+    }
+  }
+  return undefined;
 }
 
 /** 将 getResByFolder 响应转为 DataNode[] */
@@ -153,6 +182,12 @@ const TreeNav: React.FC<TreeNavProps> = ({
   mode = 'folder',
   embedMode = false,
   defaultSelectedKey,
+  tagTreeGroupId,
+  tagTreeRefreshTrigger = 0,
+  tagTreeDraggable = false,
+  onTagTreeStructureChange,
+  tagSelectionControlled = false,
+  tagSelectedKey = null,
 }) => {
   const folderService = useFolderService();
   const tagService = useTagService();
@@ -160,9 +195,11 @@ const TreeNav: React.FC<TreeNavProps> = ({
   const [loading, setLoading] = useState(true);
   const [selectedKey, setSelectedKey] = useState<React.Key | null>(defaultSelectedKey ?? null);
   const [newFolderModalOpen, setNewFolderModalOpen] = useState(false);
+  const [tagDropLoading, setTagDropLoading] = useState(false);
 
   const cacheRef = useRef<Map<string, DataNode[]>>(new Map());
   const itemMapRef = useRef<ItemMap>(new Map());
+  const rawTagTreeRef = useRef<TagTreeNode[]>([]);
 
   /** 拉取某路径下的子节点（folder mode） */
   const fetchChildren = useCallback(
@@ -199,29 +236,72 @@ const TreeNav: React.FC<TreeNavProps> = ({
     }
   }, [rootPath, fetchChildren]);
 
-  /** 拉取全量 tag 树（tag mode） */
+  const loadTagTreeData = useCallback(async (): Promise<void> => {
+    const nodes = await tagService.getTagTree(
+      tagTreeGroupId ? { groupId: tagTreeGroupId } : undefined
+    );
+    rawTagTreeRef.current = nodes;
+    itemMapRef.current.clear();
+    setTreeData(tagTreeToDataNodes(nodes, itemMapRef.current));
+  }, [tagService, tagTreeGroupId]);
+
   const fetchTagTree = useCallback(async () => {
     setLoading(true);
     try {
-      itemMapRef.current.clear();
-      const nodes = await tagService.getTagTree();
-      const data = tagTreeToDataNodes(nodes, itemMapRef.current);
-      setTreeData(data);
+      await loadTagTreeData();
     } catch (err) {
       message.error(parseErrorMessage(err, '获取标签树失败'));
       setTreeData([]);
+      rawTagTreeRef.current = [];
     } finally {
       setLoading(false);
     }
-  }, [tagService]);
+  }, [loadTagTreeData, tagTreeRefreshTrigger]);
+
+  const handleTagDrop = useCallback(
+    async (info: Parameters<NonNullable<TreeProps['onDrop']>>[0]) => {
+      const { node, dragNode, dropToGap } = info;
+      const targetTagId = String(dragNode.key);
+      const dropKey = String(node.key);
+      const newParentId = dropToGap ? findParentTagId(rawTagTreeRef.current, dropKey) : dropKey;
+
+      setTagDropLoading(true);
+      try {
+        await tagService.moveTag({
+          targetTagId,
+          newParentId,
+          ...(tagTreeGroupId ? { groupId: tagTreeGroupId } : {}),
+        });
+        message.success('标签已移动');
+        try {
+          await loadTagTreeData();
+          onTagTreeStructureChange?.();
+        } catch (e) {
+          message.error(parseErrorMessage(e, '刷新标签树失败'));
+        }
+      } catch (err) {
+        message.error(parseErrorMessage(err, '移动标签失败'));
+        try {
+          await loadTagTreeData();
+        } catch {
+          /* 保持当前展示 */
+        }
+      } finally {
+        setTagDropLoading(false);
+      }
+    },
+    [tagService, tagTreeGroupId, loadTagTreeData, onTagTreeStructureChange]
+  );
 
   useEffect(() => {
-    if (mode === 'tag') {
-      fetchTagTree();
-    } else {
-      fetchRoot();
-    }
-  }, [mode, fetchRoot, fetchTagTree]);
+    if (mode !== 'folder') return;
+    void fetchRoot();
+  }, [mode, fetchRoot]);
+
+  useEffect(() => {
+    if (mode !== 'tag') return;
+    void fetchTagTree();
+  }, [mode, fetchTagTree]);
 
   useEffect(() => {
     if (embedMode && defaultSelectedKey !== undefined) {
@@ -246,19 +326,44 @@ const TreeNav: React.FC<TreeNavProps> = ({
     [mode, fetchChildren]
   );
 
+  const isTagControlled = mode === 'tag' && tagSelectionControlled;
+
   const handleSelect = useCallback(
-    (selectedKeys: React.Key[], info: { node: DataNode }) => {
-      if (selectedKeys.length === 0) {
-        setSelectedKey(null);
+    (selectedKeys: React.Key[]) => {
+      if (isTagControlled) {
+        const key = selectedKeys.length ? String(selectedKeys[0]) : null;
+        if (key === null) {
+          onSelect?.(null);
+          return;
+        }
+        if (tagSelectedKey != null && key === tagSelectedKey) {
+          onSelect?.(null);
+          return;
+        }
+        const item = itemMapRef.current.get(key);
+        if (item) onSelect?.(item);
         return;
       }
-      const key = info.node.key;
+      if (selectedKeys.length === 0) {
+        setSelectedKey(null);
+        onSelect?.(null);
+        return;
+      }
+      const key = selectedKeys[0];
       setSelectedKey(key);
       const item = itemMapRef.current.get(String(key));
       if (item) onSelect?.(item);
     },
-    [onSelect]
+    [isTagControlled, tagSelectedKey, onSelect]
   );
+
+  const treeSelectedKeys = isTagControlled
+    ? tagSelectedKey
+      ? [tagSelectedKey]
+      : []
+    : selectedKey
+      ? [selectedKey]
+      : [];
 
   const handleNewFolder = useCallback(() => {
     setNewFolderModalOpen(true);
@@ -332,21 +437,35 @@ const TreeNav: React.FC<TreeNavProps> = ({
           新建文件夹
         </Button>
       )}
-      <Tree
-        loadData={handleLoadData}
-        treeData={treeData}
-        className={styles.tree}
-        selectedKeys={selectedKey ? [selectedKey] : []}
-        onSelect={handleSelect}
-        switcherIcon={
-          <span>
-            <LuChevronDown size={14} />
-          </span>
-        }
-        defaultExpandedKeys={mode === 'folder' ? [rootPath] : treeData[0] ? [treeData[0].key] : []}
-        defaultExpandAll={false}
-        blockNode={true}
-      />
+      <div className={`${styles.treeArea} ${tagDropLoading ? styles.treeDropBusy : ''}`}>
+        {tagDropLoading && mode === 'tag' && tagTreeDraggable && (
+          <div className={styles.dropBusyMask}>
+            <Spin size="small" />
+          </div>
+        )}
+        <Tree
+          loadData={mode === 'folder' ? handleLoadData : undefined}
+          treeData={treeData}
+          className={styles.tree}
+          selectedKeys={treeSelectedKeys}
+          onSelect={handleSelect}
+          draggable={mode === 'tag' && tagTreeDraggable && !tagDropLoading}
+          onDrop={mode === 'tag' && tagTreeDraggable ? handleTagDrop : undefined}
+          showLine={mode === 'tag' && tagTreeDraggable}
+          switcherIcon={
+            <span>
+              <LuChevronDown size={14} />
+            </span>
+          }
+          {...(mode === 'tag' && tagTreeDraggable
+            ? { defaultExpandAll: true as const }
+            : {
+                defaultExpandedKeys: mode === 'folder' ? [rootPath] : [],
+                defaultExpandAll: false as const,
+              })}
+          blockNode={true}
+        />
+      </div>
       {!embedMode && (
         <NewFolderModal
           open={newFolderModalOpen}

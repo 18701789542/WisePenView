@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { message, Breadcrumb, Table, Spin, Button, Tag } from 'antd';
+import { AiOutlineTag } from 'react-icons/ai';
 import { LuChevronLeft, LuChevronRight, LuFolderPlus } from 'react-icons/lu';
 import { getPathSegments } from '@/utils/path';
 import type { ResourceItem } from '@/types/resource';
@@ -19,6 +20,7 @@ import {
   DeleteFileModal,
   MoveToFolderModal,
   AddTagModal,
+  TagManageModal,
 } from '@/components/Drive/Modals';
 import type { MoveToFolderTarget } from '@/components/Drive/Modals';
 import { useClickFile, useTreeDriveDrop } from '@/hooks/drive';
@@ -34,7 +36,7 @@ import styles from './style.module.less';
 
 const FOLDER_FILE_PAGE_SIZE = 20;
 
-const TreeDrive: React.FC<TreeDriveProps> = ({ mode = 'folder' }) => {
+const TreeDrive: React.FC<TreeDriveProps> = ({ mode = 'folder', groupId }) => {
   const folderService = useFolderService();
   const resourceService = useResourceService();
   const tagService = useTagService();
@@ -64,6 +66,7 @@ const TreeDrive: React.FC<TreeDriveProps> = ({ mode = 'folder' }) => {
   const [moveToFolderTarget, setMoveToFolderTarget] = useState<MoveToFolderTarget | null>(null);
   const [addTagModalOpen, setAddTagModalOpen] = useState(false);
   const [addTagTarget, setAddTagTarget] = useState<MoveToFolderTarget | null>(null);
+  const [tagManageModalOpen, setTagManageModalOpen] = useState(false);
 
   // 列表状态
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -445,6 +448,16 @@ const TreeDrive: React.FC<TreeDriveProps> = ({ mode = 'folder' }) => {
                 新建文件夹
               </Button>
             )}
+            {mode === 'tag' && (
+              <Button
+                type="default"
+                size="small"
+                icon={<AiOutlineTag size={16} />}
+                onClick={() => setTagManageModalOpen(true)}
+              >
+                管理标签
+              </Button>
+            )}
           </div>
           <div ref={scrollRef} className={styles.scrollArea}>
             <div className={styles.tableWrapper}>
@@ -514,6 +527,12 @@ const TreeDrive: React.FC<TreeDriveProps> = ({ mode = 'folder' }) => {
         onCancel={handleAddTagModalClose}
         onSuccess={refresh}
         target={addTagTarget}
+      />
+
+      <TagManageModal
+        open={tagManageModalOpen}
+        onCancel={() => setTagManageModalOpen(false)}
+        groupId={groupId}
       />
     </>
   );

@@ -12,6 +12,8 @@ export type RowItem =
 export interface TreeDriveProps {
   /** 视图模式：folder 为路径文件夹树，tag 为标签树。默认 folder */
   mode?: TreeDriveMode;
+  /** tag 模式下「管理标签」操作的小组上下文；个人云盘不传 */
+  groupId?: string;
 }
 
 /**

@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
-import { Button, Modal, Tabs } from 'antd';
-import { AiOutlineTag, AiOutlineCloudUpload } from 'react-icons/ai';
-import { TagManager } from '@/components/Tag';
+import React from 'react';
+import { Button, Tabs } from 'antd';
+import { AiOutlineCloudUpload } from 'react-icons/ai';
 import FlatDrive from '@/components/Drive/FlatDrive';
 import TreeDrive from '@/components/Drive/TreeDrive';
 import { useDrivePreferencesStore, type DriveViewMode } from '@/store';
@@ -16,7 +15,6 @@ const VIEW_TABS: { key: DriveViewMode; label: string }[] = [
 const Drive: React.FC = () => {
   const viewMode = useDrivePreferencesStore((s) => s.viewMode);
   const setViewMode = useDrivePreferencesStore((s) => s.setViewMode);
-  const [tagModalOpen, setTagModalOpen] = useState(false);
 
   return (
     <div className={styles.pageContainer}>
@@ -26,9 +24,6 @@ const Drive: React.FC = () => {
           <span className={styles.pageSubtitle}>管理您的项目和文档</span>
         </div>
         <div className={styles.actionsRow}>
-          <Button icon={<AiOutlineTag size={16} />} onClick={() => setTagModalOpen(true)}>
-            管理标签
-          </Button>
           <Button type="primary" icon={<AiOutlineCloudUpload size={16} />}>
             上传文件
           </Button>
@@ -48,24 +43,6 @@ const Drive: React.FC = () => {
         {viewMode === 'flat' && <FlatDrive />}
         {viewMode === 'folder' && <TreeDrive />}
       </div>
-
-      <Modal
-        title="管理标签"
-        open={tagModalOpen}
-        onCancel={() => setTagModalOpen(false)}
-        footer={null}
-        width={900}
-        styles={{
-          body: {
-            height: 600,
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-          },
-        }}
-      >
-        <TagManager />
-      </Modal>
     </div>
   );
 };

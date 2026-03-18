@@ -28,12 +28,16 @@ const NewFolderModal: React.FC<NewFolderModalProps> = ({
   }, [open, parentPath]);
 
   const handleFolderSelect = useCallback(
-    (item: { type: 'file'; data: ResourceItem } | { type: 'folder'; data: Folder }) => {
+    (item: { type: 'file'; data: ResourceItem } | { type: 'folder'; data: Folder } | null) => {
+      if (item === null) {
+        setSelectedParentPath(parentPath ?? '/');
+        return;
+      }
       if (item.type === 'folder') {
         setSelectedParentPath(item.data.tagName ?? '/');
       }
     },
-    []
+    [parentPath]
   );
 
   const handleSubmit = async () => {

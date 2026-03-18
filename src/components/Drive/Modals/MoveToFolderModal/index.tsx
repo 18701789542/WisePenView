@@ -25,7 +25,11 @@ const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
   }, [open]);
 
   const handleFolderSelect = useCallback(
-    (item: { type: 'file'; data: ResourceItem } | { type: 'folder'; data: Folder }) => {
+    (item: { type: 'file'; data: ResourceItem } | { type: 'folder'; data: Folder } | null) => {
+      if (item === null) {
+        setSelectedFolder(null);
+        return;
+      }
       if (item.type === 'folder') {
         setSelectedFolder(item.data);
       }

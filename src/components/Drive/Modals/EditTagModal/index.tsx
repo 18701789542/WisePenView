@@ -3,8 +3,10 @@ import { Modal, Button, Tag, message } from 'antd';
 import { LuX } from 'react-icons/lu';
 import { useResourceService, useTagService } from '@/contexts/ServicesContext';
 import type { TagTreeNode } from '@/services/Tag';
+import type { Folder } from '@/types/folder';
+import type { ResourceItem } from '@/types/resource';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
-import TagTree from '@/components/Common/TagTree';
+import TreeNav from '@/components/Common/TreeNav';
 import type { EditTagModalProps } from './index.type';
 import styles from './index.module.less';
 
@@ -75,7 +77,9 @@ const EditTagModal: React.FC<EditTagModalProps> = ({
   }, [open, reset]);
 
   const handleTreeSelect = useCallback(
-    (node: TagTreeNode | null) => {
+    (item: { type: 'file'; data: ResourceItem } | { type: 'folder'; data: Folder } | null) => {
+      if (item === null || item.type !== 'folder') return;
+      const node = item.data as TagTreeNode;
       if (!node?.tagId) return;
       const { tagId, tagName } = node;
       const name = (tagName ?? tagId).trim();
@@ -143,11 +147,13 @@ const EditTagModal: React.FC<EditTagModalProps> = ({
     >
       <div className={styles.wrapper}>
         <div className={styles.treeWrapper}>
-          <TagTree
-            groupId={groupId}
-            editable={false}
+          <TreeNav
+            mode="tag"
+            tagTreeGroupId={groupId}
+            embedMode
+            showNewFolderButton={false}
             onSelect={handleTreeSelect}
-            defaultExpandAll={false}
+            className={styles.treeNav}
           />
         </div>
 
