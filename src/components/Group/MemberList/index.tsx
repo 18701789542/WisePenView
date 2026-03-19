@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import type { GroupMember } from '@/types/group';
 import type { MemberListProps } from './index.type';
-import { toNumberIds } from '@/utils/number';
+import { toIdString } from '@/utils/number';
 import MemberListToolbar from './MemberListToolbar';
 import MemberListTable from './MemberListTable';
 import {
@@ -52,7 +52,10 @@ const MemberList: React.FC<MemberListProps> = ({
     setActiveModal(action);
   };
 
-  const selectedMemberIds = useMemo(() => toNumberIds(selectedRowKeys), [selectedRowKeys]);
+  const selectedMemberIds = useMemo(
+    () => selectedRowKeys.map((k) => toIdString(k)),
+    [selectedRowKeys]
+  );
 
   return (
     <div>

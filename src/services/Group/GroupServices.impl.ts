@@ -1,6 +1,6 @@
 import Axios from '@/utils/Axios';
 import { checkResponse } from '@/utils/response';
-import { toNumberIds } from '@/utils/number';
+import { toIdString } from '@/utils/number';
 import { API_MY_ROLE_MAP, type Group, type GroupMember, type MemberListPage } from '@/types/group';
 import type { ApiResponse } from '@/types/api';
 import type {
@@ -16,6 +16,11 @@ import type {
 } from './index.type';
 import type { IGroupService } from './index.type';
 
+type GroupRaw = { groupId?: string | number } & Record<string, unknown>;
+
+/** 将接口返回的 groupId 归一化为 string，避免 JSON 解析大数时精度丢失 */
+const normalizeGroup = (g: GroupRaw): Group => ({ ...g, groupId: toIdString(g.groupId) }) as Group;
+
 const fetchGroupList = async (
   params: FetchGroupListRequest
 ): Promise<{ groups: Group[]; total: number }> => {
@@ -25,19 +30,20 @@ const fetchGroupList = async (
   })) as ApiResponse<FetchGroupListResponse>;
   checkResponse(res);
   const payload = res.data;
+  const list = (payload?.list ?? []) as unknown as GroupRaw[];
   return {
-    groups: (payload?.list ?? []) as Group[],
+    groups: list.map(normalizeGroup),
     total: Number(payload?.total) ?? 0,
   };
 };
 
 const fetchGroupInfo = async (groupId: string): Promise<Group> => {
   const res = (await Axios.get('/group/getGroupDetailInfo', {
-    params: { groupId: toNumberIds(groupId) },
+    params: { groupId },
   })) as ApiResponse<Group>;
   checkResponse(res);
   if (!res.data) throw new Error('获取小组详情失败');
-  return res.data;
+  return normalizeGroup(res.data as unknown as GroupRaw);
 };
 
 const createGroup = async (params: CreateGroupRequest) => {
@@ -55,25 +61,32 @@ const deleteGroup = async (params: DeleteGroupRequest) => {
   checkResponse(res);
 };
 
+type MemberRaw = { userId?: string | number } & Record<string, unknown>;
+
+/** 将接口返回的成员项 userId 归一化为 string */
+const normalizeMember = (m: MemberRaw): GroupMember =>
+  ({ ...m, userId: toIdString(m.userId) }) as GroupMember;
+
 const fetchGroupMembers = async (
   groupId: string | number,
   page: number,
   size: number
 ): Promise<{ members: GroupMember[]; total: number }> => {
   const res = (await Axios.get('/group/member/list', {
-    params: { groupId: toNumberIds(groupId), page, size },
+    params: { groupId, page, size },
   })) as ApiResponse<MemberListPage>;
   checkResponse(res);
   const data = res.data;
+  const list = (data?.list ?? []) as unknown as MemberRaw[];
   return {
-    members: data?.list ?? [],
+    members: list.map(normalizeMember),
     total: data?.total ?? 0,
   };
 };
 
 const fetchMyRoleInGroup = async (groupId: string): Promise<'OWNER' | 'ADMIN' | 'MEMBER'> => {
   const res = (await Axios.get('/group/member/getMyRole', {
-    params: { groupId: toNumberIds(groupId) },
+    params: { groupId },
   })) as ApiResponse<number | { role: number }>;
   checkResponse(res);
   const roleNum = typeof res.data === 'number' ? res.data : res.data?.role;

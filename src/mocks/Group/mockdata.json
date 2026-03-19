@@ -41,7 +41,7 @@
   },
   "members": [
     {
-      "userId": 1,
+      "userId": "1",
       "realname": "张三",
       "nickname": "Mock User",
       "role": 1,

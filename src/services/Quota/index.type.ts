@@ -10,9 +10,9 @@ export interface IQuotaService {
   setGroupQuota(params: SetGroupQuotaRequest): Promise<void>;
 }
 
-/** 设置成员配额请求参数（与 OpenAPI changeTokenLimit 对齐） */
+/** 设置成员配额请求参数（与 OpenAPI changeTokenLimit 对齐）；ID 用 string 避免大数精度丢失 */
 export interface SetGroupQuotaRequest {
-  groupId: number;
-  targetUserIds: number[];
+  groupId: string;
+  targetUserIds: string[];
   newTokenLimit: number;
 }

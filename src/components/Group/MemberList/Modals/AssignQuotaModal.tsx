@@ -3,7 +3,6 @@ import { Modal, Button, InputNumber, Form, Alert, message } from 'antd';
 import { useQuotaService } from '@/contexts/ServicesContext';
 import { useMemberEditGuard } from './useMemberEditGuard';
 import type { AssignQuotaModalProps } from './index.type';
-import { toNumberIds } from '@/utils/number';
 import SelectedMemberList from '@/components/Common/SelectedMemberList';
 import styles from './style.module.less';
 
@@ -54,7 +53,7 @@ const AssignQuotaModal: React.FC<AssignQuotaModalProps> = ({
       }
       setLoading(true);
       await quotaService.setGroupQuota({
-        groupId: toNumberIds(groupId),
+        groupId,
         targetUserIds: memberIds,
         newTokenLimit: Math.floor(value),
       });

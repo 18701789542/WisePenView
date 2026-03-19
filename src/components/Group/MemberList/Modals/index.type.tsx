@@ -12,8 +12,8 @@ export interface EditPermissionModalProps {
   open: boolean;
   onCancel: () => void;
   onSuccess?: () => void;
-  groupId: string | number;
-  memberIds: number[];
+  groupId: string;
+  memberIds: string[];
   members: GroupMember[];
   permissionConfig: Pick<PermissionConfig, 'editableRoles' | 'canModifyPermission'>;
 }
@@ -22,9 +22,9 @@ export interface DeleteMemberModalProps {
   open: boolean;
   onCancel: () => void;
   onSuccess?: () => void;
-  memberIds: number[];
+  memberIds: string[];
   members: GroupMember[];
-  groupId: string | number;
+  groupId: string;
   permissionConfig: Pick<PermissionConfig, 'editableRoles'>;
 }
 
@@ -32,8 +32,8 @@ export interface AssignQuotaModalProps {
   open: boolean;
   onCancel: () => void;
   onSuccess?: () => void;
-  groupId: string | number;
-  memberIds: number[];
+  groupId: string;
+  memberIds: string[];
   members: GroupMember[];
   permissionConfig: Pick<PermissionConfig, 'editableRolesForQuota'>;
 }

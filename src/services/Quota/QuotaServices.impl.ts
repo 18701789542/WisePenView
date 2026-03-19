@@ -1,6 +1,6 @@
 import Axios from '@/utils/Axios';
 import { checkResponse } from '@/utils/response';
-import { toNumberIds } from '@/utils/number';
+import { toIdString } from '@/utils/number';
 import type { ApiResponse } from '@/types/api';
 import type { UserGroupQuota } from '@/types/quota';
 import type { GroupQuotaInfo } from '@/types/quota';
@@ -20,7 +20,7 @@ const fetchUserGroupQuotas = async (
   checkResponse(res);
   const list = res.data?.list ?? [];
   const quotas: UserGroupQuota[] = list.map((item) => ({
-    groupId: item.groupId ?? '',
+    groupId: toIdString(item.groupId),
     groupName: item.groupName ?? '',
     quotaLimit: item.tokenLimit ?? 0,
     quotaUsed: item.tokenUsed ?? 0,
@@ -30,7 +30,7 @@ const fetchUserGroupQuotas = async (
 
 const fetchGroupQuota = async (groupId: string | number): Promise<GroupQuotaInfo> => {
   const res = (await Axios.get('/group/member/getGroupToken', {
-    params: { groupId: toNumberIds(groupId) },
+    params: { groupId },
   })) as ApiResponse<{ TokenUsed?: number; TokenLimit?: number }>;
   checkResponse(res);
   const data = res.data;

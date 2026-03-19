@@ -4,7 +4,6 @@ import { useGroupService } from '@/contexts/ServicesContext';
 import type { KickMembersRequest } from '@/services/Group';
 import { useMemberEditGuard } from './useMemberEditGuard';
 import type { DeleteMemberModalProps } from './index.type';
-import { toNumberIds } from '@/utils/number';
 import SelectedMemberList from '@/components/Common/SelectedMemberList';
 
 const DeleteMemberModal: React.FC<DeleteMemberModalProps> = ({
@@ -29,7 +28,7 @@ const DeleteMemberModal: React.FC<DeleteMemberModalProps> = ({
     try {
       setLoading(true);
       const params: KickMembersRequest = {
-        groupId: toNumberIds(groupId),
+        groupId,
         targetUserIds: memberIds,
       };
       await groupService.kickMembers(params);

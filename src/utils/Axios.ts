@@ -26,10 +26,12 @@ Axios.interceptors.response.use(
     if (status === 401) {
       window.location.href = '/login';
     }
-    // 400 视为业务/字段校验错误，把服务端文案挂到 message 上供上层展示
-    if (status === 400 && data && typeof data === 'object') {
+    // 400 视为业务/字段校验错误，500 视为服务端错误，把服务端文案挂到 message 上供上层展示
+    if ((status === 400 || status === 500) && data && typeof data === 'object') {
       const msg =
-        (data as { msg?: string }).msg ?? (data as { message?: string }).message ?? '请求参数错误';
+        (data as { msg?: string }).msg ??
+        (data as { message?: string }).message ??
+        (status === 400 ? '请求参数错误' : '服务器错误');
       error.message = msg;
     }
     return Promise.reject(error);

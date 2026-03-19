@@ -5,7 +5,6 @@ import { LuUpload } from 'react-icons/lu';
 import { useGroupService } from '@/contexts/ServicesContext';
 import type { EditGroupRequest } from '@/services/Group';
 import { GROUP_TYPE } from '@/constants/group';
-import { toNumberIds } from '@/utils/number';
 import type { EditGroupInfoModalProps } from './index.type';
 import styles from './style.module.less';
 
@@ -45,7 +44,7 @@ const EditGroupInfoModal: React.FC<EditGroupInfoModalProps> = ({
       const formValues = (await form.validateFields()) as EditGroupFormValues;
       setLoading(true);
       const params: EditGroupRequest = {
-        groupId: toNumberIds(groupId),
+        groupId,
         groupName: formValues.groupName,
         groupDesc: formValues.groupDesc,
         groupCoverUrl: cover ?? '',

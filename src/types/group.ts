@@ -15,9 +15,9 @@ export const ROLE_LABEL: Record<string, string> = {
   OWNER: '组长',
 };
 
-/** 后端 /group/member/list 返回的成员项结构（与 OpenAPI 一致） */
+/** 后端 /group/member/list 返回的成员项结构（与 OpenAPI 一致）；userId 用 string 避免大数精度丢失 */
 export interface GroupMember {
-  userId: number;
+  userId: string;
   realname: string;
   nickname: string;
   role: number;

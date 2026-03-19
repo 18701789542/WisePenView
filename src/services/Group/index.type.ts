@@ -27,7 +27,7 @@ export interface FetchGroupListResponse {
 
 /** 获取小组列表请求参数 */
 export interface FetchGroupListRequest {
-  relationType: 1 | 2;
+  relationType: 0 | 1;
   page: number;
   size: number;
 }
@@ -40,9 +40,9 @@ export interface CreateGroupRequest {
   groupCoverUrl?: string;
 }
 
-/** 编辑小组请求参数（与 OpenAPI changeGroup 对齐） */
+/** 编辑小组请求参数（与 OpenAPI changeGroup 对齐）；groupId 用 string 避免大数精度丢失 */
 export interface EditGroupRequest {
-  groupId: number;
+  groupId: string;
   groupName: string;
   groupDesc: string;
   groupCoverUrl: string;
@@ -51,7 +51,7 @@ export interface EditGroupRequest {
 
 /** 解散小组请求参数 */
 export interface DeleteGroupRequest {
-  groupId: number;
+  groupId: string;
 }
 
 /** 加入小组请求参数 */
@@ -61,18 +61,18 @@ export interface JoinGroupRequest {
 
 /** 退出小组请求参数 */
 export interface QuitGroupRequest {
-  groupId: number;
+  groupId: string;
 }
 
-/** 修改成员角色请求参数（与 OpenAPI changeRole 对齐） */
+/** 修改成员角色请求参数（与 OpenAPI changeRole 对齐）；ID 用 string 避免大数精度丢失 */
 export interface UpdateMemberRoleRequest {
-  groupId: number;
-  targetUserIds: number[];
+  groupId: string;
+  targetUserIds: string[];
   role: number;
 }
 
 /** 批量踢出成员请求参数 */
 export interface KickMembersRequest {
-  groupId: number;
-  targetUserIds: number[];
+  groupId: string;
+  targetUserIds: string[];
 }

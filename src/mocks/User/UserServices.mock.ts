@@ -11,7 +11,7 @@ const getUserInfo = async (_options?: { forceRefresh?: boolean }): Promise<User>
   await delay(200);
   const { userInfo } = fullUserInfo;
   return {
-    id: userInfo.id ?? 0,
+    id: userInfo.id ?? '',
     username: userInfo.username,
     nickname: userInfo.nickname ?? undefined,
     avatar: userInfo.avatar ?? undefined,

@@ -5,7 +5,6 @@ import type { UpdateMemberRoleRequest } from '@/services/Group';
 import { useMemberEditGuard } from './useMemberEditGuard';
 import type { EditPermissionModalProps } from './index.type';
 import { ROLE_MAP } from '@/types/group';
-import { toNumberIds } from '@/utils/number';
 import SelectedMemberList from '@/components/Common/SelectedMemberList';
 import styles from './style.module.less';
 
@@ -36,7 +35,7 @@ const EditPermissionModal: React.FC<EditPermissionModalProps> = ({
       setLoading(true);
       const role = ROLE_MAP[selectedPermission] ?? 3;
       const params: UpdateMemberRoleRequest = {
-        groupId: toNumberIds(groupId),
+        groupId,
         targetUserIds: memberIds,
         role,
       };

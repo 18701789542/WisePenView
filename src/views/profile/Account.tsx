@@ -33,11 +33,22 @@ import {
 } from '@/constants/user';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import { getProfileFieldConfig, PROFILE_FIELDS } from './profile.config';
+import type { ProfileFieldKey } from './profile.config';
 import styles from './style.module.less';
 
 const { Option } = Select;
 
 type ProfileFormValues = UpdateUserProfileRequest;
+
+/** 从 GetUserInfoResponse 中按字段 key 取值（userInfo / userProfile 分流） */
+function getProfileFieldValue(
+  user: GetUserInfoResponse | null,
+  key: ProfileFieldKey
+): string | number | null | undefined {
+  if (!user) return undefined;
+  if (key === 'nickname' || key === 'realName') return user.userInfo[key] ?? undefined;
+  return user.userProfile[key] ?? undefined;
+}
 
 interface VerifyEmailFormValues {
   suffixType: SendEmailVerifyRequest['suffixType'];
@@ -60,16 +71,18 @@ const Account: React.FC = () => {
         const data = await userService.getFullUserInfo();
         setUser(data);
         form.setFieldsValue({
-          nickname: data.nickname,
-          realName: data.realName,
-          sex: data.sex,
-          university: data.university ?? undefined,
-          college: data.college,
-          major: data.major,
-          className: data.className,
-          enrollmentYear: data.enrollmentYear,
-          degreeLevel: data.degreeLevel,
-          academicTitle: data.academicTitle,
+          campusNo: data.userInfo.campusNo ?? undefined,
+          mobile: data.userInfo.mobile ?? undefined,
+          nickname: data.userInfo.nickname ?? undefined,
+          realName: data.userInfo.realName ?? undefined,
+          sex: data.userProfile.sex,
+          university: data.userProfile.university ?? undefined,
+          college: data.userProfile.college ?? undefined,
+          major: data.userProfile.major ?? undefined,
+          className: data.userProfile.className ?? undefined,
+          enrollmentYear: data.userProfile.enrollmentYear ?? undefined,
+          degreeLevel: data.userProfile.degreeLevel ?? undefined,
+          academicTitle: data.userProfile.academicTitle ?? undefined,
         });
       } catch (err) {
         message.error(parseErrorMessage(err, '获取用户信息失败'));
@@ -80,7 +93,7 @@ const Account: React.FC = () => {
     void loadUser();
   }, [form]);
 
-  const identityType = user?.identityType ?? IDENTITY_TYPE.STUDENT;
+  const identityType = user?.userInfo?.identityType ?? IDENTITY_TYPE.STUDENT;
   const fieldConfig = getProfileFieldConfig(identityType);
   const visibleFields = PROFILE_FIELDS.filter((f) => fieldConfig[f.key]);
 
@@ -89,18 +102,30 @@ const Account: React.FC = () => {
       const values = await form.validateFields();
       setSaving(true);
       const params: UpdateUserProfileRequest = {
-        nickname: fieldConfig.nickname ? values.nickname : user?.nickname,
-        realName: fieldConfig.realName ? values.realName : user?.realName,
-        sex: fieldConfig.sex ? values.sex : user?.sex,
+        campusNo: values.campusNo ?? user?.userInfo?.campusNo ?? undefined,
+        mobile: values.mobile ?? user?.userInfo?.mobile ?? undefined,
+        nickname: fieldConfig.nickname ? values.nickname : (user?.userInfo?.nickname ?? undefined),
+        realName: fieldConfig.realName ? values.realName : (user?.userInfo?.realName ?? undefined),
+        sex: fieldConfig.sex ? values.sex : user?.userProfile?.sex,
         university: fieldConfig.university
           ? (values.university ?? null)
-          : (user?.university ?? null),
-        college: fieldConfig.college ? values.college : user?.college,
-        major: fieldConfig.major ? values.major : user?.major,
-        className: fieldConfig.className ? values.className : user?.className,
-        enrollmentYear: fieldConfig.enrollmentYear ? values.enrollmentYear : user?.enrollmentYear,
-        degreeLevel: fieldConfig.degreeLevel ? values.degreeLevel : user?.degreeLevel,
-        academicTitle: fieldConfig.academicTitle ? values.academicTitle : user?.academicTitle,
+          : (user?.userProfile?.university ?? null),
+        college: fieldConfig.college ? values.college : (user?.userProfile?.college ?? undefined),
+        major: fieldConfig.major ? values.major : (user?.userProfile?.major ?? undefined),
+        className: fieldConfig.className
+          ? values.className
+          : (user?.userProfile?.className ?? undefined),
+        enrollmentYear: fieldConfig.enrollmentYear
+          ? values.enrollmentYear
+          : (user?.userProfile?.enrollmentYear ?? undefined),
+        degreeLevel: fieldConfig.degreeLevel
+          ? values.degreeLevel
+          : typeof user?.userProfile?.degreeLevel === 'number'
+            ? user.userProfile.degreeLevel
+            : undefined,
+        academicTitle: fieldConfig.academicTitle
+          ? values.academicTitle
+          : (user?.userProfile?.academicTitle ?? undefined),
       };
       const updated = await userService.updateUserProfile(params);
       setUser(updated);
@@ -117,16 +142,18 @@ const Account: React.FC = () => {
   const handleCancelEdit = () => {
     form.resetFields();
     form.setFieldsValue({
-      nickname: user?.nickname,
-      realName: user?.realName,
-      sex: user?.sex,
-      university: user?.university ?? undefined,
-      college: user?.college,
-      major: user?.major,
-      className: user?.className,
-      enrollmentYear: user?.enrollmentYear,
-      degreeLevel: user?.degreeLevel,
-      academicTitle: user?.academicTitle,
+      campusNo: user?.userInfo?.campusNo ?? undefined,
+      mobile: user?.userInfo?.mobile ?? undefined,
+      nickname: user?.userInfo?.nickname ?? undefined,
+      realName: user?.userInfo?.realName ?? undefined,
+      sex: user?.userProfile?.sex,
+      university: user?.userProfile?.university ?? undefined,
+      college: user?.userProfile?.college ?? undefined,
+      major: user?.userProfile?.major ?? undefined,
+      className: user?.userProfile?.className ?? undefined,
+      enrollmentYear: user?.userProfile?.enrollmentYear ?? undefined,
+      degreeLevel: user?.userProfile?.degreeLevel ?? undefined,
+      academicTitle: user?.userProfile?.academicTitle ?? undefined,
     });
     setEditMode(false);
   };
@@ -160,9 +187,12 @@ const Account: React.FC = () => {
     label,
   }));
 
-  const nickname = user?.nickname || '未设置昵称';
-  const avatarLetter = (user?.nickname || user?.username || '?').charAt(0).toUpperCase();
-  const identityLabel = user ? getIdentityTypeLabel(user.identityType) : '';
+  const nickname = user?.userInfo?.nickname ?? user?.userInfo?.username ?? '未设置昵称';
+  const avatarLetter = (user?.userInfo?.nickname ?? user?.userInfo?.username ?? '?')
+    .charAt(0)
+    .toUpperCase();
+  const identityLabel =
+    user?.userInfo?.identityType != null ? getIdentityTypeLabel(user.userInfo.identityType) : '';
   const optionsMap = {
     sex: Object.entries(SEX_LABELS).map(([value, label]) => (
       <Option key={value} value={Number(value)}>
@@ -182,7 +212,7 @@ const Account: React.FC = () => {
         <h1 className={styles.pageTitle}>账号管理</h1>
         <span className={styles.pageSubtitle}>管理您的账号信息</span>
       </div>
-      {user?.status === USER_STATUS.UNVERIFIED && (
+      {user?.userInfo?.status === USER_STATUS.UNVERIFIED && (
         <Alert
           type="warning"
           description="请绑定邮箱以完成账号验证，否则部分功能可能无法正常使用。"
@@ -206,35 +236,35 @@ const Account: React.FC = () => {
               <div className={styles.accountInfo}>
                 <div className={styles.nameRow}>
                   <span className={styles.nickname}>{nickname}</span>
-                  {user?.username != null && (
-                    <span className={styles.username}>{user.username}</span>
+                  {user?.userInfo?.username != null && (
+                    <span className={styles.username}>{user.userInfo.username}</span>
                   )}
                 </div>
                 {identityLabel && <span className={styles.identityTag}>{identityLabel}</span>}
               </div>
             </div>
-            {user?.status != null && (
+            {user?.userInfo?.status != null && (
               <span className={styles.statusGroup}>
                 <span className={styles.statusText}>
-                  {user.status === USER_STATUS.UNVERIFIED
+                  {user.userInfo.status === USER_STATUS.UNVERIFIED
                     ? '未认证'
-                    : user.status === USER_STATUS.BANNED
+                    : user.userInfo.status === USER_STATUS.BANNED
                       ? '封禁'
                       : '已认证'}
                 </span>
                 <span
                   className={styles.statusIcon}
                   title={
-                    user.status === USER_STATUS.UNVERIFIED
+                    user.userInfo.status === USER_STATUS.UNVERIFIED
                       ? '未认证'
-                      : user.status === USER_STATUS.BANNED
+                      : user.userInfo.status === USER_STATUS.BANNED
                         ? '封禁'
                         : '已认证'
                   }
                 >
-                  {user.status === USER_STATUS.BANNED ? (
+                  {user.userInfo.status === USER_STATUS.BANNED ? (
                     <RiCloseLine size={24} className={styles.statusIconBanned} />
-                  ) : user.status === USER_STATUS.UNVERIFIED ? (
+                  ) : user.userInfo.status === USER_STATUS.UNVERIFIED ? (
                     <RiErrorWarningLine size={24} className={styles.statusIconUnverified} />
                   ) : (
                     <RiCheckLine size={24} className={styles.statusIconVerified} />
@@ -246,104 +276,131 @@ const Account: React.FC = () => {
 
           <Divider className={styles.sectionDivider} />
 
-          {/* 账号 */}
-          <h3 className={styles.sectionTitle}>账号</h3>
-          <Descriptions column={2} layout="vertical" size="small" className={styles.descriptions}>
-            <Descriptions.Item label="用户名">{user?.username ?? '-'}</Descriptions.Item>
-            <Descriptions.Item label="学工号">{user?.campusNo ?? '-'}</Descriptions.Item>
-            <Descriptions.Item label="邮箱">{user?.email ?? '-'}</Descriptions.Item>
-            <Descriptions.Item label="手机号">{user?.mobile ?? '-'}</Descriptions.Item>
-          </Descriptions>
-
-          <Divider className={styles.sectionDivider} />
-
-          {/* 基本档案（管理员不展示） */}
-          {fieldConfig.showProfileSection && (
-            <div className={styles.profileSection}>
-              <div className={styles.sectionHeader}>
-                <h3 className={styles.sectionTitle}>基本档案</h3>
-                {!editMode ? (
-                  <Button
-                    type="primary"
-                    icon={<RiPencilLine size={16} />}
-                    onClick={() => setEditMode(true)}
-                  >
-                    编辑资料
-                  </Button>
-                ) : null}
+          {/* 账号：编辑按钮放在第二栏 */}
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.sectionTitle}>账号</h3>
+            {!editMode ? (
+              <Button
+                type="primary"
+                icon={<RiPencilLine size={16} />}
+                onClick={() => setEditMode(true)}
+              >
+                编辑资料
+              </Button>
+            ) : null}
+          </div>
+          {!editMode ? (
+            <Descriptions column={2} layout="vertical" size="small" className={styles.descriptions}>
+              <Descriptions.Item label="用户名">
+                {user?.userInfo?.username ?? '-'}
+              </Descriptions.Item>
+              <Descriptions.Item label="学工号">
+                {user?.userInfo?.campusNo ?? '-'}
+              </Descriptions.Item>
+              <Descriptions.Item label="邮箱">{user?.userInfo?.email ?? '-'}</Descriptions.Item>
+              <Descriptions.Item label="手机号">{user?.userInfo?.mobile ?? '-'}</Descriptions.Item>
+            </Descriptions>
+          ) : (
+            <Form form={form} layout="vertical" className={styles.profileForm}>
+              <Descriptions
+                column={2}
+                layout="vertical"
+                size="small"
+                className={styles.descriptions}
+              >
+                <Descriptions.Item label="用户名">
+                  {user?.userInfo?.username ?? '-'}
+                </Descriptions.Item>
+                <Descriptions.Item label="邮箱">{user?.userInfo?.email ?? '-'}</Descriptions.Item>
+              </Descriptions>
+              <div className={styles.formFieldsGrid}>
+                <Form.Item label="学工号" name="campusNo">
+                  <Input placeholder="请输入学工号" className={styles.editableInput} />
+                </Form.Item>
+                <Form.Item label="手机号" name="mobile">
+                  <Input placeholder="请输入手机号" className={styles.editableInput} />
+                </Form.Item>
               </div>
-              {editMode ? (
-                <Form form={form} layout="vertical" className={styles.profileForm}>
-                  <div className={styles.formFieldsGrid}>
-                    {visibleFields.map((field) => {
-                      const disabledList = fieldConfig.disabledFields ?? [];
-                      const isReadOnly = (disabledList as readonly string[]).includes(field.key);
-                      const displayValue =
-                        field.key === 'sex'
-                          ? user?.sex != null
-                            ? getSexLabel(user.sex)
-                            : '-'
-                          : field.key === 'degreeLevel'
-                            ? user?.degreeLevel != null
-                              ? getDegreeLevelLabel(user.degreeLevel)
-                              : '-'
-                            : (user?.[field.key] ?? '-');
-                      return (
-                        <Form.Item key={field.key} label={field.label} name={field.key}>
-                          {isReadOnly ? (
-                            <div className={styles.readOnlyField}>{displayValue}</div>
-                          ) : field.type === 'input' ? (
-                            <Input
-                              placeholder={field.placeholder}
-                              className={styles.editableInput}
-                            />
-                          ) : (
-                            <Select
-                              placeholder={field.placeholder}
-                              allowClear
-                              className={styles.editableInput}
-                            >
-                              {field.optionsKey ? optionsMap[field.optionsKey] : null}
-                            </Select>
-                          )}
-                        </Form.Item>
-                      );
-                    })}
-                  </div>
-                  <div className={styles.formActions}>
-                    <Form.Item className={styles.submitItem}>
-                      <Button type="primary" onClick={handleSaveProfile} loading={saving}>
-                        保存
-                      </Button>
-                      <Button onClick={handleCancelEdit} className={styles.cancelBtn}>
-                        取消
-                      </Button>
+              <Divider className={styles.sectionDivider} />
+              <h3 className={styles.sectionTitle}>基本档案</h3>
+              <div className={styles.formFieldsGrid}>
+                {visibleFields.map((field) => {
+                  const disabledList = fieldConfig.disabledFields ?? [];
+                  const isReadOnly = (disabledList as readonly string[]).includes(field.key);
+                  const raw = getProfileFieldValue(user, field.key);
+                  const displayValue =
+                    field.key === 'sex'
+                      ? raw != null
+                        ? getSexLabel(raw as number)
+                        : '-'
+                      : field.key === 'degreeLevel'
+                        ? raw != null
+                          ? getDegreeLevelLabel(raw as number)
+                          : '-'
+                        : (raw ?? '-');
+                  return (
+                    <Form.Item key={field.key} label={field.label} name={field.key}>
+                      {isReadOnly ? (
+                        <div className={styles.readOnlyField}>{displayValue}</div>
+                      ) : field.type === 'input' ? (
+                        <Input placeholder={field.placeholder} className={styles.editableInput} />
+                      ) : (
+                        <Select
+                          placeholder={field.placeholder}
+                          allowClear
+                          className={styles.editableInput}
+                        >
+                          {field.optionsKey ? optionsMap[field.optionsKey] : null}
+                        </Select>
+                      )}
                     </Form.Item>
-                  </div>
-                </Form>
-              ) : (
+                  );
+                })}
+              </div>
+              <div className={styles.formActions}>
+                <Form.Item className={styles.submitItem}>
+                  <Button type="primary" onClick={handleSaveProfile} loading={saving}>
+                    保存
+                  </Button>
+                  <Button onClick={handleCancelEdit} className={styles.cancelBtn}>
+                    取消
+                  </Button>
+                </Form.Item>
+              </div>
+            </Form>
+          )}
+
+          {/* 基本档案（非编辑时展示，管理员不展示） */}
+          {!editMode && fieldConfig.showProfileSection && (
+            <>
+              <Divider className={styles.sectionDivider} />
+              <div className={styles.profileSection}>
+                <h3 className={styles.sectionTitle}>基本档案</h3>
                 <Descriptions
                   column={2}
                   layout="vertical"
                   size="small"
                   className={styles.descriptions}
                 >
-                  {visibleFields.map((field) => (
-                    <Descriptions.Item key={field.key} label={field.label}>
-                      {field.key === 'sex'
-                        ? user?.sex != null
-                          ? getSexLabel(user.sex)
-                          : '-'
-                        : field.key === 'degreeLevel'
-                          ? user?.degreeLevel != null
-                            ? getDegreeLevelLabel(user.degreeLevel)
+                  {visibleFields.map((field) => {
+                    const raw = getProfileFieldValue(user, field.key);
+                    return (
+                      <Descriptions.Item key={field.key} label={field.label}>
+                        {field.key === 'sex'
+                          ? raw != null
+                            ? getSexLabel(raw as number)
                             : '-'
-                          : (user?.[field.key] ?? '-')}
-                    </Descriptions.Item>
-                  ))}
+                          : field.key === 'degreeLevel'
+                            ? raw != null
+                              ? getDegreeLevelLabel(raw as number)
+                              : '-'
+                            : (raw ?? '-')}
+                      </Descriptions.Item>
+                    );
+                  })}
                 </Descriptions>
-              )}
-            </div>
+              </div>
+            </>
           )}
         </div>
       </Spin>
@@ -371,7 +428,7 @@ const Account: React.FC = () => {
         <Form form={verifyForm} layout="vertical" className={styles.verifyForm}>
           <Form.Item label="邮箱">
             <Space.Compact className={styles.verifyEmailGroup}>
-              <Space.Addon>{user?.campusNo ?? '-'}</Space.Addon>
+              <Space.Addon>{user?.userInfo?.campusNo ?? '-'}</Space.Addon>
               <Form.Item
                 name="suffixType"
                 noStyle

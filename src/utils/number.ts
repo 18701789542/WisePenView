@@ -1,12 +1,7 @@
-function toNumber(id: string | number): number {
-  return typeof id === 'string' ? parseInt(id, 10) : id;
-}
-
-/** 将 (string | number)[] 或 string | number 统一转为 number[] 或 number */
-export function toNumberIds(ids: (string | number)[]): number[];
-export function toNumberIds(id: string | number): number;
-export function toNumberIds(idOrIds: (string | number)[] | (string | number)): number[] | number {
-  return Array.isArray(idOrIds) ? idOrIds.map(toNumber) : toNumber(idOrIds);
+/** 将接口可能返回的 number 转为 string，避免大 ID 在 JSON 解析时精度丢失；前端统一用 string 表示 ID */
+export function toIdString(id: string | number | null | undefined): string {
+  if (id === null || id === undefined) return '';
+  return typeof id === 'string' ? id : String(id);
 }
 
 /** 数字千分位格式化 */

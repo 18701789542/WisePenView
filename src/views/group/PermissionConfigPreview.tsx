@@ -10,10 +10,10 @@ import PermissionConfigs, {
 import MemberList from '@/components/Group/MemberList';
 import styles from './style.module.less';
 
-/** 九张表共用的 mock 成员数据（与 API 结构一致） */
+/** 九张表共用的 mock 成员数据（与 API 结构一致）；userId 用 string 避免大数精度丢失 */
 const MOCK_MEMBERS: GroupMember[] = [
   {
-    userId: 1,
+    userId: '1',
     realname: '张三',
     nickname: '阿三',
     role: 1,
@@ -23,7 +23,7 @@ const MOCK_MEMBERS: GroupMember[] = [
     limit: 50000,
   },
   {
-    userId: 2,
+    userId: '2',
     realname: '李四',
     nickname: '小李',
     role: 2,
@@ -33,7 +33,7 @@ const MOCK_MEMBERS: GroupMember[] = [
     limit: 30000,
   },
   {
-    userId: 3,
+    userId: '3',
     realname: '王五',
     nickname: '小王',
     role: 3,

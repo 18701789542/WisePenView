@@ -1,5 +1,6 @@
 import Axios from '@/utils/Axios';
 import { checkResponse } from '@/utils/response';
+import { toIdString } from '@/utils/number';
 import type { ApiResponse } from '@/types/api';
 import type { User } from '@/types/user';
 import type {
@@ -10,13 +11,13 @@ import type {
 } from './index.type';
 import type { IUserService } from './index.type';
 
-/** 仅缓存展示用字段和id，不含 realName、campusNo 等敏感信息 */
+/** 仅缓存展示用字段和id，不含 realName、campusNo 等敏感信息；id 归一化为 string 避免大数精度丢失 */
 type CachedUserSafe = Pick<User, 'id' | 'username' | 'nickname' | 'avatar' | 'identityType'>;
 
 const toUserSafe = (data: GetUserInfoResponse): CachedUserSafe => {
   const { userInfo } = data;
   return {
-    id: userInfo.id ?? 0,
+    id: toIdString(userInfo.id),
     username: userInfo.username,
     nickname: userInfo.nickname ?? undefined,
     avatar: userInfo.avatar ?? undefined,

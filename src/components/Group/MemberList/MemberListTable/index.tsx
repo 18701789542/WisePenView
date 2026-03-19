@@ -28,7 +28,7 @@ const MemberListTable: React.FC<MemberListTableProps> = ({
   const [members, setMembers] = useState<GroupMember[]>(mockMembers ?? []);
   const [total, setTotal] = useState(mockMembers?.length ?? 0);
 
-  const selectedMembersMapRef = useRef<Map<number, GroupMember>>(new Map());
+  const selectedMembersMapRef = useRef<Map<string, GroupMember>>(new Map());
 
   const fetchMembers = async (page: number, size: number) => {
     if (mockMembers != null) return;
@@ -92,15 +92,15 @@ const MemberListTable: React.FC<MemberListTableProps> = ({
 
   useEffect(() => {
     members.forEach((member) => {
-      const key = member.userId;
-      if (selectedRowKeys.some((k) => Number(k) === key)) {
+      const key = String(member.userId);
+      if (selectedRowKeys.some((k) => String(k) === key)) {
         selectedMembersMapRef.current.set(key, member);
       }
     });
 
     if (onSelectedMembersChange) {
       const selectedMembers = selectedRowKeys
-        .map((k) => selectedMembersMapRef.current.get(Number(k)))
+        .map((k) => selectedMembersMapRef.current.get(String(k)))
         .filter((member): member is GroupMember => member !== undefined);
       onSelectedMembersChange(selectedMembers);
     }
@@ -125,9 +125,9 @@ const MemberListTable: React.FC<MemberListTableProps> = ({
         onSelectedRowKeysChange(finalSelectedKeys);
 
         validNewKeys.forEach((key) => {
-          const numKey = typeof key === 'string' ? parseInt(key, 10) : key;
-          const member = members.find((m) => m.userId === numKey);
-          if (member) selectedMembersMapRef.current.set(numKey, member);
+          const idKey = String(key);
+          const member = members.find((m) => String(m.userId) === idKey);
+          if (member) selectedMembersMapRef.current.set(idKey, member);
         });
 
         const validNewKeysSet = new Set(validNewKeys.map((k) => String(k)));
@@ -136,8 +136,7 @@ const MemberListTable: React.FC<MemberListTableProps> = ({
         );
         previousCurrentPageKeys.forEach((key) => {
           if (!validNewKeysSet.has(String(key))) {
-            const numKey = typeof key === 'string' ? parseInt(key, 10) : key;
-            selectedMembersMapRef.current.delete(numKey);
+            selectedMembersMapRef.current.delete(String(key));
           }
         });
       },

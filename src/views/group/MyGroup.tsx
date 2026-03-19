@@ -15,7 +15,7 @@ const MyGroup: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<string>('joined');
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(8);
+  const [size, setSize] = useState(8);
   const [groups, setGroups] = useState<Group[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -30,7 +30,7 @@ const MyGroup: React.FC = () => {
       const params: FetchGroupListRequest = {
         relationType,
         page,
-        pageSize,
+        size,
       };
       const { groups: list, total: totalCount } = await groupService.fetchGroupList(params);
       setGroups(list);
@@ -43,7 +43,7 @@ const MyGroup: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [groupService, relationType, page, pageSize]);
+  }, [groupService, relationType, page, size]);
 
   useEffect(() => {
     fetchGroups();
@@ -56,8 +56,8 @@ const MyGroup: React.FC = () => {
 
   const handlePageChange = (newPage: number, newPageSize?: number) => {
     setPage(newPage);
-    if (newPageSize && newPageSize !== pageSize) {
-      setPageSize(newPageSize);
+    if (newPageSize && newPageSize !== size) {
+      setSize(newPageSize);
       setPage(1);
     }
   };
@@ -126,7 +126,7 @@ const MyGroup: React.FC = () => {
           <div className={styles.paginationWrap}>
             <Pagination
               current={page}
-              pageSize={pageSize}
+              pageSize={size}
               total={total}
               showSizeChanger
               showTotal={(t) => `共 ${t} 条`}

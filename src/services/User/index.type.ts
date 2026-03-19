@@ -40,9 +40,9 @@ export interface UpdateUserProfileRequest {
   academicTitle?: string;
 }
 
-/** 获取用户信息接口响应 data 中的 userInfo */
+/** 获取用户信息接口响应 data 中的 userInfo；id 用 string 避免大数精度丢失 */
 export interface GetUserInfoResponseUserInfo {
-  id?: number;
+  id?: string;
   nickname: string | null;
   realName: string | null;
   avatar: string | null;

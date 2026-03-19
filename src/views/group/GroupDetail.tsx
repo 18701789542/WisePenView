@@ -34,6 +34,7 @@ const GroupDetail: React.FC = () => {
         groupService.fetchGroupInfo(id),
         groupService.fetchMyRoleInGroup(id),
       ]);
+      console.log(groupData, role);
       setGroup(groupData);
       setCurrentUserRole(role);
     } catch {
