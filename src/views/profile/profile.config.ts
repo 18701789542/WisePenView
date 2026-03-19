@@ -19,19 +19,11 @@ export const getProfileFieldConfig = (identityType: number) => {
     enrollmentYear: isStudent,
     degreeLevel: isStudent,
     academicTitle: isTeacher,
-    /** 编辑模式下为 disabled（只读）的字段 */
-    disabledFields: [
-      'university',
-      ...(isStudent ? (['enrollmentYear', 'degreeLevel'] as const) : []),
-    ] as const,
   } as const;
 };
 
 export type ProfileFieldConfig = ReturnType<typeof getProfileFieldConfig>;
-export type ProfileFieldKey = keyof Omit<
-  ProfileFieldConfig,
-  'showProfileSection' | 'disabledFields'
->;
+export type ProfileFieldKey = keyof Omit<ProfileFieldConfig, 'showProfileSection'>;
 
 /** 基本档案字段列表，顺序决定 grid 布局（每行 2 个） */
 export const PROFILE_FIELDS: Array<{

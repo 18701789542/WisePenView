@@ -11,6 +11,15 @@ export interface IUserService {
   sendEmailVerify(params: SendEmailVerifyRequest): Promise<void>;
   /** 发起复旦 UIS 认证（与 OpenAPI initiateFudanUISVerify 对齐） */
   initiateUISVerify(params: InitiateUISVerifyRequest): Promise<void>;
+  /** 查询复旦 UIS 认证状态（单次，与 checkFudanUISVerify 对齐） */
+  checkFudanUISVerify(): Promise<FudanUISVerifyStatusData>;
+  /**
+   * 每 intervalMs 轮询 checkFudanUISVerify，直到 data.completed === true，返回该帧 data。
+   * UI 再根据 requireAction / actionPayload / message 展示二维码或文案。
+   */
+  pollFudanUISVerifyUntilComplete(
+    options?: PollFudanUISVerifyOptions
+  ): Promise<FudanUISVerifyStatusData>;
   confirmEmailVerify(params: ConfirmEmailVerifyRequest): Promise<void>;
   /** 退出登录时清理缓存 */
   clearUserCache(): void;
@@ -30,6 +39,22 @@ export interface SendEmailVerifyRequest {
 export interface InitiateUISVerifyRequest {
   uisAccount: string;
   uisPassword: string;
+}
+
+/** checkFudanUISVerify 响应 data */
+export interface FudanUISVerifyStatusData {
+  completed: boolean;
+  requireAction: boolean;
+  actionPayload: string;
+  message: string;
+}
+
+/** pollFudanUISVerifyUntilComplete 选项 */
+export interface PollFudanUISVerifyOptions {
+  /** 轮询间隔，默认 2000ms */
+  intervalMs?: number;
+  /** 取消轮询（如关闭弹窗、离开页面） */
+  signal?: AbortSignal;
 }
 
 /** 更新用户信息请求参数（仅基本档案可编辑；账号栏只读；impl 内按 userInfo / userProfile 拆成两次 PUT） */

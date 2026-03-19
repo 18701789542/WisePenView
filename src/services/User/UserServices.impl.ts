@@ -5,8 +5,10 @@ import type { ApiResponse } from '@/types/api';
 import type { User } from '@/types/user';
 import type {
   ConfirmEmailVerifyRequest,
+  FudanUISVerifyStatusData,
   GetUserInfoResponse,
   InitiateUISVerifyRequest,
+  PollFudanUISVerifyOptions,
   SendEmailVerifyRequest,
   UpdateUserInfoRequest,
 } from './index.type';
@@ -95,6 +97,67 @@ const initiateUISVerify = async (params: InitiateUISVerifyRequest): Promise<void
   checkResponse(res);
 };
 
+const normalizeFudanUISVerifyData = (raw: unknown): FudanUISVerifyStatusData => {
+  if (!raw || typeof raw !== 'object') {
+    return {
+      completed: false,
+      requireAction: false,
+      actionPayload: '',
+      message: '',
+    };
+  }
+  const d = raw as Record<string, unknown>;
+  return {
+    completed: Boolean(d.completed),
+    requireAction: Boolean(d.requireAction),
+    actionPayload: typeof d.actionPayload === 'string' ? d.actionPayload : '',
+    message: typeof d.message === 'string' ? d.message : '',
+  };
+};
+
+const checkFudanUISVerify = async (): Promise<FudanUISVerifyStatusData> => {
+  const res = (await Axios.get('/user/verify/checkFudanUISVerify')) as ApiResponse<unknown>;
+  checkResponse(res);
+  return normalizeFudanUISVerifyData(res.data);
+};
+
+const throwIfAborted = (signal: AbortSignal | undefined): void => {
+  if (signal?.aborted) {
+    throw new DOMException('Aborted', 'AbortError');
+  }
+};
+
+const sleep = (ms: number, signal: AbortSignal | undefined): Promise<void> =>
+  new Promise((resolve, reject) => {
+    throwIfAborted(signal);
+    const timer = window.setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    const onAbort = () => {
+      window.clearTimeout(timer);
+      reject(new DOMException('Aborted', 'AbortError'));
+    };
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
+
+const pollFudanUISVerifyUntilComplete = async (
+  options?: PollFudanUISVerifyOptions
+): Promise<FudanUISVerifyStatusData> => {
+  const intervalMs = options?.intervalMs ?? 2000;
+  const { signal } = options ?? {};
+
+  for (;;) {
+    throwIfAborted(signal);
+    const status = await checkFudanUISVerify();
+    console.log(status);
+    if (status.completed) {
+      return status;
+    }
+    await sleep(intervalMs, signal);
+  }
+};
+
 const confirmEmailVerify = async (params: ConfirmEmailVerifyRequest): Promise<void> => {
   const res = (await Axios.get('/user/verify/checkEmailVerify', {
     params: { token: params.token },
@@ -108,6 +171,8 @@ export const UserServicesImpl: IUserService = {
   updateUserInfo,
   sendEmailVerify,
   initiateUISVerify,
+  checkFudanUISVerify,
+  pollFudanUISVerifyUntilComplete,
   confirmEmailVerify,
   clearUserCache,
 };

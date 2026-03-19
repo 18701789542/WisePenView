@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Avatar,
@@ -13,6 +13,7 @@ import {
   Select,
   Spin,
 } from 'antd';
+import type { InputRef } from 'antd/es/input';
 import {
   RiCheckLine,
   RiCloseLine,
@@ -21,6 +22,7 @@ import {
   RiPencilLine,
   RiShieldUserLine,
 } from 'react-icons/ri';
+import { QRCodeSVG } from 'qrcode.react';
 import { useUserService } from '@/contexts/ServicesContext';
 import type {
   GetUserInfoResponse,
@@ -57,6 +59,54 @@ function getProfileFieldValue(
   return user.userProfile[key] ?? undefined;
 }
 
+/** 档案字段在只读 Input 中展示的文案（性别 / 学历为枚举文案） */
+function getProfileDisplayString(user: GetUserInfoResponse | null, key: ProfileFieldKey): string {
+  const raw = getProfileFieldValue(user, key);
+  if (raw === null || raw === undefined || raw === '') return '-';
+  if (key === 'sex') return getSexLabel(raw as number);
+  if (key === 'degreeLevel') return getDegreeLevelLabel(raw as number);
+  return String(raw);
+}
+
+const SexReadonlyInput = React.forwardRef<InputRef, { value?: number | null }>(({ value }, ref) => (
+  <Input
+    ref={ref}
+    disabled
+    readOnly
+    value={value != null ? getSexLabel(value) : '-'}
+    className={styles.editableInput}
+  />
+));
+SexReadonlyInput.displayName = 'SexReadonlyInput';
+
+const DegreeLevelReadonlyInput = React.forwardRef<InputRef, { value?: number | null }>(
+  ({ value }, ref) => (
+    <Input
+      ref={ref}
+      disabled
+      readOnly
+      value={value != null ? getDegreeLevelLabel(value) : '-'}
+      className={styles.editableInput}
+    />
+  )
+);
+DegreeLevelReadonlyInput.displayName = 'DegreeLevelReadonlyInput';
+
+function buildProfileFormValues(data: GetUserInfoResponse): ProfileFormValues {
+  return {
+    nickname: data.userInfo.nickname ?? undefined,
+    realName: data.userInfo.realName ?? undefined,
+    sex: data.userProfile.sex,
+    university: data.userProfile.university ?? undefined,
+    college: data.userProfile.college ?? undefined,
+    major: data.userProfile.major ?? undefined,
+    className: data.userProfile.className ?? undefined,
+    enrollmentYear: data.userProfile.enrollmentYear ?? undefined,
+    degreeLevel: data.userProfile.degreeLevel ?? undefined,
+    academicTitle: data.userProfile.academicTitle ?? undefined,
+  };
+}
+
 type VerifyModalFormValues = {
   email?: string;
   uisAccount?: string;
@@ -64,6 +114,18 @@ type VerifyModalFormValues = {
 };
 
 type VerifyModalMode = 'email' | 'uis';
+
+/** actionPayload 是否为可直接作为 <img src> 的图片地址 */
+function isLikelyQrImageSrc(payload: string): boolean {
+  const t = payload.trim();
+  return t.startsWith('data:image/') || /^https?:\/\//i.test(t);
+}
+
+type UisOutcomeState = {
+  requireAction: boolean;
+  actionPayload: string;
+  message: string;
+};
 
 const Account: React.FC = () => {
   const userService = useUserService();
@@ -74,6 +136,9 @@ const Account: React.FC = () => {
   const [verifyModalOpen, setVerifyModalOpen] = useState(false);
   const [verifyMode, setVerifyMode] = useState<VerifyModalMode>('uis');
   const [verifySubmitting, setVerifySubmitting] = useState(false);
+  const [uisOutcomeOpen, setUisOutcomeOpen] = useState(false);
+  const [uisOutcome, setUisOutcome] = useState<UisOutcomeState | null>(null);
+  const uisPollAbortRef = useRef<AbortController | null>(null);
   const [form] = Form.useForm<ProfileFormValues>();
   const [verifyForm] = Form.useForm<VerifyModalFormValues>();
 
@@ -83,18 +148,7 @@ const Account: React.FC = () => {
         setLoading(true);
         const data = await userService.getFullUserInfo();
         setUser(data);
-        form.setFieldsValue({
-          nickname: data.userInfo.nickname ?? undefined,
-          realName: data.userInfo.realName ?? undefined,
-          sex: data.userProfile.sex,
-          university: data.userProfile.university ?? undefined,
-          college: data.userProfile.college ?? undefined,
-          major: data.userProfile.major ?? undefined,
-          className: data.userProfile.className ?? undefined,
-          enrollmentYear: data.userProfile.enrollmentYear ?? undefined,
-          degreeLevel: data.userProfile.degreeLevel ?? undefined,
-          academicTitle: data.userProfile.academicTitle ?? undefined,
-        });
+        form.setFieldsValue(buildProfileFormValues(data));
       } catch (err) {
         message.error(parseErrorMessage(err, '获取用户信息失败'));
       } finally {
@@ -104,41 +158,72 @@ const Account: React.FC = () => {
     void loadUser();
   }, [form]);
 
+  useEffect(
+    () => () => {
+      uisPollAbortRef.current?.abort();
+    },
+    []
+  );
+
   const identityType = user?.userInfo?.identityType ?? IDENTITY_TYPE.STUDENT;
   const fieldConfig = getProfileFieldConfig(identityType);
   const visibleFields = PROFILE_FIELDS.filter((f) => fieldConfig[f.key]);
+
+  const readonlyFieldSet = useMemo(
+    () => new Set(user?.readonlyFields ?? []),
+    [user?.readonlyFields]
+  );
 
   const handleSaveProfile = async () => {
     try {
       const values = await form.validateFields();
       setSaving(true);
+      const rf = new Set(user?.readonlyFields ?? []);
       const params: UpdateUserInfoRequest = {
-        nickname: fieldConfig.nickname ? values.nickname : (user?.userInfo?.nickname ?? undefined),
-        realName: fieldConfig.realName ? values.realName : (user?.userInfo?.realName ?? undefined),
-        sex: fieldConfig.sex ? values.sex : user?.userProfile?.sex,
-        university: fieldConfig.university
-          ? (values.university ?? null)
-          : (user?.userProfile?.university ?? null),
-        college: fieldConfig.college ? values.college : (user?.userProfile?.college ?? undefined),
-        major: fieldConfig.major ? values.major : (user?.userProfile?.major ?? undefined),
-        className: fieldConfig.className
-          ? values.className
-          : (user?.userProfile?.className ?? undefined),
-        enrollmentYear: fieldConfig.enrollmentYear
-          ? values.enrollmentYear
-          : (user?.userProfile?.enrollmentYear ?? undefined),
-        degreeLevel: fieldConfig.degreeLevel
-          ? values.degreeLevel
-          : typeof user?.userProfile?.degreeLevel === 'number'
-            ? user.userProfile.degreeLevel
-            : undefined,
-        academicTitle: fieldConfig.academicTitle
-          ? values.academicTitle
-          : (user?.userProfile?.academicTitle ?? undefined),
+        nickname:
+          fieldConfig.nickname && !rf.has('nickname')
+            ? values.nickname
+            : (user?.userInfo?.nickname ?? undefined),
+        realName:
+          fieldConfig.realName && !rf.has('realName')
+            ? values.realName
+            : (user?.userInfo?.realName ?? undefined),
+        sex: fieldConfig.sex && !rf.has('sex') ? values.sex : user?.userProfile?.sex,
+        university:
+          fieldConfig.university && !rf.has('university')
+            ? (values.university ?? null)
+            : (user?.userProfile?.university ?? null),
+        college:
+          fieldConfig.college && !rf.has('college')
+            ? values.college
+            : (user?.userProfile?.college ?? undefined),
+        major:
+          fieldConfig.major && !rf.has('major')
+            ? values.major
+            : (user?.userProfile?.major ?? undefined),
+        className:
+          fieldConfig.className && !rf.has('className')
+            ? values.className
+            : (user?.userProfile?.className ?? undefined),
+        enrollmentYear:
+          fieldConfig.enrollmentYear && !rf.has('enrollmentYear')
+            ? values.enrollmentYear
+            : (user?.userProfile?.enrollmentYear ?? undefined),
+        degreeLevel:
+          fieldConfig.degreeLevel && !rf.has('degreeLevel')
+            ? values.degreeLevel
+            : typeof user?.userProfile?.degreeLevel === 'number'
+              ? user.userProfile.degreeLevel
+              : undefined,
+        academicTitle:
+          fieldConfig.academicTitle && !rf.has('academicTitle')
+            ? values.academicTitle
+            : (user?.userProfile?.academicTitle ?? undefined),
       };
       await userService.updateUserInfo(params);
       const data = await userService.getFullUserInfo();
       setUser(data);
+      form.setFieldsValue(buildProfileFormValues(data));
       setEditMode(false);
       message.success('保存成功');
     } catch (err) {
@@ -150,23 +235,17 @@ const Account: React.FC = () => {
   };
 
   const handleCancelEdit = () => {
-    form.resetFields();
-    form.setFieldsValue({
-      nickname: user?.userInfo?.nickname ?? undefined,
-      realName: user?.userInfo?.realName ?? undefined,
-      sex: user?.userProfile?.sex,
-      university: user?.userProfile?.university ?? undefined,
-      college: user?.userProfile?.college ?? undefined,
-      major: user?.userProfile?.major ?? undefined,
-      className: user?.userProfile?.className ?? undefined,
-      enrollmentYear: user?.userProfile?.enrollmentYear ?? undefined,
-      degreeLevel: user?.userProfile?.degreeLevel ?? undefined,
-      academicTitle: user?.userProfile?.academicTitle ?? undefined,
-    });
+    if (user) {
+      form.setFieldsValue(buildProfileFormValues(user));
+    } else {
+      form.resetFields();
+    }
     setEditMode(false);
   };
 
   const handleVerify = () => {
+    uisPollAbortRef.current?.abort();
+    uisPollAbortRef.current = null;
     verifyForm.resetFields();
     setVerifyMode('uis');
     setVerifySubmitting(false);
@@ -178,6 +257,20 @@ const Account: React.FC = () => {
     setVerifyMode('uis');
     setVerifySubmitting(false);
     setVerifyModalOpen(false);
+  };
+
+  const handleUisOutcomeModalClose = () => {
+    setUisOutcomeOpen(false);
+    setUisOutcome(null);
+    void (async () => {
+      try {
+        const data = await userService.getFullUserInfo();
+        setUser(data);
+        form.setFieldsValue(buildProfileFormValues(data));
+      } catch {
+        /* 刷新用户信息失败时静默，避免打断用户关闭弹窗 */
+      }
+    })();
   };
 
   const setPendingVerifyEmail = usePendingVerifyEmailStore((s) => s.setEmail);
@@ -199,7 +292,34 @@ const Account: React.FC = () => {
           uisPassword: values.uisPassword ?? '',
         };
         await userService.initiateUISVerify(params);
-        message.success('UIS 认证已发起，请按页面或邮件提示完成后续步骤');
+        verifyForm.resetFields();
+        setVerifyMode('uis');
+        setVerifyModalOpen(false);
+        setVerifySubmitting(false);
+
+        uisPollAbortRef.current?.abort();
+        const controller = new AbortController();
+        uisPollAbortRef.current = controller;
+        const stopLoading = message.loading('正在确认 UIS 认证状态…', 0);
+        try {
+          const result = await userService.pollFudanUISVerifyUntilComplete({
+            signal: controller.signal,
+          });
+          stopLoading();
+          setUisOutcome({
+            requireAction: result.requireAction,
+            actionPayload: result.actionPayload,
+            message: result.message,
+          });
+          setUisOutcomeOpen(true);
+        } catch (pollErr) {
+          stopLoading();
+          if (pollErr instanceof DOMException && pollErr.name === 'AbortError') {
+            return;
+          }
+          message.error(parseErrorMessage(pollErr, '确认认证状态失败'));
+        }
+        return;
       }
       verifyForm.resetFields();
       setVerifyMode('uis');
@@ -301,14 +421,12 @@ const Account: React.FC = () => {
 
           <Divider className={styles.sectionDivider} />
 
-          {/* 账号：仅展示，不可编辑 */}
+          {/* 账号：普通展示，非表单控件 */}
           <h3 className={styles.sectionTitle}>账号</h3>
           <Descriptions column={2} layout="vertical" size="small" className={styles.descriptions}>
             <Descriptions.Item label="用户名">{user?.userInfo?.username ?? '-'}</Descriptions.Item>
             <Descriptions.Item label="学工号">
-              {user?.userInfo?.campusNo === 'PENDING'
-                ? '未认证'
-                : (user?.userInfo?.campusNo ?? '-')}
+              {user?.userInfo?.campusNo === 'PENDING' ? '-' : (user?.userInfo?.campusNo ?? '-')}
             </Descriptions.Item>
             <Descriptions.Item label="邮箱">{user?.userInfo?.email ?? '-'}</Descriptions.Item>
             <Descriptions.Item label="手机号">{user?.userInfo?.mobile ?? '-'}</Descriptions.Item>
@@ -335,24 +453,31 @@ const Account: React.FC = () => {
                 <Form form={form} layout="vertical" className={styles.profileForm}>
                   <div className={styles.formFieldsGrid}>
                     {visibleFields.map((field) => {
-                      const disabledList = fieldConfig.disabledFields ?? [];
-                      const isReadOnly = (disabledList as readonly string[]).includes(field.key);
-                      const raw = getProfileFieldValue(user, field.key);
-                      const displayValue =
-                        field.key === 'sex'
-                          ? raw != null
-                            ? getSexLabel(raw as number)
-                            : '-'
-                          : field.key === 'degreeLevel'
-                            ? raw != null
-                              ? getDegreeLevelLabel(raw as number)
-                              : '-'
-                            : (raw ?? '-');
+                      const lockedByServer = readonlyFieldSet.has(field.key);
+                      if (lockedByServer) {
+                        if (field.key === 'sex') {
+                          return (
+                            <Form.Item key={field.key} name={field.key} label={field.label}>
+                              <SexReadonlyInput />
+                            </Form.Item>
+                          );
+                        }
+                        if (field.key === 'degreeLevel') {
+                          return (
+                            <Form.Item key={field.key} name={field.key} label={field.label}>
+                              <DegreeLevelReadonlyInput />
+                            </Form.Item>
+                          );
+                        }
+                        return (
+                          <Form.Item key={field.key} name={field.key} label={field.label}>
+                            <Input disabled readOnly className={styles.editableInput} />
+                          </Form.Item>
+                        );
+                      }
                       return (
-                        <Form.Item key={field.key} label={field.label} name={field.key}>
-                          {isReadOnly ? (
-                            <div className={styles.readOnlyField}>{displayValue}</div>
-                          ) : field.type === 'input' ? (
+                        <Form.Item key={field.key} name={field.key} label={field.label}>
+                          {field.type === 'input' ? (
                             <Input
                               placeholder={field.placeholder}
                               className={styles.editableInput}
@@ -388,22 +513,11 @@ const Account: React.FC = () => {
                   size="small"
                   className={styles.descriptions}
                 >
-                  {visibleFields.map((field) => {
-                    const raw = getProfileFieldValue(user, field.key);
-                    return (
-                      <Descriptions.Item key={field.key} label={field.label}>
-                        {field.key === 'sex'
-                          ? raw != null
-                            ? getSexLabel(raw as number)
-                            : '-'
-                          : field.key === 'degreeLevel'
-                            ? raw != null
-                              ? getDegreeLevelLabel(raw as number)
-                              : '-'
-                            : (raw ?? '-')}
-                      </Descriptions.Item>
-                    );
-                  })}
+                  {visibleFields.map((field) => (
+                    <Descriptions.Item key={field.key} label={field.label}>
+                      {getProfileDisplayString(user, field.key)}
+                    </Descriptions.Item>
+                  ))}
                 </Descriptions>
               )}
             </div>
@@ -504,6 +618,73 @@ const Account: React.FC = () => {
               </Form.Item>
             </Form>
           </>
+        )}
+      </Modal>
+
+      <Modal
+        title={uisOutcome?.requireAction ? '请扫码完成 UIS 验证' : 'UIS 认证结果'}
+        open={uisOutcomeOpen && uisOutcome != null}
+        onCancel={handleUisOutcomeModalClose}
+        footer={[
+          <Button key="ok" type="primary" onClick={handleUisOutcomeModalClose}>
+            知道了
+          </Button>,
+        ]}
+        width={440}
+        destroyOnHidden
+        centered
+      >
+        {uisOutcome != null && (
+          <div className={styles.uisOutcomeBody}>
+            {uisOutcome.requireAction ? (
+              <>
+                {uisOutcome.actionPayload.trim() === '' ? (
+                  <Alert
+                    type="warning"
+                    showIcon
+                    message="未返回二维码数据，请稍后重试或联系管理员"
+                  />
+                ) : isLikelyQrImageSrc(uisOutcome.actionPayload) ? (
+                  <div className={styles.uisQrWrap}>
+                    <img
+                      src={uisOutcome.actionPayload.trim()}
+                      alt="UIS 验证二维码"
+                      className={styles.uisQrImg}
+                    />
+                  </div>
+                ) : (
+                  <div className={styles.uisQrWrap}>
+                    <QRCodeSVG
+                      value={uisOutcome.actionPayload.trim()}
+                      size={220}
+                      level="M"
+                      includeMargin
+                    />
+                  </div>
+                )}
+                <Alert
+                  type="info"
+                  showIcon
+                  className={styles.uisOutcomeHint}
+                  message="请使用复旦大学 UIS 相关应用或微信等扫码完成验证。"
+                />
+              </>
+            ) : (
+              <Alert
+                type="info"
+                showIcon
+                message={uisOutcome.message.trim() !== '' ? uisOutcome.message : '认证已完成'}
+              />
+            )}
+            {uisOutcome.message.trim() !== '' && uisOutcome.requireAction && (
+              <Alert
+                type="info"
+                showIcon
+                className={styles.uisOutcomeHint}
+                message={uisOutcome.message}
+              />
+            )}
+          </div>
         )}
       </Modal>
     </div>

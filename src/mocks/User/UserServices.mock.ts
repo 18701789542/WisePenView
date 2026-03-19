@@ -1,5 +1,5 @@
 import type { User } from '@/types/user';
-import type { IUserService } from '@/services/User';
+import type { FudanUISVerifyStatusData, IUserService } from '@/services/User';
 import type { GetUserInfoResponse } from '@/services/User';
 import mockdata from './mockdata.json';
 
@@ -30,6 +30,60 @@ const sendEmailVerify = async (): Promise<void> => {
 
 const initiateUISVerify = async (): Promise<void> => {
   await delay(200);
+  mockUisPollCount = 0;
+};
+
+/** 模拟：前两次未完成，第三次 completed 且需扫码 */
+let mockUisPollCount = 0;
+
+const checkFudanUISVerify = async (): Promise<FudanUISVerifyStatusData> => {
+  await delay(100);
+  mockUisPollCount += 1;
+  if (mockUisPollCount < 3) {
+    return {
+      completed: false,
+      requireAction: false,
+      actionPayload: '',
+      message: '',
+    };
+  }
+  return {
+    completed: true,
+    requireAction: true,
+    actionPayload: 'https://example.com/mock-uis-qr-payload',
+    message: 'Mock：请使用复旦 UIS 完成扫码',
+  };
+};
+
+const pollFudanUISVerifyUntilComplete: IUserService['pollFudanUISVerifyUntilComplete'] = async (
+  options
+) => {
+  const intervalMs = options?.intervalMs ?? 2000;
+  const { signal } = options ?? {};
+  for (;;) {
+    if (signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
+    const status = await checkFudanUISVerify();
+    if (status.completed) {
+      return status;
+    }
+    await new Promise<void>((resolve, reject) => {
+      const t = window.setTimeout(resolve, intervalMs);
+      const onAbort = () => {
+        window.clearTimeout(t);
+        reject(new DOMException('Aborted', 'AbortError'));
+      };
+      if (signal) {
+        if (signal.aborted) {
+          window.clearTimeout(t);
+          reject(new DOMException('Aborted', 'AbortError'));
+          return;
+        }
+        signal.addEventListener('abort', onAbort, { once: true });
+      }
+    });
+  }
 };
 
 const confirmEmailVerify = async (): Promise<void> => {
@@ -56,6 +110,8 @@ export const UserServicesMock: IUserService = {
   updateUserInfo,
   sendEmailVerify,
   initiateUISVerify,
+  checkFudanUISVerify,
+  pollFudanUISVerifyUntilComplete,
   confirmEmailVerify,
   clearUserCache,
 };
