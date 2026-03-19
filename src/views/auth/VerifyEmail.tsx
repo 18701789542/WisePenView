@@ -1,29 +1,34 @@
 import React, { useState } from 'react';
-import { Alert, Form, Typography, Button, Modal, message as antMessage } from 'antd';
-import { Link, useNavigate } from 'react-router-dom';
+import { Alert, Button, Modal, Typography, message as antMessage } from 'antd';
+import { useNavigate } from 'react-router-dom';
 import { useUserService } from '@/contexts/ServicesContext';
+import { usePendingVerifyEmailStore } from '@/store';
 import type { ConfirmEmailVerifyRequest } from '@/services/User';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import styles from './Auth.module.less';
 
 const VerifyEmail: React.FC = () => {
   const userService = useUserService();
+  const clearPendingEmail = usePendingVerifyEmailStore((s) => s.clear);
+
+  /** 首帧同步读：先 localStorage（与发起验证同源），再 URL ?email=（后端若在链接中带邮箱） */
+  const [displayEmail] = useState<string | null>(() => {
+    const fromStorage = usePendingVerifyEmailStore.getState().peekPendingEmail();
+    if (fromStorage) return fromStorage;
+    const fromUrl = new URLSearchParams(window.location.search).get('email');
+    return fromUrl ? decodeURIComponent(fromUrl) : null;
+  });
   const [loading, setLoading] = useState(false);
   const [successModalOpen, setSuccessModalOpen] = useState(false);
-  const [form] = Form.useForm();
   const [messageApi, contextHolder] = antMessage.useMessage();
   const navigate = useNavigate();
 
   const searchParams = new URLSearchParams(window.location.search);
-  const username = searchParams.get('username') ?? 'no username';
-  const campusNo = searchParams.get('campusNo') ?? 'no campusNo';
+  const token = searchParams.get('token');
 
   const onVerify = async () => {
-    if (loading) return;
-
-    const token = searchParams.get('token');
-    if (!token) {
-      messageApi.error('链接无效或已过期');
+    if (loading || !token) {
+      if (!token) messageApi.error('链接无效或已过期');
       return;
     }
 
@@ -31,7 +36,8 @@ const VerifyEmail: React.FC = () => {
     try {
       const params: ConfirmEmailVerifyRequest = { token };
       await userService.confirmEmailVerify(params);
-      messageApi.success('邮箱绑定成功');
+      messageApi.success('邮箱验证成功');
+      clearPendingEmail();
       setSuccessModalOpen(true);
     } catch (err) {
       messageApi.error(parseErrorMessage(err, '验证失败'));
@@ -40,62 +46,54 @@ const VerifyEmail: React.FC = () => {
     }
   };
 
+  const goToAccount = () => {
+    setSuccessModalOpen(false);
+    navigate('/app/profile/account', { replace: true, state: { fromVerify: true } });
+  };
+
   return (
     <div className={styles.authContainer}>
       {contextHolder}
-      <Typography.Title>绑定邮箱</Typography.Title>
+      <Typography.Title>邮箱验证</Typography.Title>
       <Alert
         className={styles.bindAlert}
         description={
-          <>
-            将为以下用户绑定邮箱：
-            <br />
-            <Typography.Text type="secondary">
-              学工号：{campusNo} 用户名：{username}
-            </Typography.Text>
-          </>
+          displayEmail ? (
+            <>
+              正在为 <Typography.Text strong>{displayEmail}</Typography.Text>{' '}
+              完成验证，请点击下方按钮。
+            </>
+          ) : (
+            '请点击下方按钮完成邮箱验证。'
+          )
         }
         type="info"
         showIcon
       />
-      <Form layout="vertical" form={form} requiredMark={false}>
-        <Form.Item>
-          <Button
-            type="primary"
-            size="large"
-            className={styles.submitButton}
-            loading={loading}
-            onClick={onVerify}
-          >
-            绑定
-          </Button>
-        </Form.Item>
-      </Form>
+      <div style={{ marginTop: 24 }}>
+        <Button
+          type="primary"
+          size="large"
+          className={styles.submitButton}
+          loading={loading}
+          onClick={onVerify}
+          disabled={!token}
+        >
+          完成验证
+        </Button>
+      </div>
       <Modal
         title="邮箱验证成功"
         open={successModalOpen}
-        onCancel={() => setSuccessModalOpen(false)}
+        onCancel={goToAccount}
         destroyOnHidden
         footer={[
-          <Button key="stay" onClick={() => setSuccessModalOpen(false)}>
-            留在当前页面
-          </Button>,
-          <Button
-            key="login"
-            type="primary"
-            onClick={() => {
-              setSuccessModalOpen(false);
-              navigate('/app/profile/account', {
-                replace: true,
-                state: { fromVerify: true },
-              });
-            }}
-          >
+          <Button key="close" type="primary" onClick={goToAccount}>
             去账户设置
           </Button>,
         ]}
       >
-        <Typography.Text>恭喜您，邮箱验证成功！请前往登录页面登录。</Typography.Text>
+        <Typography.Text>验证成功，您可前往账户设置查看。</Typography.Text>
       </Modal>
     </div>
   );

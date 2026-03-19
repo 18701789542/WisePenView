@@ -203,9 +203,24 @@
   margin-left: var(--ant-margin-sm);
 }
 
-/* 验证邮箱 Modal */
+/* 账号验证 Modal（邮箱 / UIS） */
+.verifyModeRadio {
+  display: flex;
+  width: 100%;
+  margin-bottom: var(--ant-margin-md);
+
+  :global(.ant-radio-button-wrapper) {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+.verifyModeAlert {
+  margin-bottom: var(--ant-margin-md);
+}
+
 .verifyForm {
-  padding-top: var(--ant-padding-sm);
+  padding-top: 0;
 
   :global(.ant-form-item) {
     margin-bottom: var(--ant-margin-md);

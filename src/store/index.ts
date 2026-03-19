@@ -8,6 +8,7 @@
 // Zustand stores
 export {
   useDrivePreferencesStore,
+  usePendingVerifyEmailStore,
   useRecentFilesStore,
   type DriveViewMode,
   type RecentFileItem,

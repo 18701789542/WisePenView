@@ -9,6 +9,7 @@ import {
   Input,
   message,
   Modal,
+  Radio,
   Select,
   Spin,
 } from 'antd';
@@ -18,10 +19,12 @@ import {
   RiErrorWarningLine,
   RiMailLine,
   RiPencilLine,
+  RiShieldUserLine,
 } from 'react-icons/ri';
 import { useUserService } from '@/contexts/ServicesContext';
 import type {
   GetUserInfoResponse,
+  InitiateUISVerifyRequest,
   SendEmailVerifyRequest,
   UpdateUserInfoRequest,
 } from '@/services/User';
@@ -34,6 +37,7 @@ import {
   SEX_LABELS,
   USER_STATUS,
 } from '@/constants/user';
+import { usePendingVerifyEmailStore } from '@/store';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import { getProfileFieldConfig, PROFILE_FIELDS } from './profile.config';
 import type { ProfileFieldKey } from './profile.config';
@@ -53,9 +57,13 @@ function getProfileFieldValue(
   return user.userProfile[key] ?? undefined;
 }
 
-interface VerifyEmailFormValues {
-  email: SendEmailVerifyRequest['email'];
-}
+type VerifyModalFormValues = {
+  email?: string;
+  uisAccount?: string;
+  uisPassword?: string;
+};
+
+type VerifyModalMode = 'email' | 'uis';
 
 const Account: React.FC = () => {
   const userService = useUserService();
@@ -64,8 +72,9 @@ const Account: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [verifyModalOpen, setVerifyModalOpen] = useState(false);
+  const [verifyMode, setVerifyMode] = useState<VerifyModalMode>('uis');
   const [form] = Form.useForm<ProfileFormValues>();
-  const [verifyForm] = Form.useForm<VerifyEmailFormValues>();
+  const [verifyForm] = Form.useForm<VerifyModalFormValues>();
 
   useEffect(() => {
     const loadUser = async () => {
@@ -158,21 +167,38 @@ const Account: React.FC = () => {
 
   const handleVerify = () => {
     verifyForm.resetFields();
+    setVerifyMode('uis');
     setVerifyModalOpen(true);
   };
 
   const handleVerifyModalCancel = () => {
     verifyForm.resetFields();
+    setVerifyMode('uis');
     setVerifyModalOpen(false);
   };
 
+  const setPendingVerifyEmail = usePendingVerifyEmailStore((s) => s.setEmail);
+
   const handleVerifySubmit = async () => {
     try {
-      const values = await verifyForm.validateFields();
-      const params: SendEmailVerifyRequest = { email: values.email.trim() };
-      await userService.sendEmailVerify(params);
-      message.success('验证邮件已发送，请查收');
+      if (verifyMode === 'email') {
+        const values = await verifyForm.validateFields(['email']);
+        const email = (values.email ?? '').trim();
+        const params: SendEmailVerifyRequest = { email };
+        await userService.sendEmailVerify(params);
+        setPendingVerifyEmail(email);
+        message.success('验证邮件已发送，请查收');
+      } else {
+        const values = await verifyForm.validateFields(['uisAccount', 'uisPassword']);
+        const params: InitiateUISVerifyRequest = {
+          uisAccount: (values.uisAccount ?? '').trim(),
+          uisPassword: values.uisPassword ?? '',
+        };
+        await userService.initiateUISVerify(params);
+        message.success('UIS 认证已发起，请按页面或邮件提示完成后续步骤');
+      }
       verifyForm.resetFields();
+      setVerifyMode('uis');
       setVerifyModalOpen(false);
     } catch (err) {
       if (err && typeof err === 'object' && 'errorFields' in err) return;
@@ -208,7 +234,7 @@ const Account: React.FC = () => {
       {user?.userInfo?.status === USER_STATUS.UNVERIFIED && (
         <Alert
           type="warning"
-          description="请绑定邮箱以完成账号验证，否则部分功能可能无法正常使用。"
+          description="请通过邮箱验证或复旦 UIS 认证完成账号验证，否则部分功能可能无法正常使用。"
           showIcon
           action={
             <Button size="small" type="link" onClick={handleVerify}>
@@ -380,7 +406,7 @@ const Account: React.FC = () => {
       </Spin>
 
       <Modal
-        title="验证邮箱"
+        title="账号验证"
         open={verifyModalOpen}
         onCancel={handleVerifyModalCancel}
         destroyOnHidden
@@ -389,32 +415,85 @@ const Account: React.FC = () => {
             取消
           </Button>,
           <Button key="verify" type="primary" onClick={handleVerifySubmit}>
-            验证
+            {verifyMode === 'email' ? '发送验证邮件' : '发起 UIS 认证'}
           </Button>,
         ]}
         width={480}
       >
-        <Alert
-          type="info"
-          showIcon
-          description={<span>请输入完整邮箱地址，系统将发送包含验证链接的邮件。</span>}
-        />
-        <Form form={verifyForm} layout="vertical" className={styles.verifyForm}>
-          <Form.Item
-            label="邮箱"
-            name="email"
-            rules={[
-              { required: true, message: '请输入邮箱' },
-              { type: 'email', message: '请输入有效邮箱地址' },
-            ]}
-          >
-            <Input
-              prefix={<RiMailLine size={18} className={styles.verifyEmailIcon} />}
-              placeholder="请输入完整邮箱地址"
-              allowClear
+        <Radio.Group
+          className={styles.verifyModeRadio}
+          value={verifyMode}
+          onChange={(e) => {
+            setVerifyMode(e.target.value as VerifyModalMode);
+            verifyForm.resetFields();
+          }}
+          optionType="button"
+          buttonStyle="solid"
+          block
+        >
+          <Radio.Button value="uis">复旦 UIS 验证</Radio.Button>
+          <Radio.Button value="email">邮箱验证</Radio.Button>
+        </Radio.Group>
+        {verifyMode === 'email' ? (
+          <>
+            <Alert
+              type="info"
+              showIcon
+              className={styles.verifyModeAlert}
+              description={<span>请输入完整邮箱地址，系统将发送包含验证链接的邮件。</span>}
             />
-          </Form.Item>
-        </Form>
+            <Form form={verifyForm} layout="vertical" className={styles.verifyForm}>
+              <Form.Item
+                label="邮箱"
+                name="email"
+                rules={[
+                  { required: true, message: '请输入邮箱' },
+                  { type: 'email', message: '请输入有效邮箱地址' },
+                ]}
+              >
+                <Input
+                  prefix={<RiMailLine size={18} className={styles.verifyEmailIcon} />}
+                  placeholder="请输入完整邮箱地址"
+                  allowClear
+                />
+              </Form.Item>
+            </Form>
+          </>
+        ) : (
+          <>
+            <Alert
+              type="info"
+              showIcon
+              className={styles.verifyModeAlert}
+              description={
+                <span>
+                  使用复旦大学统一身份认证（UIS）账号与密码发起认证，请按后续提示完成验证。
+                </span>
+              }
+            />
+            <Form form={verifyForm} layout="vertical" className={styles.verifyForm}>
+              <Form.Item
+                label="UIS 账号"
+                name="uisAccount"
+                rules={[{ required: true, message: '请输入 UIS 账号' }]}
+              >
+                <Input
+                  prefix={<RiShieldUserLine size={18} className={styles.verifyEmailIcon} />}
+                  placeholder="学工号或 UIS 账号"
+                  allowClear
+                  autoComplete="username"
+                />
+              </Form.Item>
+              <Form.Item
+                label="UIS 密码"
+                name="uisPassword"
+                rules={[{ required: true, message: '请输入 UIS 密码' }]}
+              >
+                <Input.Password placeholder="UIS 密码" autoComplete="current-password" />
+              </Form.Item>
+            </Form>
+          </>
+        )}
       </Modal>
     </div>
   );

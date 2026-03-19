@@ -28,6 +28,10 @@ const sendEmailVerify = async (): Promise<void> => {
   await delay(200);
 };
 
+const initiateUISVerify = async (): Promise<void> => {
+  await delay(200);
+};
+
 const confirmEmailVerify = async (): Promise<void> => {
   await delay(200);
 };
@@ -51,6 +55,7 @@ export const UserServicesMock: IUserService = {
   getUserInfo,
   updateUserInfo,
   sendEmailVerify,
+  initiateUISVerify,
   confirmEmailVerify,
   clearUserCache,
 };

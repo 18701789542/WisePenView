@@ -6,6 +6,7 @@ import type { User } from '@/types/user';
 import type {
   ConfirmEmailVerifyRequest,
   GetUserInfoResponse,
+  InitiateUISVerifyRequest,
   SendEmailVerifyRequest,
   UpdateUserInfoRequest,
 } from './index.type';
@@ -78,14 +79,24 @@ const clearUserCache = (): void => {
 };
 
 const sendEmailVerify = async (params: SendEmailVerifyRequest): Promise<void> => {
-  const res = (await Axios.post('/user/verify/initiateEmailVerify', {
-    email: params.email,
+  const res = (await Axios.post('/user/verify/initiateEmailVerify', null, {
+    params: { email: params.email },
+  })) as ApiResponse;
+  checkResponse(res);
+};
+
+const initiateUISVerify = async (params: InitiateUISVerifyRequest): Promise<void> => {
+  const res = (await Axios.post('/user/verify/initiateFudanUISVerify', null, {
+    params: {
+      uisAccount: params.uisAccount,
+      uisPassword: params.uisPassword,
+    },
   })) as ApiResponse;
   checkResponse(res);
 };
 
 const confirmEmailVerify = async (params: ConfirmEmailVerifyRequest): Promise<void> => {
-  const res = (await Axios.get('/user/verify/check', {
+  const res = (await Axios.get('/user/verify/checkEmailVerify', {
     params: { token: params.token },
   })) as ApiResponse;
   checkResponse(res);
@@ -96,6 +107,7 @@ export const UserServicesImpl: IUserService = {
   getUserInfo,
   updateUserInfo,
   sendEmailVerify,
+  initiateUISVerify,
   confirmEmailVerify,
   clearUserCache,
 };

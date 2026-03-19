@@ -9,6 +9,8 @@ export interface IUserService {
   /** 更新用户信息（内部两次 PUT：userInfo + userProfile）；不拉 GET，需全量时由调用方自行 getFullUserInfo */
   updateUserInfo(params: UpdateUserInfoRequest): Promise<void>;
   sendEmailVerify(params: SendEmailVerifyRequest): Promise<void>;
+  /** 发起复旦 UIS 认证（与 OpenAPI initiateFudanUISVerify 对齐） */
+  initiateUISVerify(params: InitiateUISVerifyRequest): Promise<void>;
   confirmEmailVerify(params: ConfirmEmailVerifyRequest): Promise<void>;
   /** 退出登录时清理缓存 */
   clearUserCache(): void;
@@ -22,6 +24,12 @@ export interface ConfirmEmailVerifyRequest {
 /** 发起邮箱验证请求参数（后端接受完整邮箱字符串） */
 export interface SendEmailVerifyRequest {
   email: string;
+}
+
+/** 发起复旦 UIS 认证请求参数（OpenAPI：query uisAccount、uisPassword） */
+export interface InitiateUISVerifyRequest {
+  uisAccount: string;
+  uisPassword: string;
 }
 
 /** 更新用户信息请求参数（仅基本档案可编辑；账号栏只读；impl 内按 userInfo / userProfile 拆成两次 PUT） */
