@@ -36,6 +36,7 @@ const DeleteFolderModal: React.FC<DeleteFolderModalProps> = ({
       title="删除文件夹"
       open={open && !!folder}
       onCancel={onCancel}
+      destroyOnHidden
       footer={[
         <Button key="cancel" onClick={onCancel}>
           取消

@@ -75,6 +75,7 @@ const AssignQuotaModal: React.FC<AssignQuotaModalProps> = ({
       title="分配配额"
       open={open}
       onCancel={onCancel}
+      destroyOnHidden
       footer={[
         <Button key="cancel" onClick={onCancel}>
           取消

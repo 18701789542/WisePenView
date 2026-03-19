@@ -75,6 +75,7 @@ const VerifyEmail: React.FC = () => {
         title="邮箱验证成功"
         open={successModalOpen}
         onCancel={() => setSuccessModalOpen(false)}
+        destroyOnHidden
         footer={[
           <Button key="stay" onClick={() => setSuccessModalOpen(false)}>
             留在当前页面

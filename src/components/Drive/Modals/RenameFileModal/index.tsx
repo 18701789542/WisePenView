@@ -51,6 +51,7 @@ const RenameFileModal: React.FC<RenameFileModalProps> = ({ open, onCancel, onSuc
       title="重命名文件"
       open={open && !!file}
       onCancel={handleCancel}
+      destroyOnHidden
       footer={[
         <Button key="cancel" onClick={handleCancel}>
           取消

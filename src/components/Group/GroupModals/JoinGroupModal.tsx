@@ -37,6 +37,7 @@ const JoinGroupModal: React.FC<JoinGroupModalProps> = ({ open, onCancel, onSucce
       title="加入小组"
       open={open}
       onCancel={onCancel}
+      destroyOnHidden
       footer={[
         <Button key="cancel" onClick={onCancel}>
           取消

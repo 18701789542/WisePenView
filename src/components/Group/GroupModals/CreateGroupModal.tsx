@@ -74,6 +74,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ open, onCancel, onS
       title="新建小组"
       open={open}
       onCancel={handleCancel}
+      destroyOnHidden
       footer={[
         <Button key="cancel" onClick={handleCancel}>
           取消

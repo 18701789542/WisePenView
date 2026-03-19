@@ -83,6 +83,7 @@ const AddTagModal: React.FC<AddTagModalProps> = ({ open, onCancel, onSuccess, ta
       title="添加标签"
       open={open}
       onCancel={handleCancel}
+      destroyOnHidden
       footer={[
         <Button key="cancel" onClick={handleCancel}>
           取消

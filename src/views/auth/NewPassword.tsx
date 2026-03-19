@@ -76,6 +76,7 @@ const NewPassword: React.FC = () => {
         title="密码设置成功"
         open={successModalOpen}
         onCancel={() => setSuccessModalOpen(false)}
+        destroyOnHidden
         footer={[
           <Button
             key="stay"

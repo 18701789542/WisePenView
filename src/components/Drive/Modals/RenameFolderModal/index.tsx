@@ -51,6 +51,7 @@ const RenameFolderModal: React.FC<RenameFolderModalProps> = ({
       title="重命名文件夹"
       open={open && !!folder}
       onCancel={handleCancel}
+      destroyOnHidden
       footer={[
         <Button key="cancel" onClick={handleCancel}>
           取消

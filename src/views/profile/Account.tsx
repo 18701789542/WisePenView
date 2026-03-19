@@ -352,6 +352,7 @@ const Account: React.FC = () => {
         title="验证邮箱"
         open={verifyModalOpen}
         onCancel={handleVerifyModalCancel}
+        destroyOnHidden
         footer={[
           <Button key="cancel" onClick={handleVerifyModalCancel}>
             取消

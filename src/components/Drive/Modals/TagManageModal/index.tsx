@@ -159,7 +159,7 @@ const TagManageModal: React.FC<TagManageModalProps> = ({ open, onCancel, groupId
       onCancel={onCancel}
       footer={null}
       width={960}
-      destroyOnClose
+      destroyOnHidden
       classNames={{ body: styles.modalBody }}
     >
       <div className={styles.embed}>
@@ -256,7 +256,7 @@ const TagManageModal: React.FC<TagManageModalProps> = ({ open, onCancel, groupId
           }}
           onOk={() => void handleAddRoot()}
           confirmLoading={addRootLoading}
-          destroyOnClose
+          destroyOnHidden
         >
           <Form form={addRootForm} layout="vertical">
             <Form.Item
@@ -281,7 +281,7 @@ const TagManageModal: React.FC<TagManageModalProps> = ({ open, onCancel, groupId
           }}
           onOk={() => void handleAddChild()}
           confirmLoading={addChildLoading}
-          destroyOnClose
+          destroyOnHidden
         >
           <Form form={addChildForm} layout="vertical">
             <Form.Item

@@ -103,6 +103,7 @@ const Register: React.FC = () => {
         title="注册成功"
         open={successModalOpen}
         onCancel={() => setSuccessModalOpen(false)}
+        destroyOnHidden
         footer={[
           <Button
             key="stay"

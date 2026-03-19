@@ -27,6 +27,7 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({ open, onCancel, invit
       title="邀请用户"
       open={open}
       onCancel={handleCancel}
+      destroyOnHidden
       footer={[
         <Button key="cancel" onClick={handleCancel}>
           关闭

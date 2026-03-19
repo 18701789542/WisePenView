@@ -57,6 +57,7 @@ const EditPermissionModal: React.FC<EditPermissionModalProps> = ({
       title="修改权限"
       open={open}
       onCancel={onCancel}
+      destroyOnHidden
       footer={[
         <Button key="cancel" onClick={onCancel}>
           取消

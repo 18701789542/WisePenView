@@ -49,6 +49,7 @@ const DeleteMemberModal: React.FC<DeleteMemberModalProps> = ({
       title="删除成员"
       open={open}
       onCancel={onCancel}
+      destroyOnHidden
       footer={[
         <Button key="cancel" onClick={onCancel}>
           取消

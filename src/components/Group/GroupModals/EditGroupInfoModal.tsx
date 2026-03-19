@@ -69,6 +69,7 @@ const EditGroupInfoModal: React.FC<EditGroupInfoModalProps> = ({
       title="编辑小组信息"
       open={open}
       onCancel={onCancel}
+      destroyOnHidden
       footer={[
         <Button key="cancel" onClick={onCancel}>
           取消

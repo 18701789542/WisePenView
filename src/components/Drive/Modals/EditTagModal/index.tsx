@@ -129,6 +129,7 @@ const EditTagModal: React.FC<EditTagModalProps> = ({
       title="编辑标签"
       open={open && !!file}
       onCancel={handleCancel}
+      destroyOnHidden
       footer={[
         <Button key="cancel" onClick={handleCancel}>
           取消

@@ -71,6 +71,7 @@ const NewFolderModal: React.FC<NewFolderModalProps> = ({
       title="新建文件夹"
       open={open}
       onCancel={handleCancel}
+      destroyOnHidden
       footer={[
         <Button key="cancel" onClick={handleCancel}>
           取消

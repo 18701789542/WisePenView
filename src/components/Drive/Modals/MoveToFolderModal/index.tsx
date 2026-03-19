@@ -85,6 +85,7 @@ const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
       title="移动到文件夹"
       open={open && !!target}
       onCancel={handleCancel}
+      destroyOnHidden
       footer={[
         <Button key="cancel" onClick={handleCancel}>
           取消

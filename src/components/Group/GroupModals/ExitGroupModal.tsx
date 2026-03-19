@@ -44,6 +44,7 @@ const ExitGroupModal: React.FC<ExitGroupModalProps> = ({
       title="退出小组"
       open={open}
       onCancel={onCancel}
+      destroyOnHidden
       footer={[
         <Button key="cancel" onClick={onCancel}>
           取消

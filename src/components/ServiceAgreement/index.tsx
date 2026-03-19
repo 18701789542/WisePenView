@@ -5,7 +5,14 @@ import type { ContractModalProps } from './index.type';
 
 const ServiceAgreement: React.FC<ContractModalProps> = ({ open, onCancel }) => {
   return (
-    <Modal title="服务协议" open={open} onCancel={onCancel} footer={null} width={800}>
+    <Modal
+      title="服务协议"
+      open={open}
+      onCancel={onCancel}
+      destroyOnHidden
+      footer={null}
+      width={800}
+    >
       <div className={styles.modalContent}>
         <b>一、总则</b>
         <br />
