@@ -13,36 +13,33 @@ import type { IUserService } from './index.type';
 /** 仅缓存展示用字段和id，不含 realName、campusNo 等敏感信息 */
 type CachedUserSafe = Pick<User, 'id' | 'username' | 'nickname' | 'avatar' | 'identityType'>;
 
-const toUserSafe = (data: GetUserInfoResponse): CachedUserSafe => ({
-  id: data.id,
-  username: data.username,
-  nickname: data.nickname,
-  avatar: data.avatar,
-  identityType: data.identityType,
-});
+const toUserSafe = (data: GetUserInfoResponse): CachedUserSafe => {
+  const { userInfo } = data;
+  return {
+    id: userInfo.id ?? 0,
+    username: userInfo.username,
+    nickname: userInfo.nickname ?? undefined,
+    avatar: userInfo.avatar ?? undefined,
+    identityType: userInfo.identityType,
+  };
+};
 
 /** 模块级缓存，仅存非敏感展示字段，退出登录时通过 clearUserCache 清理 */
 let cachedUserInfo: CachedUserSafe | null = null;
-
-const fetchUserInfoFromApi = async (): Promise<GetUserInfoResponse> => {
-  const res = (await Axios.get('/user/info')) as ApiResponse<GetUserInfoResponse>;
-  checkResponse(res);
-  return res.data;
-};
 
 const getUserInfo = async (options?: { forceRefresh?: boolean }): Promise<User> => {
   const forceRefresh = options?.forceRefresh ?? false;
   if (!forceRefresh && cachedUserInfo) {
     return cachedUserInfo;
   }
-  const data = await fetchUserInfoFromApi();
+  const data = await getFullUserInfo();
   cachedUserInfo = toUserSafe(data);
   return cachedUserInfo;
 };
 
 /** 全量拉取，含敏感信息，不缓存 */
 const getFullUserInfo = async (): Promise<GetUserInfoResponse> => {
-  const res = (await Axios.get('/user/info')) as ApiResponse<GetUserInfoResponse>;
+  const res = (await Axios.get('/user/getUserInfo')) as ApiResponse<GetUserInfoResponse>;
   checkResponse(res);
   return res.data;
 };
