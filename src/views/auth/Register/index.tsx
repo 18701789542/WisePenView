@@ -7,7 +7,6 @@ import { useAuthService } from '@/contexts/ServicesContext';
 import { USERNAME_MAX_LENGTH, USERNAME_PATTERN, USERNAME_PATTERN_MESSAGE } from '@/constants/user';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import auth from '../Auth.module.less';
-import page from './style.module.less';
 import type { RegisterRequest } from '@/services/Auth';
 
 const Register: React.FC = () => {
@@ -39,7 +38,7 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className={`${auth.authContainer} ${page.pageRoot}`}>
+    <div className={auth.authContainer}>
       {contextHolder}
       <Typography.Title>注册</Typography.Title>
       <Form layout="vertical" form={form} onFinish={onFinish} requiredMark={false}>

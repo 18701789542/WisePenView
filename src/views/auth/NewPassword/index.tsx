@@ -5,7 +5,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuthService } from '@/contexts/ServicesContext';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import auth from '../Auth.module.less';
-import page from './style.module.less';
 import type { NewPasswordRequest } from '@/services/Auth';
 
 const NewPassword: React.FC = () => {
@@ -39,7 +38,7 @@ const NewPassword: React.FC = () => {
   };
 
   return (
-    <div className={`${auth.authContainer} ${page.pageRoot}`}>
+    <div className={auth.authContainer}>
       {contextHolder}
       <Typography.Title>设置新密码</Typography.Title>
       <Form layout="vertical" form={form} onFinish={onFinish} requiredMark={false}>

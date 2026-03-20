@@ -5,7 +5,6 @@ import { Link } from 'react-router-dom';
 import { useAuthService } from '@/contexts/ServicesContext';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import auth from '../Auth.module.less';
-import page from './style.module.less';
 import type { ResetPasswordRequest } from '@/services/Auth';
 
 const ResetPassword: React.FC = () => {
@@ -28,7 +27,7 @@ const ResetPassword: React.FC = () => {
   };
 
   return (
-    <div className={`${auth.authContainer} ${page.pageRoot}`}>
+    <div className={auth.authContainer}>
       {contextHolder}
       <Typography.Title>找回密码</Typography.Title>
       <Alert

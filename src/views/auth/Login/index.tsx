@@ -6,7 +6,6 @@ import ServiceAgreement from '@/components/ServiceAgreement/index';
 import { useAuthService } from '@/contexts/ServicesContext';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import auth from '../Auth.module.less';
-import page from './style.module.less';
 import type { LoginRequest } from '@/services/Auth';
 
 const Login: React.FC = () => {
@@ -31,7 +30,7 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className={`${auth.authContainer} ${page.pageRoot}`}>
+    <div className={auth.authContainer}>
       {contextHolder}
       <Typography.Title>登录</Typography.Title>
 

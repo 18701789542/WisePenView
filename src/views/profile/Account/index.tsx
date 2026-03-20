@@ -22,7 +22,6 @@ import {
   RiPencilLine,
   RiShieldUserLine,
 } from 'react-icons/ri';
-import { QRCodeSVG } from 'qrcode.react';
 import { useUserService } from '@/contexts/ServicesContext';
 import type {
   GetUserInfoResponse,
@@ -44,7 +43,6 @@ import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import { getProfileFieldConfig, PROFILE_FIELDS } from '../profile.config';
 import type { ProfileFieldKey } from '../profile.config';
 import layout from '../style.module.less';
-import page from './style.module.less';
 
 const { Option } = Select;
 
@@ -116,13 +114,39 @@ type VerifyModalFormValues = {
 
 type VerifyModalMode = 'email' | 'uis';
 
-/** actionPayload 是否为可直接作为 <img src> 的图片地址 */
-function isLikelyQrImageSrc(payload: string): boolean {
-  const t = payload.trim();
-  return t.startsWith('data:image/') || /^https?:\/\//i.test(t);
+/**
+ * UIS actionPayload 约定为二维码图片的 base64 字符（无 data: 前缀）；
+ * 若带 `data:image/*;base64,` 亦可；会去掉 base64 段中的空白/换行。
+ */
+function resolveUisQrImageDataUrl(payload: string): string | null {
+  const raw = payload.trim();
+  if (!raw) return null;
+
+  const lower = raw.toLowerCase();
+  const base64Sep = ';base64,';
+  const sepIdx = lower.indexOf(base64Sep);
+  if (lower.startsWith('data:image/') && sepIdx !== -1) {
+    const prefix = raw.slice(0, sepIdx + base64Sep.length);
+    const b64 = raw.slice(sepIdx + base64Sep.length).replace(/\s/g, '');
+    return b64 ? `${prefix}${b64}` : null;
+  }
+
+  const compact = raw.replace(/\s/g, '');
+  if (compact.length < 24 || !/^[A-Za-z0-9+/]+=*$/.test(compact)) {
+    return null;
+  }
+  if (compact.startsWith('iVBORw0KGgo')) {
+    return `data:image/png;base64,${compact}`;
+  }
+  if (compact.startsWith('/9j/')) {
+    return `data:image/jpeg;base64,${compact}`;
+  }
+  return `data:image/png;base64,${compact}`;
 }
 
 type UisOutcomeState = {
+  /** false：仍处扫码阶段，禁止关闭弹窗；true：后端已 completed，可关闭并展示结果 */
+  pollingCompleted: boolean;
   requireAction: boolean;
   actionPayload: string;
   message: string;
@@ -261,6 +285,8 @@ const Account: React.FC = () => {
   };
 
   const handleUisOutcomeModalClose = () => {
+    uisPollAbortRef.current?.abort();
+    uisPollAbortRef.current = null;
     setUisOutcomeOpen(false);
     setUisOutcome(null);
     void (async () => {
@@ -301,20 +327,37 @@ const Account: React.FC = () => {
         uisPollAbortRef.current?.abort();
         const controller = new AbortController();
         uisPollAbortRef.current = controller;
-        const stopLoading = message.loading('正在确认 UIS 认证状态…', 0);
+        let destroyPollLoading: (() => void) | null = message.loading('正在确认 UIS 认证状态…', 0);
+        const endPollLoading = () => {
+          destroyPollLoading?.();
+          destroyPollLoading = null;
+        };
         try {
           const result = await userService.pollFudanUISVerifyUntilComplete({
             signal: controller.signal,
+            onProgress: (status) => {
+              if (status.requireAction && status.actionPayload.trim() !== '') {
+                endPollLoading();
+                setUisOutcome({
+                  pollingCompleted: false,
+                  requireAction: true,
+                  actionPayload: status.actionPayload,
+                  message: status.message,
+                });
+                setUisOutcomeOpen(true);
+              }
+            },
           });
-          stopLoading();
+          endPollLoading();
           setUisOutcome({
+            pollingCompleted: true,
             requireAction: result.requireAction,
             actionPayload: result.actionPayload,
             message: result.message,
           });
           setUisOutcomeOpen(true);
         } catch (pollErr) {
-          stopLoading();
+          endPollLoading();
           if (pollErr instanceof DOMException && pollErr.name === 'AbortError') {
             return;
           }
@@ -352,8 +395,11 @@ const Account: React.FC = () => {
     )),
   } as const;
 
+  const uisQrImageSrc = resolveUisQrImageDataUrl(uisOutcome?.actionPayload ?? '');
+  const uisAwaitingScan = uisOutcome != null && !uisOutcome.pollingCompleted;
+
   return (
-    <div className={`${layout.pageContainer} ${page.pageRoot}`}>
+    <div className={layout.pageContainer}>
       <div className={layout.pageHeader}>
         <h1 className={layout.pageTitle}>账号管理</h1>
         <span className={layout.pageSubtitle}>管理您的账号信息</span>
@@ -623,21 +669,28 @@ const Account: React.FC = () => {
       </Modal>
 
       <Modal
-        title={uisOutcome?.requireAction ? '请扫码完成 UIS 验证' : 'UIS 认证结果'}
+        title={uisAwaitingScan ? '请扫码完成 UIS 验证' : 'UIS 认证'}
         open={uisOutcomeOpen && uisOutcome != null}
         onCancel={handleUisOutcomeModalClose}
-        footer={[
-          <Button key="ok" type="primary" onClick={handleUisOutcomeModalClose}>
-            知道了
-          </Button>,
-        ]}
+        closable
+        maskClosable={!uisAwaitingScan}
+        keyboard={!uisAwaitingScan}
+        footer={
+          uisAwaitingScan
+            ? null
+            : [
+                <Button key="ok" type="primary" onClick={handleUisOutcomeModalClose}>
+                  知道了
+                </Button>,
+              ]
+        }
         width={440}
         destroyOnHidden
         centered
       >
         {uisOutcome != null && (
           <div className={layout.uisOutcomeBody}>
-            {uisOutcome.requireAction ? (
+            {uisAwaitingScan ? (
               <>
                 {uisOutcome.actionPayload.trim() === '' ? (
                   <Alert
@@ -645,44 +698,33 @@ const Account: React.FC = () => {
                     showIcon
                     message="未返回二维码数据，请稍后重试或联系管理员"
                   />
-                ) : isLikelyQrImageSrc(uisOutcome.actionPayload) ? (
-                  <div className={layout.uisQrWrap}>
-                    <img
-                      src={uisOutcome.actionPayload.trim()}
-                      alt="UIS 验证二维码"
-                      className={layout.uisQrImg}
+                ) : uisQrImageSrc != null ? (
+                  <>
+                    <Alert
+                      type="info"
+                      showIcon
+                      className={layout.uisOutcomeHint}
+                      message="请使用复旦大学 UIS 相关应用或微信等扫码完成验证。"
                     />
-                  </div>
+                    <div className={layout.uisQrWrap}>
+                      <img src={uisQrImageSrc} alt="UIS 验证二维码" className={layout.uisQrImg} />
+                    </div>
+                  </>
                 ) : (
-                  <div className={layout.uisQrWrap}>
-                    <QRCodeSVG
-                      value={uisOutcome.actionPayload.trim()}
-                      size={220}
-                      level="M"
-                      includeMargin
-                    />
-                  </div>
+                  <Alert
+                    type="warning"
+                    showIcon
+                    message="二维码图片数据无效"
+                    description="服务端应返回 PNG 或 JPEG 的 base64 编码字符串；也可使用 data:image/png;base64, 前缀格式。"
+                  />
                 )}
-                <Alert
-                  type="info"
-                  showIcon
-                  className={layout.uisOutcomeHint}
-                  message="请使用复旦大学 UIS 相关应用或微信等扫码完成验证。"
-                />
               </>
             ) : (
               <Alert
-                type="info"
+                type="success"
                 showIcon
-                message={uisOutcome.message.trim() !== '' ? uisOutcome.message : '认证已完成'}
-              />
-            )}
-            {uisOutcome.message.trim() !== '' && uisOutcome.requireAction && (
-              <Alert
-                type="info"
-                showIcon
-                className={layout.uisOutcomeHint}
-                message={uisOutcome.message}
+                message="认证成功"
+                description={uisOutcome.message.trim() !== '' ? uisOutcome.message : undefined}
               />
             )}
           </div>

@@ -3,7 +3,6 @@ import QuotaByGroup from '@/components/Profile/QuotaByGroup';
 import type { UserGroupQuota } from '@/types/quota';
 import { useQuotaService } from '@/contexts/ServicesContext';
 import layout from '../style.module.less';
-import page from './style.module.less';
 
 const Usage: React.FC = () => {
   const quotaService = useQuotaService();
@@ -44,7 +43,7 @@ const Usage: React.FC = () => {
   };
 
   return (
-    <div className={`${layout.pageContainer} ${page.pageRoot}`}>
+    <div className={layout.pageContainer}>
       <div className={layout.pageHeader}>
         <h1 className={layout.pageTitle}>余额与使用量</h1>
         <span className={layout.pageSubtitle}>查看您在各小组中的配额使用情况</span>

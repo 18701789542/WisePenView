@@ -6,7 +6,6 @@ import { usePendingVerifyEmailStore } from '@/store';
 import type { ConfirmEmailVerifyRequest } from '@/services/User';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import auth from '../Auth.module.less';
-import page from './style.module.less';
 
 const VerifyEmail: React.FC = () => {
   const userService = useUserService();
@@ -53,7 +52,7 @@ const VerifyEmail: React.FC = () => {
   };
 
   return (
-    <div className={`${auth.authContainer} ${page.pageRoot}`}>
+    <div className={auth.authContainer}>
       {contextHolder}
       <Typography.Title>邮箱验证</Typography.Title>
       <Alert
