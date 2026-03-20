@@ -5,6 +5,7 @@
 
 import type { JsonDelta } from '@/types/note';
 import type { INoteService } from '@/services/Note';
+import type { IResourceService } from '@/services/Resource';
 import type { LocalNoteStorage } from './LocalNoteStorage';
 
 export interface ConflictResolveCallbacks {
@@ -21,17 +22,21 @@ export interface ConflictResolveCallbacks {
 
 export interface ConflictResolveOptions {
   noteService: INoteService;
+  /** 冲突另存后用于把新资源的展示名改成「原标题 - 副本」（标题仅绑 Resource） */
+  resourceService?: IResourceService;
   localNoteStorage: LocalNoteStorage;
   onSyncFail?: (error: unknown) => void;
 }
 
 export class ConflictResolve {
   private readonly noteService: INoteService;
+  private readonly resourceService?: IResourceService;
   private readonly localNoteStorage: LocalNoteStorage;
   private readonly onSyncFail?: (error: unknown) => void;
 
   constructor(options: ConflictResolveOptions) {
     this.noteService = options.noteService;
+    this.resourceService = options.resourceService;
     this.localNoteStorage = options.localNoteStorage;
     this.onSyncFail = options.onSyncFail;
   }
@@ -60,12 +65,22 @@ export class ConflictResolve {
 
       const created = await this.noteService.createNote({
         initial_content: snapshot.blocks,
-        title: copyTitle,
         source: snapshot.noteId,
       });
 
-      const newResourceId = created.doc_id;
+      const newResourceId = created.resourceId;
       const newBaseVersion = created.version;
+
+      if (this.resourceService) {
+        try {
+          await this.resourceService.renameResource({
+            resourceId: newResourceId,
+            newName: copyTitle,
+          });
+        } catch {
+          // 与页面内标题重命名失败策略一致：静默，避免阻断冲突恢复主流程
+        }
+      }
 
       let offlineDeltas: JsonDelta[] = [];
       try {

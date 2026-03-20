@@ -7,6 +7,7 @@ import Note from '@/components/Note';
 import SaveStatusLight from '@/components/Note/SaveStatusLight';
 import { UploadPipeline, type SaveStatus, type ConnectionState } from '@/components/Note/Pipeline';
 import { useNoteService, useResourceService } from '@/contexts/ServicesContext';
+import type { Block } from '@/types/note';
 import type { NotePageLoadState, NotePageLocationState, NotePageNoteData } from './index.type';
 
 import styles from './style.module.less';
@@ -51,29 +52,31 @@ const NotePage: React.FC = () => {
           throw new Error('加载笔记失败');
         }
         setNoteData({
-          resourceId: res.doc_id,
+          resourceId: res.resourceId,
           version: res.version,
           blocks: res.blocks,
           lastEditedAt: res.updated_at,
         });
         setLoadState('success');
       } else {
-        // 无 resourceId，创建新笔记
-        const res = await noteService.createNote();
-        if (!res.ok) {
+        // 无 resourceId：create 只保证落库与返回 resourceId/version，正文由 load 拉取
+        const created = await noteService.createNote();
+        if (!created.ok) {
           throw new Error('创建笔记失败');
         }
+        const loaded = await noteService.loadNote(created.resourceId);
+        if (!loaded.ok) {
+          throw new Error('加载笔记失败');
+        }
         const createdNoteData: NotePageNoteData = {
-          resourceId: res.doc_id,
-          version: res.version,
-          blocks: res.blocks,
-          lastEditedAt: res.created_at,
+          resourceId: loaded.resourceId,
+          version: loaded.version,
+          blocks: loaded.blocks,
+          lastEditedAt: loaded.updated_at,
         };
-        // 先用 createNote 返回值初始化当前页面，避免后续 loadNote 失败时出现「刚创建就加载失败」
         setNoteData(createdNoteData);
         setLoadState('success');
-        // 创建成功后跳转到新笔记页面，并通过 state 传递初始 noteData，供新路由复用
-        navigate(`/app/note/${res.doc_id}`, {
+        navigate(`/app/note/${created.resourceId}`, {
           replace: true,
           state: { fromCreate: true, initialNoteData: createdNoteData },
         });
@@ -102,6 +105,7 @@ const NotePage: React.FC = () => {
     if (!noteData) return null;
     return new UploadPipeline({
       noteService,
+      resourceService,
       resourceId: noteData.resourceId,
       initialVersion: noteData.version,
       getSnapshot: async () => {
@@ -113,7 +117,7 @@ const NotePage: React.FC = () => {
       onConnectionStateChange: setConnectionState,
       onSaveStatusChange: setSaveStatus,
     });
-  }, [noteService, noteData]);
+  }, [noteService, resourceService, noteData]);
 
   const handleTitleStable = useCallback(
     async (title: string) => {

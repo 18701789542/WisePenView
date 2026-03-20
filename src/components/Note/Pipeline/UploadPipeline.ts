@@ -20,6 +20,7 @@
 
 import type { JsonDelta, Block, NoteChange } from '@/types/note';
 import type { INoteService } from '@/services/Note';
+import type { IResourceService } from '@/services/Resource';
 import { SyncCore } from './SyncCore';
 import { ConnectionStateController } from './ConnectionState';
 import type { ConnectionState } from './ConnectionState';
@@ -41,6 +42,8 @@ export type { SaveStatus };
 
 export interface UploadPipelineOptions {
   noteService: INoteService;
+  /** 冲突另存副本时用于设置新 Resource 展示名（见 ConflictResolve） */
+  resourceService?: IResourceService;
   resourceId: string;
   initialVersion: number;
   getSnapshot?: () => Promise<{ blocks: Block[]; title?: string }>;
@@ -132,6 +135,7 @@ export class UploadPipeline {
 
     this.conflictResolve = new ConflictResolve({
       noteService: options.noteService,
+      resourceService: options.resourceService,
       localNoteStorage: this.localNoteStorage,
       onSyncFail: this.onSyncFail,
     });

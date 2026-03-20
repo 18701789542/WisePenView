@@ -239,13 +239,13 @@ const FileList: React.FC<FileListProps> = ({ groupId, filter }) => {
   const handleDuplicateNote = useCallback(
     async (file: ResourceItem) => {
       try {
-        const res = await noteService.duplicateNote({ source: file.resourceId });
-        if (res.ok && res.doc_id) {
+        const res = await noteService.createNote({ source: file.resourceId });
+        if (res.ok && res.resourceId) {
           message.success('副本已创建');
           fetchList();
           clickFile({
             ...file,
-            resourceId: res.doc_id,
+            resourceId: res.resourceId,
             resourceName: `${file.resourceName || '未命名'}（副本）`,
             resourceType: 'NOTE',
           });

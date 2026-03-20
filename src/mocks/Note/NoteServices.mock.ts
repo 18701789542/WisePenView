@@ -3,17 +3,16 @@ import type {
   INoteService,
   SyncNoteResponse,
   LoadNoteResponse,
+  CreateNoteRequest,
   CreateNoteResponse,
-  DuplicateNoteRequest,
-  DuplicateNoteResponse,
 } from '@/services/Note';
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** 预设的两个 mock note 的 doc_id，loadNote 会按 id 返回不同内容 */
+/** 预设的两个 mock resourceId，loadNote 会按 id 返回不同内容 */
 export const MOCK_NOTE_IDS = ['mock-note-1', 'mock-note-2'] as const;
 
-const MOCK_NOTE_1: Omit<LoadNoteResponse, 'doc_id'> = {
+const MOCK_NOTE_1: Omit<LoadNoteResponse, 'resourceId'> = {
   ok: true,
   version: 1,
   blocks: [
@@ -28,7 +27,7 @@ const MOCK_NOTE_1: Omit<LoadNoteResponse, 'doc_id'> = {
   updated_at: new Date().toISOString(),
 };
 
-const MOCK_NOTE_2: Omit<LoadNoteResponse, 'doc_id'> = {
+const MOCK_NOTE_2: Omit<LoadNoteResponse, 'resourceId'> = {
   ok: true,
   version: 1,
   blocks: [
@@ -43,10 +42,10 @@ const MOCK_NOTE_2: Omit<LoadNoteResponse, 'doc_id'> = {
   updated_at: new Date().toISOString(),
 };
 
-const syncNote = async (docId: string, payload: SyncPayload): Promise<SyncNoteResponse> => {
+const syncNote = async (resourceId: string, payload: SyncPayload): Promise<SyncNoteResponse> => {
   const { base_version, send_timestamp, deltas } = payload;
   console.log('[NoteServices.mock] syncNote', {
-    docId,
+    resourceId,
     baseVersion: base_version,
     sendTimestamp: send_timestamp,
     deltas: deltas.map((delta) => {
@@ -75,32 +74,23 @@ const syncNote = async (docId: string, payload: SyncPayload): Promise<SyncNoteRe
   return { new_version: Date.now() };
 };
 
-const loadNote = async (docId: string): Promise<LoadNoteResponse> => {
+const loadNote = async (resourceId: string): Promise<LoadNoteResponse> => {
   await delay(300);
-  const base = docId === MOCK_NOTE_IDS[1] ? MOCK_NOTE_2 : MOCK_NOTE_1;
-  return { ...base, doc_id: docId };
+  const base = resourceId === MOCK_NOTE_IDS[1] ? MOCK_NOTE_2 : MOCK_NOTE_1;
+  return { ...base, resourceId };
 };
 
-const createNote = async (): Promise<CreateNoteResponse> => {
+const createNote = async (params?: CreateNoteRequest): Promise<CreateNoteResponse> => {
   await delay(200);
-  const docId = `mock-doc-${Date.now()}`;
+  const resourceId =
+    params?.resourceId ??
+    (params?.source !== undefined
+      ? `mock-doc-copy-${params.source}-${Date.now()}`
+      : `mock-doc-${Date.now()}`);
   return {
     ok: true,
-    doc_id: docId,
+    resourceId,
     version: 1,
-    blocks: [],
-    created_at: new Date().toISOString(),
-  };
-};
-
-const duplicateNote = async (params: DuplicateNoteRequest): Promise<DuplicateNoteResponse> => {
-  await delay(200);
-  const docId = `mock-doc-copy-${params.source}-${Date.now()}`;
-  return {
-    ok: true,
-    doc_id: docId,
-    version: 1,
-    blocks: [],
     created_at: new Date().toISOString(),
   };
 };
@@ -109,5 +99,4 @@ export const NoteServicesMock: INoteService = {
   syncNote,
   loadNote,
   createNote,
-  duplicateNote,
 };
