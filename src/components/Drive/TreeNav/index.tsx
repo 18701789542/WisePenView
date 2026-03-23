@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Tree, Spin, Empty } from 'antd';
 import type { DataNode } from 'antd/es/tree';
 import { LuChevronDown } from 'react-icons/lu';
-import { useRequest } from 'ahooks';
+import { useLatest, useRequest } from 'ahooks';
 import { useFolderService, useTagService } from '@/contexts/ServicesContext';
 import type { TagTreeNode } from '@/services/Tag/index.type';
 import { mapFolderToTagTreeNode } from '@/types/folder';
@@ -88,11 +88,8 @@ const TreeNav: React.FC<TreeNavProps> = ({
   const nodeMapRef = useRef<NodeMap>(new Map());
   const loadMoreMetaRef = useRef<Map<string, NavLoadMoreMeta>>(new Map());
   const resourceByIdRef = useRef<Map<string, ResourceItem>>(new Map());
-  const onChangeRef = useRef(onChange);
-  const handleLoadMoreRef = useRef<(k: string) => Promise<void>>(async () => {});
+  const onChangeRef = useLatest(onChange);
   const inflightLoadMoreRef = useRef<Set<string>>(new Set());
-
-  onChangeRef.current = onChange;
 
   const tagInitialCheckKey = useMemo(() => {
     if (tagInitialCheckedIds === undefined) return '';
@@ -117,7 +114,7 @@ const TreeNav: React.FC<TreeNavProps> = ({
           showFiles,
           selectMode,
           viewMode,
-          onLoadMoreClick: (k) => void handleLoadMoreRef.current(k),
+          onLoadMoreClick: (k) => void handleLoadMore(k),
         };
         setTreeData((prev) =>
           replaceLoadMoreInNavTree(
@@ -141,7 +138,7 @@ const TreeNav: React.FC<TreeNavProps> = ({
     [adapter, message, showFiles, selectMode, viewMode]
   );
 
-  handleLoadMoreRef.current = handleLoadMore;
+  const handleLoadMoreRef = useLatest(handleLoadMore);
 
   // folder
   const { loading: folderLoading } = useRequest(
@@ -285,7 +282,7 @@ const TreeNav: React.FC<TreeNavProps> = ({
         message.error(parseErrorMessage(err, '加载文件夹内容失败'));
       }
     },
-    [folderService, groupId, showFiles, selectMode, viewMode, message]
+    [folderService, groupId, showFiles, selectMode, viewMode, message, handleLoadMoreRef]
   );
 
   const handleLoadTagLeavesData = useCallback(
@@ -325,7 +322,7 @@ const TreeNav: React.FC<TreeNavProps> = ({
         message.error(parseErrorMessage(err, '加载标签内容失败'));
       }
     },
-    [adapter, selectMode, viewMode, message]
+    [adapter, selectMode, viewMode, message, handleLoadMoreRef]
   );
 
   const loadDataProp =
@@ -346,7 +343,7 @@ const TreeNav: React.FC<TreeNavProps> = ({
         onChangeRef.current?.(node ? [node] : [], []);
       }
     },
-    [selectMode]
+    [selectMode, onChangeRef]
   );
 
   const handleCheckTags = useCallback(
@@ -359,7 +356,7 @@ const TreeNav: React.FC<TreeNavProps> = ({
         .filter((n): n is TagTreeNode => n != null);
       onChangeRef.current?.(nodes, []);
     },
-    [viewMode, selectMode]
+    [viewMode, selectMode, onChangeRef]
   );
 
   const handleCheckFiles = useCallback(
@@ -373,7 +370,7 @@ const TreeNav: React.FC<TreeNavProps> = ({
         .filter((x): x is ResourceItem => x != null);
       onChangeRef.current?.([], leaves);
     },
-    [selectMode]
+    [selectMode, onChangeRef]
   );
 
   const treeCheckable = (viewMode === 'tag' && selectMode === 'nodes') || selectMode === 'leaves';

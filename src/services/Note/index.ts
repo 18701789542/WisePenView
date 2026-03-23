@@ -1,7 +1,7 @@
 export type {
   INoteService,
-  SyncNoteResponse,
-  LoadNoteResponse,
+  SyncTitleRequest,
   CreateNoteRequest,
   CreateNoteResponse,
+  DeleteNoteRequest,
 } from './index.type';

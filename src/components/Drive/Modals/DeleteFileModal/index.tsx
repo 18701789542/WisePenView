@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, Button, Alert } from 'antd';
 import { useRequest } from 'ahooks';
-import { useDocumentService } from '@/contexts/ServicesContext';
+import { useDocumentService, useNoteService } from '@/contexts/ServicesContext';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import { useRecentFilesStore } from '@/store';
 import type { DeleteFileModalProps } from './index.type';
@@ -10,11 +10,19 @@ import { RESOURCE_TYPE } from '@/constants/resource';
 
 const DeleteFileModal: React.FC<DeleteFileModalProps> = ({ open, onCancel, onSuccess, file }) => {
   const documentService = useDocumentService();
+  const noteService = useNoteService();
   const message = useAppMessage();
   const removeFile = useRecentFilesStore((s) => s.removeFile);
 
   const { loading, run: runDeleteFile } = useRequest(
-    async () => documentService.deleteDocument(file!.resourceId!),
+    async () => {
+      const resourceId = file!.resourceId!;
+      if (file!.resourceType === RESOURCE_TYPE.NOTE) {
+        await noteService.deleteNote({ resourceId });
+        return;
+      }
+      await documentService.deleteDocument(resourceId);
+    },
     {
       manual: true,
       onSuccess: () => {
@@ -31,10 +39,6 @@ const DeleteFileModal: React.FC<DeleteFileModalProps> = ({ open, onCancel, onSuc
 
   const handleConfirm = async () => {
     if (!file?.resourceId) return;
-    if (file.resourceType === RESOURCE_TYPE.NOTE) {
-      message.warning('暂不支持删除笔记');
-      return;
-    }
     runDeleteFile();
   };
 

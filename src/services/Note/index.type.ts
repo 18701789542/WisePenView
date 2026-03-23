@@ -6,47 +6,33 @@
 import type { SyncPayload, Block } from '@/types/note';
 
 /** NoteService 接口：供依赖注入使用 */
+/** web-socket服务放在了yjs目录下 */
 export interface INoteService {
-  /** 增量保存：将一批编辑变更提交到服务端 */
-  syncNote(resourceId: string, payload: SyncPayload): Promise<SyncNoteResponse>;
-  /** 全量加载：获取文档的完整内容 */
-  loadNote(resourceId: string): Promise<LoadNoteResponse>;
-  /**
-   * 新建或复制文档：普通创建不传参或传 `initial_content`；
-   * 从已有文档复制时传 `source`（与旧 `duplicate` 接口合并为同一 POST /note/create）
-   */
-  createNote(params?: CreateNoteRequest): Promise<CreateNoteResponse>;
+  syncTitle(params: SyncTitleRequest): Promise<void>;
+  /** 新建 / 从源文档派生 Note；成功时返回新资源 ID */
+  createNote(params: CreateNoteRequest): Promise<CreateNoteResponse>;
+  /** 删除 Note（后端会做权限校验并移除资源） */
+  deleteNote(params: DeleteNoteRequest): Promise<void>;
 }
 
-/** 增量保存响应 */
-export interface SyncNoteResponse {
-  /** 应用变更后的文档版本，客户端应更新本地 base_version */
-  new_version: number;
-}
-
-/** 全量加载响应 */
-export interface LoadNoteResponse {
-  ok: boolean;
-  resourceId: string;
-  version: number;
-  blocks: Block[];
-  updated_at?: string;
-}
-
-/** 新建文档请求参数 */
+/** 与 docs/apis/note-api.md「新建文档接口」请求体一致 */
 export interface CreateNoteRequest {
-  /** 与已有 Resource 绑定时传入其 id（须先 createResource） */
-  resourceId?: string;
-  /** 初始 Block 树；不传则创建空文档 */
   initial_content?: Block[];
-  /** 源笔记 resourceId，用于从已有文档创建副本；普通创建留空 */
+  title?: string;
+  /** 从已有文档创建副本时传入源文档 ID */
   source?: string;
 }
 
-/** 新建文档响应（不返回 `blocks`，正文以服务端持久化为准，由 `loadNote` 拉取） */
+/** 与调用方约定：成功时携带新资源 ID（后端 doc_id 由实现层映射） */
 export interface CreateNoteResponse {
-  ok: boolean;
+  resourceId?: string;
+}
+
+export interface DeleteNoteRequest {
   resourceId: string;
-  version: number;
-  created_at?: string;
+}
+
+export interface SyncTitleRequest {
+  resourceId: string;
+  newName: string;
 }

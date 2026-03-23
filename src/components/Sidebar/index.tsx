@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
+import { useRequest } from 'ahooks';
 import { Menu } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
 import clsx from 'clsx';
@@ -20,6 +21,8 @@ import UserProfile from '@/components/UserProfile';
 import { useRecentFilesStore } from '@/store';
 import { useClickFile } from '@/hooks/drive';
 import { useAppMessage } from '@/hooks/useAppMessage';
+import { useNoteService } from '@/contexts/ServicesContext';
+import { RESOURCE_TYPE } from '@/constants/resource';
 import { type SidebarProps, type SidebarMenuItem } from './index.type';
 import { getOpenedResourceIdFromPath } from '@/utils/openedResourceRoute';
 
@@ -27,8 +30,10 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const recentItems = useRecentFilesStore((s) => s.items);
+  const addRecentFile = useRecentFilesStore((s) => s.addFile);
   const removeRecentFile = useRecentFilesStore((s) => s.removeFile);
   const clickFile = useClickFile();
+  const noteService = useNoteService();
   const messageApi = useAppMessage();
 
   const handleOpenFile = useCallback(
@@ -73,6 +78,35 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
     [location.pathname, navigate, removeRecentFile]
   );
 
+  const { loading: creatingNote, run: runCreateNote } = useRequest(
+    async () => {
+      const { resourceId } = await noteService.createNote({});
+      if (!resourceId) {
+        throw new Error('创建笔记失败：未获取到资源ID');
+      }
+      return resourceId;
+    },
+    {
+      manual: true,
+      onSuccess: (resourceId) => {
+        addRecentFile({
+          resourceId,
+          resourceName: '未命名',
+          resourceType: RESOURCE_TYPE.NOTE,
+        });
+        navigate(`/app/note/${encodeURIComponent(resourceId)}`);
+      },
+      onError: () => {
+        messageApi.error('创建笔记失败，请稍后重试');
+      },
+    }
+  );
+
+  const handleCreateNote = useCallback(() => {
+    if (creatingNote) return;
+    runCreateNote();
+  }, [creatingNote, runCreateNote]);
+
   const menuItems = useMemo(() => {
     const baseItems: SidebarMenuItem[] = [
       {
@@ -84,7 +118,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
         key: '/app/note',
         icon: <RiPenNibFill size={18} />,
         label: '新建笔记',
-        onClick: () => navigate('/app/note'),
+        onClick: handleCreateNote,
       },
       {
         key: '/app/drive',
@@ -159,7 +193,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
     }
 
     return baseItems;
-  }, [collapsed, recentItems, handleOpenFile, handleCloseRecentFile, navigate]);
+  }, [collapsed, recentItems, handleOpenFile, handleCloseRecentFile, handleCreateNote, navigate]);
 
   return (
     <div className={clsx(styles.sider, collapsed && styles.collapsed)}>
