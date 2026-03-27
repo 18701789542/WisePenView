@@ -21,10 +21,6 @@ const renameResource = async (params: RenameResourceRequest): Promise<void> => {
   await delay(150);
 };
 
-const deleteResource = async (): Promise<void> => {
-  await delay(150);
-};
-
 const updateResourcePath = async (): Promise<void> => {
   await delay(150);
 };
@@ -37,7 +33,6 @@ export const ResourceServicesMock: IResourceService = {
   getUserResources,
   getGroupResources,
   renameResource,
-  deleteResource,
   updateResourcePath,
   updateResourceTags,
 };

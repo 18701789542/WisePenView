@@ -76,13 +76,6 @@ const renameResource = async (params: RenameResourceRequest): Promise<void> => {
   checkResponse(res);
 };
 
-const deleteResource = async (resourceId: string): Promise<void> => {
-  const res = (await Axios.post('/internal/resource/deleteRes', null, {
-    params: { resourceId },
-  })) as ApiResponse;
-  checkResponse(res);
-};
-
 /** 当前 resource.openapi.json 未收录「资源归属路径」变更接口，仍对接既有 /resource/move */
 const updateResourcePath = async (params: UpdateResourcePathRequest): Promise<void> => {
   const res = (await Axios.post('/resource/move', params)) as ApiResponse;
@@ -98,7 +91,6 @@ export const ResourceServicesImpl: IResourceService = {
   getUserResources,
   getGroupResources,
   renameResource,
-  deleteResource,
   updateResourcePath,
   updateResourceTags,
 };

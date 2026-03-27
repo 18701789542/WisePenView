@@ -1,4 +1,4 @@
-/** `POST /document/upload/init` 请求体，与后端 DocumentUploadInitRequest 一致 */
+/** `POST /document/initDocUpload` 请求体，与后端 DocumentUploadInitRequest 一致 */
 export interface DocumentUploadInitRequestBody {
   filename: string;
   extension: string;
@@ -6,7 +6,7 @@ export interface DocumentUploadInitRequestBody {
   size: number;
 }
 
-/** `POST /document/upload/init` 的 `data`，与后端 DocumentUploadInitResponse 一致 */
+/** `POST /document/initDocUpload` 的 `data`，与后端 DocumentUploadInitResponse 一致 */
 export interface DocumentUploadInitResponse {
   documentId: string;
   putUrl: string | null;
@@ -15,7 +15,7 @@ export interface DocumentUploadInitResponse {
   flashUploaded: boolean;
 }
 
-/** DocumentService：文档上传、重试转换、删除（路径与 docs/apis/document-frontend.md 一致） */
+/** DocumentService：文档上传、重试转换、删除（路径与当前后端 DocumentController 一致） */
 export interface IDocumentService {
   /** 计算 MD5 → 初始化上传 → 非秒传时 PUT 至 OSS，返回 documentId（即 resourceId） */
   uploadDocument(params: UploadDocumentParams): Promise<UploadDocumentResult>;
@@ -23,7 +23,7 @@ export interface IDocumentService {
   retryConvert(documentId: string): Promise<void>;
   /** 取消上传或删除文档 */
   deleteDocument(documentId: string): Promise<void>;
-  /** 文档预览 PDF 同源 URL（GET `/document/{id}/preview`；dev 下经 `/api` 代理） */
+  /** 文档预览 PDF 同源 URL（GET `/document/getDocPreview?documentId=...`；dev 下经 `/api` 代理） */
   getDocumentPreviewUrl(resourceId: string): string;
 }
 

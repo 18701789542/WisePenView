@@ -41,8 +41,10 @@ const assertDocumentUploadAllowed = (file: File): void => {
   }
 };
 
-const initUpload = async (body: DocumentUploadInitRequestBody): Promise<DocumentUploadInitResponse> => {
-  const res = (await Axios.post('/document/upload/init', body, {
+const initUpload = async (
+  body: DocumentUploadInitRequestBody
+): Promise<DocumentUploadInitResponse> => {
+  const res = (await Axios.post('/document/initDocUpload', body, {
     timeout: DOCUMENT_UPLOAD_INIT_TIMEOUT_MS,
   })) as ApiResponse<DocumentUploadInitResponse>;
   checkResponse(res);
@@ -74,7 +76,12 @@ const uploadDocument = async (params: UploadDocumentParams): Promise<UploadDocum
     };
   }
 
-  if (init.putUrl == null || init.putUrl === '' || init.callbackHeader == null || init.callbackHeader === '') {
+  if (
+    init.putUrl == null ||
+    init.putUrl === '' ||
+    init.callbackHeader == null ||
+    init.callbackHeader === ''
+  ) {
     throw new Error('上传初始化未返回有效的直传地址');
   }
 
@@ -93,18 +100,22 @@ const uploadDocument = async (params: UploadDocumentParams): Promise<UploadDocum
 };
 
 const retryConvert = async (documentId: string): Promise<void> => {
-  const res = (await Axios.post(`/document/${documentId}/retry`)) as ApiResponse<unknown>;
+  const res = (await Axios.post('/document/retryDocConvert', null, {
+    params: { documentId },
+  })) as ApiResponse<unknown>;
   checkResponse(res);
 };
 
 const deleteDocument = async (documentId: string): Promise<void> => {
-  const res = (await Axios.delete(`/document/${documentId}`)) as ApiResponse<unknown>;
+  const res = (await Axios.post('/document/deletedDoc', null, {
+    params: { documentId },
+  })) as ApiResponse<unknown>;
   checkResponse(res);
 };
 
 /** dev：/api/document/... 经 Vite 剥离 /api → 网关 /document/... */
 const getDocumentPreviewUrl = (resourceId: string): string => {
-  const path = `/api/document/${encodeURIComponent(resourceId)}/preview`;
+  const path = `/api/document/getDocPreview?documentId=${encodeURIComponent(resourceId)}`;
   return new URL(path, window.location.origin).href;
 };
 

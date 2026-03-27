@@ -1,22 +1,27 @@
 import React, { useState } from 'react';
 import { Modal, Button, Alert } from 'antd';
-import { useResourceService } from '@/contexts/ServicesContext';
+import { useDocumentService } from '@/contexts/ServicesContext';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import { useRecentFilesStore } from '@/store';
 import type { DeleteFileModalProps } from './index.type';
 import { useAppMessage } from '@/hooks/useAppMessage';
+import { RESOURCE_TYPE } from '@/constants/resource';
 
 const DeleteFileModal: React.FC<DeleteFileModalProps> = ({ open, onCancel, onSuccess, file }) => {
-  const resourceService = useResourceService();
+  const documentService = useDocumentService();
   const message = useAppMessage();
   const [loading, setLoading] = useState(false);
   const removeFile = useRecentFilesStore((s) => s.removeFile);
 
   const handleConfirm = async () => {
     if (!file?.resourceId) return;
+    if (file.resourceType === RESOURCE_TYPE.NOTE) {
+      message.warning('暂不支持删除笔记');
+      return;
+    }
     try {
       setLoading(true);
-      await resourceService.deleteResource(file.resourceId);
+      await documentService.deleteDocument(file.resourceId);
       removeFile(file.resourceId);
       message.success('文件已删除');
       onSuccess?.();

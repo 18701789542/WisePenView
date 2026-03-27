@@ -19,7 +19,6 @@ export interface IResourceService {
   getUserResources(params: GetUserResourcesRequest): Promise<ResourceListPage>;
   getGroupResources(params: GetGroupResourceRequest): Promise<ResourceListPage>;
   renameResource(params: RenameResourceRequest): Promise<void>;
-  deleteResource(resourceId: string): Promise<void>;
   updateResourcePath(params: UpdateResourcePathRequest): Promise<void>;
   updateResourceTags(params: UpdateResourceTagsRequest): Promise<void>;
 }
