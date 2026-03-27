@@ -11,6 +11,7 @@ import type { IResourceService } from './index.type';
 import Axios from '@/utils/Axios';
 import { checkResponse } from '@/utils/response';
 import type { ApiResponse } from '@/types/api';
+import { useRecentFilesStore } from '@/store';
 
 /** GET query：数组用重复键，兼容 Spring @RequestParam List */
 const serializeResourceListQuery = (params: Record<string, unknown>): string => {
@@ -74,6 +75,8 @@ const getGroupResources = async (params: GetGroupResourceRequest): Promise<Resou
 const renameResource = async (params: RenameResourceRequest): Promise<void> => {
   const res = (await Axios.post('/resource/item/renameRes', params)) as ApiResponse;
   checkResponse(res);
+  // 重命名成功后，更新最近文件列表的文件名
+  useRecentFilesStore.getState().updateFileName(params.resourceId, params.newName);
 };
 
 /** 当前 resource.openapi.json 未收录「资源归属路径」变更接口，仍对接既有 /resource/move */

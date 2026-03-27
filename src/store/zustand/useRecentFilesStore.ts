@@ -8,8 +8,6 @@ export interface RecentFileItem {
   resourceType?: string;
 }
 
-const MAX_RECENT = 15;
-
 type RecentFilesState = {
   items: RecentFileItem[];
   addFile: (item: RecentFileItem) => void;
@@ -24,9 +22,20 @@ export const useRecentFilesStore = create<RecentFilesState>()(
 
       addFile: (item) =>
         set((state) => {
-          const filtered = state.items.filter((i) => i.resourceId !== item.resourceId);
-          const next = [item, ...filtered].slice(0, MAX_RECENT);
-          return { items: next };
+          // 查找是否已存在同 resourceId 的文件
+          const existIndex = state.items.findIndex((i) => i.resourceId === item.resourceId);
+          if (existIndex >= 0) {
+            // 如已存在，则更新 resourceName / resourceType，移动到原有顺序保持不变
+            const next = [...state.items];
+            next[existIndex] = {
+              ...next[existIndex],
+              resourceName: item.resourceName,
+              resourceType: item.resourceType,
+            };
+            return { items: next };
+          }
+
+          return { items: [...state.items, item] };
         }),
 
       removeFile: (resourceId) =>

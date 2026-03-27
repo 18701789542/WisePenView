@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button, Input } from 'antd';
 import { useResourceService } from '@/contexts/ServicesContext';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
-import { useRecentFilesStore } from '@/store';
 import type { RenameFileModalProps } from './index.type';
 import { useAppMessage } from '@/hooks/useAppMessage';
 
@@ -11,7 +10,6 @@ const RenameFileModal: React.FC<RenameFileModalProps> = ({ open, onCancel, onSuc
   const message = useAppMessage();
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
-  const updateFileName = useRecentFilesStore((s) => s.updateFileName);
 
   useEffect(() => {
     if (open && file) {
@@ -32,7 +30,6 @@ const RenameFileModal: React.FC<RenameFileModalProps> = ({ open, onCancel, onSuc
         resourceId: file.resourceId,
         newName: trimmed,
       });
-      updateFileName(file.resourceId, trimmed);
       message.success('重命名成功');
       onSuccess?.();
       onCancel();

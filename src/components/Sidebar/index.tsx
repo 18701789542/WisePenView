@@ -21,6 +21,7 @@ import { useRecentFilesStore } from '@/store';
 import { useClickFile } from '@/hooks/drive';
 import { useAppMessage } from '@/hooks/useAppMessage';
 import { type SidebarProps, type SidebarMenuItem } from './index.type';
+import { getOpenedResourceIdFromPath } from '@/utils/openedResourceRoute';
 
 const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
   const navigate = useNavigate();
@@ -44,6 +45,32 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
       }
     },
     [clickFile, recentItems, messageApi]
+  );
+
+  const selectedKeys = useMemo(() => {
+    const pathname = location.pathname;
+    const baseSelectedKeys = [pathname];
+    const resourceId = getOpenedResourceIdFromPath(pathname);
+    if (resourceId == null) return baseSelectedKeys;
+
+    const existsInSidebar = recentItems.some((item) => item.resourceId === resourceId);
+    if (!existsInSidebar) return baseSelectedKeys;
+
+    return [`opened-file-${resourceId}`];
+  }, [location.pathname, recentItems]);
+
+  const handleCloseRecentFile = useCallback(
+    (resourceId: string) => {
+      // 当前正在打开的资源ID（取自 pathname）
+      const currentId = getOpenedResourceIdFromPath(location.pathname);
+      // 移除最近文件列表中的此文件
+      removeRecentFile(resourceId);
+      // 如果当前正打开的是此文件，则跳转回文件列表页
+      if (currentId === resourceId) {
+        navigate('/app/drive');
+      }
+    },
+    [location.pathname, navigate, removeRecentFile]
   );
 
   const menuItems = useMemo(() => {
@@ -106,7 +133,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
                     onClick={(event) => {
                       event.preventDefault();
                       event.stopPropagation();
-                      removeRecentFile(item.resourceId);
+                      handleCloseRecentFile(item.resourceId);
                     }}
                   >
                     <RiCloseLine size={14} />
@@ -132,7 +159,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
     }
 
     return baseItems;
-  }, [collapsed, recentItems, handleOpenFile, removeRecentFile, navigate]);
+  }, [collapsed, recentItems, handleOpenFile, handleCloseRecentFile, navigate]);
 
   return (
     <div className={clsx(styles.sider, collapsed && styles.collapsed)}>
@@ -157,7 +184,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
         <Menu
           mode="inline"
           theme="light"
-          selectedKeys={[location.pathname]}
+          selectedKeys={selectedKeys}
           inlineCollapsed={collapsed}
           items={menuItems}
         />
