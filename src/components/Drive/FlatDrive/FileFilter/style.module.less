@@ -88,7 +88,7 @@
   min-width: 120px;
 }
 
-.tagPool {
+.stickerList {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -97,7 +97,7 @@
   width: 100%;
 }
 
-.poolLoading {
+.stickerLoading {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -105,16 +105,7 @@
   width: 100%;
 }
 
-.poolEmpty {
-  margin: var(--ant-margin-sm) auto;
-
-  :global(.ant-empty-description) {
-    font-size: var(--ant-font-size-sm);
-  }
-}
-
-/** 可选标签池：与已选区同为 outlined Tag，点击加入筛选 */
-.poolTag {
+.stickerTag {
   margin: 0;
   font-size: var(--ant-font-size-sm);
   line-height: 20px;
@@ -125,15 +116,35 @@
     border-color 0.2s,
     background 0.2s;
 
-  &:not(.poolTagPicked):hover {
+  &:not(.stickerTagPicked):hover {
     color: var(--ant-color-primary);
     border-color: var(--ant-color-primary);
   }
 }
 
-.poolTagPicked {
+.stickerTagPicked {
   cursor: default;
   color: var(--ant-color-primary);
   border-color: var(--ant-color-primary);
   background: var(--ant-color-primary-bg);
+}
+
+.addTag {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  font-size: var(--ant-font-size-sm);
+  line-height: 20px;
+  cursor: pointer;
+  border-style: dashed;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+
+  &:hover {
+    color: var(--ant-color-primary);
+    border-color: var(--ant-color-primary);
+  }
 }

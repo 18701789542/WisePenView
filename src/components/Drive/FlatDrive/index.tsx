@@ -20,7 +20,7 @@ const FlatDrive: React.FC<FlatDriveProps> = ({ groupId }) => {
   return (
     <div className={styles.wrapper}>
       <section className={styles.filterSection}>
-        <FileFilter groupId={groupId} value={filter} onChange={setFilter} />
+        <FileFilter value={filter} onChange={setFilter} />
       </section>
       <main className={styles.listArea}>
         <FileList groupId={groupId} filter={filter} />

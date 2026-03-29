@@ -1,12 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import clsx from 'clsx';
-import { Tag, Radio, Select, Spin, Empty } from 'antd';
-import { LuX } from 'react-icons/lu';
-import { useTagService } from '@/contexts/ServicesContext';
+import { Tag, Radio, Select, Spin } from 'antd';
+import { LuX, LuPlus } from 'react-icons/lu';
+import { useStickerService } from '@/contexts/ServicesContext';
 import { TAG_QUERY_LOGIC_MODE, RESOURCE_SORT_BY, RESOURCE_SORT_DIR } from '@/services/Resource';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import type { FileFilterProps, FileFilterValue } from './index.type';
+import type { Sticker } from '@/services/Sticker';
 import { useAppMessage } from '@/hooks/useAppMessage';
+import AddStickerModal from './AddStickerModal';
 import styles from './style.module.less';
 
 const DEFAULT_VALUE: FileFilterValue = {
@@ -29,60 +31,51 @@ const SORT_DIR_OPTIONS = [
   { label: '降序', value: RESOURCE_SORT_DIR.DESC },
 ];
 
-const toPoolItems = (
-  flat: { tagId: string; tagName?: string }[]
-): { tagId: string; tagName: string }[] =>
-  flat
-    .filter((n) => n.tagId && (n.tagName ?? '').trim())
-    .map((n) => ({ tagId: n.tagId, tagName: (n.tagName ?? '').trim() }));
-
-const FileFilter: React.FC<FileFilterProps> = ({ groupId, value, onChange }) => {
-  const tagService = useTagService();
+const FileFilter: React.FC<FileFilterProps> = ({ value, onChange }) => {
+  const stickerService = useStickerService();
   const message = useAppMessage();
   const [innerValue, setInnerValue] = useState<FileFilterValue>(DEFAULT_VALUE);
   const isControlled = value !== undefined;
   const current = isControlled ? value : innerValue;
 
-  const [tagMap, setTagMap] = useState<Map<string, string>>(new Map());
-  const [poolTags, setPoolTags] = useState<{ tagId: string; tagName: string }[]>([]);
-  const [poolLoading, setPoolLoading] = useState(true);
+  const [stickers, setStickers] = useState<Sticker[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      setPoolLoading(true);
+      setLoading(true);
       try {
-        const list = await tagService.getFlatTagTree(groupId ? { groupId } : undefined);
-        if (!cancelled) setPoolTags(toPoolItems(list));
+        const list = await stickerService.getStickerList();
+        if (!cancelled) setStickers(list);
       } catch (err) {
         if (!cancelled) {
           message.error(parseErrorMessage(err, '获取标签列表失败'));
-          setPoolTags([]);
+          setStickers([]);
         }
       } finally {
-        if (!cancelled) setPoolLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     load();
     return () => {
       cancelled = true;
     };
-  }, [groupId, tagService, message]);
+  }, [stickerService, message]);
 
   const updateValue = useCallback(
-    (next: FileFilterValue) => {
+    (patch: Partial<FileFilterValue>) => {
+      const next = { ...current, ...patch };
       if (!isControlled) setInnerValue(next);
       onChange?.(next);
     },
-    [isControlled, onChange]
+    [current, isControlled, onChange]
   );
 
   const handlePickTag = useCallback(
     (tagId: string, tagName: string) => {
       if (current.tagIds.includes(tagId)) return;
-      setTagMap((prev) => new Map(prev).set(tagId, tagName));
       updateValue({
-        ...current,
         tagIds: [...current.tagIds, tagId],
         tagNames: [...current.tagNames, tagName],
       });
@@ -93,37 +86,15 @@ const FileFilter: React.FC<FileFilterProps> = ({ groupId, value, onChange }) => 
   const handleRemoveTag = useCallback(
     (tagId: string) => {
       const idx = current.tagIds.indexOf(tagId);
-      const nextTagIds = current.tagIds.filter((id) => id !== tagId);
-      const nextTagNames = current.tagNames.filter((_, i) => i !== idx);
       updateValue({
-        ...current,
-        tagIds: nextTagIds,
-        tagNames: nextTagNames,
+        tagIds: current.tagIds.filter((id) => id !== tagId),
+        tagNames: current.tagNames.filter((_, i) => i !== idx),
       });
     },
     [current, updateValue]
   );
 
-  const handleLogicModeChange = useCallback(
-    (val: FileFilterValue['tagQueryLogicMode']) => {
-      updateValue({ ...current, tagQueryLogicMode: val });
-    },
-    [current, updateValue]
-  );
-
-  const handleSortByChange = useCallback(
-    (val: FileFilterValue['sortBy']) => {
-      updateValue({ ...current, sortBy: val });
-    },
-    [current, updateValue]
-  );
-
-  const handleSortDirChange = useCallback(
-    (val: FileFilterValue['sortDir']) => {
-      updateValue({ ...current, sortDir: val });
-    },
-    [current, updateValue]
-  );
+  const [addModalOpen, setAddModalOpen] = useState(false);
 
   return (
     <div className={styles.wrapper}>
@@ -133,7 +104,7 @@ const FileFilter: React.FC<FileFilterProps> = ({ groupId, value, onChange }) => 
           {current.tagIds.length === 0 ? (
             <span className={styles.selectedPlaceholder}>点击下方标签加入筛选</span>
           ) : (
-            current.tagIds.map((tagId) => (
+            current.tagIds.map((tagId, i) => (
               <Tag
                 key={tagId}
                 variant="outlined"
@@ -142,7 +113,7 @@ const FileFilter: React.FC<FileFilterProps> = ({ groupId, value, onChange }) => 
                 closeIcon={<LuX size={13} />}
                 className={styles.selectedTag}
               >
-                {tagMap.get(tagId) ?? current.tagNames[current.tagIds.indexOf(tagId)] ?? tagId}
+                {current.tagNames[i] ?? tagId}
               </Tag>
             ))
           )}
@@ -151,7 +122,7 @@ const FileFilter: React.FC<FileFilterProps> = ({ groupId, value, onChange }) => 
           <span className={styles.selectedMatchLabel}>匹配</span>
           <Radio.Group
             value={current.tagQueryLogicMode}
-            onChange={(e) => handleLogicModeChange(e.target.value)}
+            onChange={(e) => updateValue({ tagQueryLogicMode: e.target.value })}
             size="middle"
             options={[
               { label: '包含任意', value: TAG_QUERY_LOGIC_MODE.OR },
@@ -161,42 +132,30 @@ const FileFilter: React.FC<FileFilterProps> = ({ groupId, value, onChange }) => 
         </div>
       </div>
 
-      <div className={styles.tagPool}>
-        {poolLoading ? (
-          <div className={styles.poolLoading}>
+      <div className={styles.stickerList}>
+        {loading ? (
+          <div className={styles.stickerLoading}>
             <Spin size="small" />
           </div>
-        ) : poolTags.length === 0 ? (
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="暂无标签"
-            className={styles.poolEmpty}
-          />
         ) : (
-          poolTags.map(({ tagId, tagName }) => {
-            const picked = current.tagIds.includes(tagId);
-            return (
+          <>
+            {stickers.map(({ tagId, tagName }) => (
               <Tag
                 key={tagId}
                 variant="outlined"
-                className={clsx(styles.poolTag, picked && styles.poolTagPicked)}
-                role="button"
-                tabIndex={picked ? -1 : 0}
-                onClick={() => {
-                  if (!picked) handlePickTag(tagId, tagName);
-                }}
-                onKeyDown={(e) => {
-                  if (picked) return;
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handlePickTag(tagId, tagName);
-                  }
-                }}
+                className={clsx(
+                  styles.stickerTag,
+                  current.tagIds.includes(tagId) && styles.stickerTagPicked
+                )}
+                onClick={() => handlePickTag(tagId, tagName)}
               >
                 {tagName}
               </Tag>
-            );
-          })
+            ))}
+            <Tag className={styles.addTag} onClick={() => setAddModalOpen(true)}>
+              <LuPlus size={14} />
+            </Tag>
+          </>
         )}
       </div>
 
@@ -206,18 +165,24 @@ const FileFilter: React.FC<FileFilterProps> = ({ groupId, value, onChange }) => 
           <Select
             size="middle"
             value={current.sortBy}
-            onChange={handleSortByChange}
+            onChange={(val) => updateValue({ sortBy: val })}
             options={SORT_BY_OPTIONS}
             className={styles.sortSelect}
           />
           <Radio.Group
             value={current.sortDir}
-            onChange={(e) => handleSortDirChange(e.target.value)}
+            onChange={(e) => updateValue({ sortDir: e.target.value })}
             size="middle"
             options={SORT_DIR_OPTIONS}
           />
         </div>
       </div>
+
+      <AddStickerModal
+        open={addModalOpen}
+        onCancel={() => setAddModalOpen(false)}
+        onSuccess={(sticker) => setStickers((prev) => [...prev, sticker])}
+      />
     </div>
   );
 };

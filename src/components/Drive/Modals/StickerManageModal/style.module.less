@@ -1,0 +1,111 @@
+.modalBody {
+  padding: var(--ant-padding-md);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.split {
+  display: flex;
+  flex-direction: row;
+  min-height: 320px;
+  gap: 0;
+}
+
+.listPane {
+  flex: 0 0 45%;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--ant-color-border-secondary);
+  padding-right: var(--ant-padding-md);
+}
+
+.listPaneTitle {
+  font-weight: 600;
+  margin-bottom: var(--ant-margin-sm);
+  flex-shrink: 0;
+}
+
+.stickerList {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: var(--ant-margin-xs);
+  flex: 1;
+  overflow: auto;
+}
+
+.stickerTag {
+  margin: 0;
+  font-size: var(--ant-font-size-sm);
+  line-height: 20px;
+  padding: 4px 11px;
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    border-color 0.2s,
+    background 0.2s;
+
+  &:hover {
+    color: var(--ant-color-primary);
+    border-color: var(--ant-color-primary);
+  }
+}
+
+.stickerTagSelected {
+  color: var(--ant-color-primary);
+  border-color: var(--ant-color-primary);
+  background: var(--ant-color-primary-bg);
+}
+
+.detailPane {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding-left: var(--ant-padding-md);
+}
+
+.sectionTitle {
+  font-weight: 600;
+  margin-bottom: var(--ant-margin-sm);
+}
+
+.form {
+  max-width: 280px;
+}
+
+.fieldGroup {
+  margin-bottom: var(--ant-margin-md);
+}
+
+.fieldLabel {
+  display: block;
+  margin-bottom: var(--ant-margin-xs);
+  font-size: var(--ant-font-size-sm);
+}
+
+.formActions {
+  display: flex;
+  gap: var(--ant-margin-sm);
+}
+
+.emptyDetail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ant-margin-md);
+  padding: var(--ant-padding-lg) 0;
+}
+
+.addForm {
+  max-width: 280px;
+}
+
+.emptyHint {
+  color: var(--ant-color-text-secondary);
+  font-size: var(--ant-font-size-sm);
+  margin: 0;
+}

@@ -8,7 +8,7 @@ import { formatSize } from '@/utils/format';
 import type { ResourceItem } from '@/types/resource';
 import { useResourceService, useNoteService } from '@/contexts/ServicesContext';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
-import { RenameFileModal, DeleteFileModal, EditTagModal } from '@/components/Drive/Modals';
+import { RenameFileModal, DeleteFileModal, EditStickerModal } from '@/components/Drive/Modals';
 import { useClickFile } from '@/hooks/drive';
 import { useAppMessage } from '@/hooks/useAppMessage';
 import type { FileListProps } from './index.type';
@@ -20,7 +20,7 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50];
 interface ColumnBuildProps {
   onDelete: (record: ResourceItem) => void;
   onRename: (record: ResourceItem) => void;
-  onEditTag: (record: ResourceItem) => void;
+  onEditSticker: (record: ResourceItem) => void;
   onDuplicateNote: (record: ResourceItem) => void;
   onCloseDropdown: () => void;
   openDropdownKey: string | null;
@@ -44,18 +44,20 @@ const buildColumns = (props: ColumnBuildProps): ColumnsType<ResourceItem> => [
     dataIndex: 'currentTags',
     key: 'currentTags',
     width: 200,
-    render: (currentTags?: string[]) =>
-      currentTags?.length ? (
+    render: (raw?: Record<string, string>) => {
+      const entries = raw ? Object.entries(raw) : [];
+      return entries.length ? (
         <span className={styles.tagList}>
-          {currentTags.map((t) => (
-            <Tag variant="outlined" key={t}>
-              {t}
+          {entries.map(([id, name]) => (
+            <Tag variant="outlined" key={id}>
+              {name}
             </Tag>
           ))}
         </span>
       ) : (
         '-'
-      ),
+      );
+    },
   },
   {
     title: '类型',
@@ -100,7 +102,7 @@ const buildColumns = (props: ColumnBuildProps): ColumnsType<ResourceItem> => [
             // 防止点击事件冒泡到父级元素，导致文件打开
             info.domEvent.stopPropagation();
             props.onCloseDropdown();
-            props.onEditTag(record);
+            props.onEditSticker(record);
           },
         },
         {
@@ -164,10 +166,10 @@ const FileList: React.FC<FileListProps> = ({ groupId, filter }) => {
   const [loading, setLoading] = useState(false);
   const [renameFileModalOpen, setRenameFileModalOpen] = useState(false);
   const [deleteFileModalOpen, setDeleteFileModalOpen] = useState(false);
-  const [editTagModalOpen, setEditTagModalOpen] = useState(false);
+  const [editStickerModalOpen, setEditStickerModalOpen] = useState(false);
   const [renameFileTarget, setRenameFileTarget] = useState<ResourceItem | null>(null);
   const [deleteFileTarget, setDeleteFileTarget] = useState<ResourceItem | null>(null);
-  const [editTagTarget, setEditTagTarget] = useState<ResourceItem | null>(null);
+  const [editStickerTarget, setEditStickerTarget] = useState<ResourceItem | null>(null);
 
   const fetchList = useCallback(async () => {
     setLoading(true);
@@ -223,14 +225,14 @@ const FileList: React.FC<FileListProps> = ({ groupId, filter }) => {
     setRenameFileTarget(null);
   }, []);
 
-  const handleEditTag = useCallback((file: ResourceItem) => {
-    setEditTagTarget(file);
-    setEditTagModalOpen(true);
+  const handleEditSticker = useCallback((file: ResourceItem) => {
+    setEditStickerTarget(file);
+    setEditStickerModalOpen(true);
   }, []);
 
-  const handleEditTagModalClose = useCallback(() => {
-    setEditTagModalOpen(false);
-    setEditTagTarget(null);
+  const handleEditStickerModalClose = useCallback(() => {
+    setEditStickerModalOpen(false);
+    setEditStickerTarget(null);
   }, []);
 
   const handleDeleteFile = useCallback((file: ResourceItem) => {
@@ -283,13 +285,13 @@ const FileList: React.FC<FileListProps> = ({ groupId, filter }) => {
       buildColumns({
         onDelete: handleDeleteFile,
         onRename: handleRenameFile,
-        onEditTag: handleEditTag,
+        onEditSticker: handleEditSticker,
         onDuplicateNote: handleDuplicateNote,
         onCloseDropdown: () => setOpenDropdownKey(null),
         openDropdownKey,
         setOpenDropdownKey,
       }),
-    [handleDeleteFile, handleRenameFile, handleEditTag, handleDuplicateNote, openDropdownKey]
+    [handleDeleteFile, handleRenameFile, handleEditSticker, handleDuplicateNote, openDropdownKey]
   );
 
   const handleRowClick = useCallback(
@@ -339,11 +341,10 @@ const FileList: React.FC<FileListProps> = ({ groupId, filter }) => {
         onCancel={handleDeleteFileModalClose}
         onSuccess={fetchList}
       />
-      <EditTagModal
-        open={editTagModalOpen}
-        file={editTagTarget}
-        groupId={groupId}
-        onCancel={handleEditTagModalClose}
+      <EditStickerModal
+        open={editStickerModalOpen}
+        file={editStickerTarget}
+        onCancel={handleEditStickerModalClose}
         onSuccess={fetchList}
       />
     </>

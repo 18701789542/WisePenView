@@ -1,35 +1,30 @@
 import type { ApiResponse } from '@/types/api';
 import Axios from '@/utils/Axios';
 import { checkResponse } from '@/utils/response';
-import { filterNonPathTags, flattenTagTree } from '@/utils/tagTree';
 import type {
-  FlatTagTreeResponse,
-  GetTagTreeRequest,
   TagTreeResponse,
   TagCreateRequest,
   TagUpdateRequest,
   TagDeleteRequest,
   TagMoveRequest,
+  GetGroupTagTreeRequest,
 } from './index.type';
 import type { ITagService } from './index.type';
 
-const fetchRawTagTree = async (params?: GetTagTreeRequest): Promise<TagTreeResponse[]> => {
-  const res = (await Axios.get('/resource/tag/getTagTree', {
-    params: params?.groupId != null ? { groupId: params.groupId } : undefined,
-  })) as ApiResponse<TagTreeResponse[]>;
+// 不传groupId获取用户标签树
+const getUserTagTree = async (): Promise<TagTreeResponse[]> => {
+  const res = (await Axios.get('/resource/tag/getTagTree')) as ApiResponse<TagTreeResponse[]>;
   checkResponse(res);
   return res.data ?? [];
 };
 
-const getTagTree = async (params?: GetTagTreeRequest): Promise<TagTreeResponse[]> => {
-  const raw = await fetchRawTagTree(params);
-  return filterNonPathTags(raw);
-};
-
-const getFlatTagTree = async (params?: GetTagTreeRequest): Promise<FlatTagTreeResponse[]> => {
-  const raw = await fetchRawTagTree(params);
-  const tree = filterNonPathTags(raw);
-  return flattenTagTree(tree);
+// 传groupId获取组标签树
+const getGroupTagTree = async (params: GetGroupTagTreeRequest): Promise<TagTreeResponse[]> => {
+  const res = (await Axios.get('/resource/tag/getTagTree', { params })) as ApiResponse<
+    TagTreeResponse[]
+  >;
+  checkResponse(res);
+  return res.data ?? [];
 };
 
 const updateTag = async (params: TagUpdateRequest): Promise<void> => {
@@ -54,8 +49,8 @@ const moveTag = async (params: TagMoveRequest): Promise<void> => {
 };
 
 export const TagServicesImpl: ITagService = {
-  getTagTree,
-  getFlatTagTree,
+  getUserTagTree,
+  getGroupTagTree,
   updateTag,
   addTag,
   deleteTag,
