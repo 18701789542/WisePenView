@@ -1,0 +1,70 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.stickerList {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ant-margin-xs);
+  padding: var(--ant-padding-xs) 0;
+}
+
+.stickerLoading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  width: 100%;
+}
+
+.stickerTag {
+  margin: 0;
+  font-size: var(--ant-font-size-sm);
+  line-height: 20px;
+  padding: 4px 11px;
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    border-color 0.2s,
+    background 0.2s;
+
+  &:not(.stickerTagPicked):hover {
+    color: var(--ant-color-primary);
+    border-color: var(--ant-color-primary);
+  }
+}
+
+.stickerTagPicked {
+  cursor: pointer;
+  color: var(--ant-color-primary);
+  border-color: var(--ant-color-primary);
+  background: var(--ant-color-primary-bg);
+}
+
+.addTag {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  font-size: var(--ant-font-size-sm);
+  line-height: 20px;
+  cursor: pointer;
+  border-style: dashed;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+
+  &:hover {
+    color: var(--ant-color-primary);
+    border-color: var(--ant-color-primary);
+  }
+}
+
+.allPickedHint {
+  font-size: var(--ant-font-size-sm);
+  color: var(--ant-color-text-quaternary);
+  line-height: 28px;
+}

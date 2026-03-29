@@ -36,6 +36,7 @@ import type { INoteService } from '@/services/Note';
 import type { IQuotaService } from '@/services/Quota';
 import type { IResourceService } from '@/services/Resource';
 import type { ITagService } from '@/services/Tag';
+import type { IStickerService } from '@/services/Sticker';
 import type { IUserService } from '@/services/User';
 
 // 第二步：导入真实实现（*Services.impl.ts，调用后端 API）
@@ -48,6 +49,7 @@ import { NoteServicesImpl } from '@/services/Note/NoteServices.impl';
 import { QuotaServicesImpl } from '@/services/Quota/QuotaServices.impl';
 import { ResourceServicesImpl } from '@/services/Resource/ResourceServices.impl';
 import { TagServicesImpl } from '@/services/Tag/TagServices.impl';
+import { StickerServicesImpl } from '@/services/Sticker/StickerServices.impl';
 import { UserServicesImpl } from '@/services/User/UserServices.impl';
 
 // 第三步：导入 Mock 实现（src/mocks/Xxx/XxxServices.mock.ts，用于 MODE === 'mock' 时）
@@ -60,6 +62,7 @@ import { NoteServicesMock } from '@/mocks/Note/NoteServices.mock';
 import { QuotaServicesMock } from '@/mocks/Quota/QuotaServices.mock';
 import { ResourceServicesMock } from '@/mocks/Resource/ResourceServices.mock';
 import { TagServicesMock } from '@/mocks/Tag/TagServices.mock';
+import { StickerServicesMock } from '@/mocks/Sticker/StickerServices.mock';
 import { UserServicesMock } from '@/mocks/User/UserServices.mock';
 
 // 第四步：在 ServicesContextValue 中新增该服务的类型
@@ -73,6 +76,7 @@ export interface ServicesContextValue {
   note: INoteService;
   quota: IQuotaService;
   resource: IResourceService;
+  sticker: IStickerService;
   tag: ITagService;
   user: IUserService;
 }
@@ -87,6 +91,7 @@ const servicesValue: ServicesContextValue = {
   note: NoteServicesImpl,
   quota: QuotaServicesImpl,
   resource: ResourceServicesImpl,
+  sticker: StickerServicesImpl,
   tag: TagServicesImpl,
   user: UserServicesImpl,
 };
@@ -101,6 +106,7 @@ const mockServicesValue: ServicesContextValue = {
   note: NoteServicesMock,
   quota: QuotaServicesMock,
   resource: ResourceServicesMock,
+  sticker: StickerServicesMock,
   tag: TagServicesMock,
   user: UserServicesMock,
 };
@@ -114,6 +120,7 @@ export const useImageService = (): IImageService => useServicesContext().image;
 export const useNoteService = (): INoteService => useServicesContext().note;
 export const useQuotaService = (): IQuotaService => useServicesContext().quota;
 export const useResourceService = (): IResourceService => useServicesContext().resource;
+export const useStickerService = (): IStickerService => useServicesContext().sticker;
 export const useTagService = (): ITagService => useServicesContext().tag;
 export const useUserService = (): IUserService => useServicesContext().user;
 

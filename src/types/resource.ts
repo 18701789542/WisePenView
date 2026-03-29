@@ -13,6 +13,6 @@ export interface ResourceItem {
   size?: number;
   /** 归属路径（文件夹），如 '/' 或 '/documents/notes' */
   path?: string;
-  /** 当前标签 ID 或名称列表，与接口返回一致 */
-  currentTags?: string[];
+  /** 当前标签映射（tagId → tagName），与接口返回一致 */
+  currentTags?: Record<string, string>;
 }

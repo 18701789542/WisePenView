@@ -5,8 +5,8 @@
 
 /** TagService 接口：供依赖注入使用 */
 export interface ITagService {
-  getTagTree(params?: GetTagTreeRequest): Promise<TagTreeResponse[]>;
-  getFlatTagTree(params?: GetTagTreeRequest): Promise<FlatTagTreeResponse[]>;
+  getUserTagTree(): Promise<TagTreeResponse[]>;
+  getGroupTagTree(params: GetGroupTagTreeRequest): Promise<TagTreeResponse[]>;
   updateTag(params: TagUpdateRequest): Promise<void>;
   addTag(params: TagCreateRequest): Promise<string>;
   deleteTag(params: TagDeleteRequest): Promise<void>;
@@ -44,14 +44,8 @@ export interface TagTreeResponse {
 /** 领域别名：路径文件夹语义（与 TagTreeResponse 相同结构） */
 export type TagTreeNode = TagTreeResponse;
 
-/** 平铺节点（无 children） */
-export type FlatTagTreeResponse = Omit<TagTreeResponse, 'children'>;
-
-export type FlatTagTreeNode = FlatTagTreeResponse;
-
-/** GET /resource/tag/getTagTree */
-export interface GetTagTreeRequest {
-  groupId?: string;
+export interface GetGroupTagTreeRequest {
+  groupId: string;
 }
 
 /** POST /resource/tag/addTag */
