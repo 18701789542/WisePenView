@@ -1,35 +1,32 @@
 import type { ResourceItem } from '@/types/resource';
-import type { Folder } from '@/types/folder';
+import type { TagTreeNode } from '@/services/Tag/index.type';
 
 /** TreeDrive 视图模式：文件夹树（path tag） / 标签树（全量 tag） */
 export type TreeDriveMode = 'folder' | 'tag';
 
-/** 表格行项：文件夹或文件 */
-export type RowItem =
-  | { key: string; _type: 'folder'; data: Folder }
-  | { key: string; _type: 'file'; data: ResourceItem };
+/** 「加载更多」占位行，记录下一页元数据 */
+export interface LoadMoreRowItem {
+  key: string;
+  _type: 'loadMore';
+  parentKey: string;
+  nextPage: number;
+  /** 分页加载上下文节点（文件夹树与标签树均为 TagTreeNode） */
+  treeNode: TagTreeNode;
+  totalFiles: number;
+  loadedFiles: number;
+}
+
+/** 树形表格行：树节点可递归包含 children */
+export type TreeRowItem =
+  | { key: string; _type: 'folder'; data: TagTreeNode; children?: TreeRowItem[] }
+  | { key: string; _type: 'file'; data: ResourceItem }
+  | LoadMoreRowItem;
 
 export interface TreeDriveProps {
   /** 视图模式：folder 为路径文件夹树，tag 为标签树。默认 folder */
   mode?: TreeDriveMode;
   /** tag 模式下「管理标签」操作的小组上下文；个人云盘不传 */
   groupId?: string;
-}
-
-/**
- * 将当前路径下的 folders + folderFiles 转为 Table 的 dataSource
- */
-export function buildTableDataSource(folders: Folder[], folderFiles: ResourceItem[]): RowItem[] {
-  return [
-    ...folders.map((f) => ({
-      key: `folder-${f.tagId}`,
-      _type: 'folder' as const,
-      data: f,
-    })),
-    ...folderFiles.map((f) => ({
-      key: `file-${f.resourceId}`,
-      _type: 'file' as const,
-      data: f,
-    })),
-  ];
+  /** 只读：隐藏新建与行内操作；文件夹树同时禁用拖拽移动 */
+  readOnlyMode?: boolean;
 }

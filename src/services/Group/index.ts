@@ -11,5 +11,6 @@ export type {
   QuitGroupRequest,
   UpdateMemberRoleRequest,
   KickMembersRequest,
+  UpdateGroupResConfigRequest,
 } from './index.type';
 export { mapGroupMemberRawResponse } from './groupMember.mapper';

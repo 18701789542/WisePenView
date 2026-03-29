@@ -2,7 +2,7 @@ import React from 'react';
 import { Avatar, Badge } from 'antd';
 import type { TableColumnsType } from 'antd';
 import type { GroupMember } from '@/types/group';
-import type { PermissionConfig } from '../PermissionConfig';
+import type { GroupDisplayConfig } from '@/components/Group/GroupDisplayConfig';
 import QuotaBar from '@/components/Common/QuotaBar';
 import type { GroupMemberRole } from '@/constants/group';
 import { ROLE_LABEL, ROLE_MAP } from '@/constants/group';
@@ -23,7 +23,7 @@ const getBadgeColor = (role: GroupMemberRole): string => {
 };
 
 export const getColumns = (
-  permissionConfig: PermissionConfig,
+  groupDisplayConfig: GroupDisplayConfig,
   styles: Record<string, string>
 ): TableColumnsType<MemberRecord> => {
   const columns: TableColumnsType<MemberRecord> = [
@@ -98,8 +98,8 @@ export const getColumns = (
   ];
 
   const filteredColumns = columns.filter((col) => {
-    if (col.key === 'realname' && !permissionConfig.showRealName) return false;
-    if (col.key === 'quota' && !permissionConfig.showQuotas) return false;
+    if (col.key === 'realname' && !groupDisplayConfig.showRealName) return false;
+    if (col.key === 'quota' && !groupDisplayConfig.showQuotas) return false;
     return true;
   });
 

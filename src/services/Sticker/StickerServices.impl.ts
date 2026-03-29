@@ -1,5 +1,9 @@
 import { TagServicesImpl } from '@/services/Tag/TagServices.impl';
 import { ResourceServicesImpl } from '@/services/Resource/ResourceServices.impl';
+import Axios from '@/utils/Axios';
+import { checkResponse } from '@/utils/response';
+import type { ApiResponse } from '@/types/api';
+import type { TagTreeResponse } from '@/services/Tag/index.type';
 import type {
   IStickerService,
   Sticker,
@@ -10,31 +14,35 @@ import type {
 } from './index.type';
 
 const getStickerList = async (): Promise<Sticker[]> => {
-  const raw = await TagServicesImpl.getUserTagTree();
+  const res = (await Axios.get('/resource/tag/getTagTree')) as ApiResponse<TagTreeResponse[]>;
+  checkResponse(res);
   // 过滤掉路径标签, 忽略叶子节点，同时简化数据结构
-  const stickers = raw
+  const stickers = res.data
     .filter((node) => node.tagName !== '/')
     .map((node) => ({ tagId: node.tagId, tagName: node.tagName }));
   return stickers;
 };
 
-const addSticker = async (params: AddStickerRequest): Promise<string> => {
-  return TagServicesImpl.addTag({
+const addSticker = async (params: AddStickerRequest): Promise<void> => {
+  const res = (await Axios.post('/resource/tag/addTag', {
     tagName: params.stickerName,
-  });
+  })) as ApiResponse;
+  checkResponse(res);
 };
 
 const updateSticker = async (params: UpdateStickerRequest): Promise<void> => {
-  await TagServicesImpl.updateTag({
+  const res = (await Axios.post('/resource/tag/changeTag', {
     targetTagId: params.stickerId,
     tagName: params.stickerName,
-  });
+  })) as ApiResponse;
+  checkResponse(res);
 };
 
 const deleteSticker = async (params: DeleteStickerRequest): Promise<void> => {
-  await TagServicesImpl.deleteTag({
+  const res = (await Axios.post('/resource/tag/removeTag', {
     targetTagId: params.stickerId,
-  });
+  })) as ApiResponse;
+  checkResponse(res);
 };
 
 const updateResourceStickers = async (params: UpdateResourceStickersRequest): Promise<void> => {

@@ -18,7 +18,7 @@ const EditPermissionModal: React.FC<EditPermissionModalProps> = ({
   groupId,
   memberIds,
   members,
-  permissionConfig,
+  groupDisplayConfig,
 }) => {
   const groupService = useGroupService();
   const message = useAppMessage();
@@ -27,10 +27,10 @@ const EditPermissionModal: React.FC<EditPermissionModalProps> = ({
 
   const { memberContainsOwner, canEdit, confirmDisabled } = useMemberEditGuard(
     members,
-    permissionConfig.editableRoles,
+    groupDisplayConfig.editableRoles,
     { checkOwner: true }
   );
-  const canPromoteToAdmin = permissionConfig.canModifyPermission;
+  const canPromoteToAdmin = groupDisplayConfig.canModifyPermission;
 
   const handleConfirm = async () => {
     try {

@@ -2,13 +2,12 @@ import { useCallback } from 'react';
 import { useAppMessage } from '@/hooks/useAppMessage';
 import type { ResourceItem } from '@/types/resource';
 import type { Folder } from '@/types/folder';
-import type { IResourceService } from '@/services/Resource';
-import type { ITagService } from '@/services/Tag';
+import type { IFolderService } from '@/services/Folder/index.type';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
+import { getFolderDisplayName } from '@/utils/path';
 
 export interface UseTreeDriveDropParams {
-  resourceService: IResourceService;
-  tagService: ITagService;
+  folderService: IFolderService;
   refresh: () => void;
 }
 
@@ -24,41 +23,35 @@ export function useTreeDriveDrop(params: UseTreeDriveDropParams): {
   handleDrop: OnDropFile;
   handleDropFolder: OnDropFolder;
 } {
-  const { resourceService, tagService, refresh } = params;
+  const { folderService, refresh } = params;
   const message = useAppMessage();
 
   const handleDrop = useCallback<OnDropFile>(
     async (file, targetFolder) => {
-      if (file.resourceId == null || file.resourceId === '') return;
-      const targetPath = targetFolder.tagName ?? '/';
       try {
-        await resourceService.updateResourcePath({
-          resourceId: file.resourceId,
-          path: targetPath,
-        });
-        message.success(`已移动到 ~${targetPath === '/' ? '根目录' : targetPath}`);
+        await folderService.moveResourceToFolder(targetFolder, file);
+        message.success(`已移动到「${getFolderDisplayName(targetFolder.tagName)}」`);
         refresh();
       } catch (err) {
         message.error(parseErrorMessage(err, '移动失败'));
       }
     },
-    [resourceService, refresh, message]
+    [folderService, refresh, message]
   );
 
   const handleDropFolder = useCallback<OnDropFolder>(
     async (folder, targetFolder) => {
       try {
-        await tagService.moveTag({
-          targetTagId: folder.tagId,
-          newParentId: targetFolder.tagId,
-        });
-        message.success(`已将「${folder.tagName}」移动到「${targetFolder.tagName}」下`);
+        await folderService.moveFolderToFolder(folder, targetFolder);
+        message.success(
+          `已将「${getFolderDisplayName(folder.tagName)}」移动到「${getFolderDisplayName(targetFolder.tagName)}」下`
+        );
         refresh();
       } catch (err) {
         message.error(parseErrorMessage(err, '移动失败'));
       }
     },
-    [tagService, refresh, message]
+    [folderService, refresh, message]
   );
 
   return { handleDrop, handleDropFolder };

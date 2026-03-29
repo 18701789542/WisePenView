@@ -1,8 +1,8 @@
-/** Toolbar 依赖 PermissionConfig 的动作权限 */
+/** Toolbar 依赖 GroupDisplayConfig 的动作权限 */
 export interface MemberListToolbarProps {
   isEditMode: boolean;
   total: number;
-  permissionConfig: {
+  groupDisplayConfig: {
     canEnterEditMode: boolean;
     canModifyPermission: boolean;
     canAssignQuota: boolean;

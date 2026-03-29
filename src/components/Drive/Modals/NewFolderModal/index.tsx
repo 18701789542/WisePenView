@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Button, Input } from 'antd';
 import { useFolderService } from '@/contexts/ServicesContext';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
-import type { Folder } from '@/types/folder';
-import type { ResourceItem } from '@/types/resource';
+import { getFolderDisplayName } from '@/utils/path';
 import type { NewFolderModalProps } from './index.type';
-import TreeNav from '@/components/Common/TreeNav';
 import { useAppMessage } from '@/hooks/useAppMessage';
 
 import styles from './index.module.less';
@@ -14,33 +12,18 @@ const NewFolderModal: React.FC<NewFolderModalProps> = ({
   open,
   onCancel,
   onSuccess,
-  parentPath,
+  parentFolder,
 }) => {
   const folderService = useFolderService();
   const message = useAppMessage();
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [selectedParentPath, setSelectedParentPath] = useState(parentPath ?? '/');
 
   useEffect(() => {
     if (open) {
       setName('');
-      setSelectedParentPath(parentPath ?? '/');
     }
-  }, [open, parentPath]);
-
-  const handleFolderSelect = useCallback(
-    (item: { type: 'file'; data: ResourceItem } | { type: 'folder'; data: Folder } | null) => {
-      if (item === null) {
-        setSelectedParentPath(parentPath ?? '/');
-        return;
-      }
-      if (item.type === 'folder') {
-        setSelectedParentPath(item.data.tagName ?? '/');
-      }
-    },
-    [parentPath]
-  );
+  }, [open]);
 
   const handleSubmit = async () => {
     const trimmed = name.trim();
@@ -48,9 +31,13 @@ const NewFolderModal: React.FC<NewFolderModalProps> = ({
       message.warning('请输入文件夹名称');
       return;
     }
+    if (!parentFolder) {
+      message.warning('当前目录未就绪，请关闭后重试');
+      return;
+    }
     try {
       setLoading(true);
-      await folderService.createFolder(selectedParentPath, trimmed);
+      await folderService.createFolder(parentFolder, trimmed);
       message.success('新建成功');
       onSuccess?.();
       onCancel();
@@ -66,8 +53,6 @@ const NewFolderModal: React.FC<NewFolderModalProps> = ({
     onCancel();
   };
 
-  const displayPath = `~${selectedParentPath || '/'}`;
-
   return (
     <Modal
       title="新建文件夹"
@@ -78,23 +63,23 @@ const NewFolderModal: React.FC<NewFolderModalProps> = ({
         <Button key="cancel" onClick={handleCancel}>
           取消
         </Button>,
-        <Button key="confirm" type="primary" onClick={handleSubmit} loading={loading}>
+        <Button
+          key="confirm"
+          type="primary"
+          onClick={handleSubmit}
+          loading={loading}
+          disabled={!parentFolder}
+        >
           创建
         </Button>,
       ]}
       width={420}
     >
-      <div className={styles.pathHint}>选择路径：</div>
-      <div className={styles.treeWrap}>
-        <TreeNav
-          mode="folder"
-          embedMode
-          defaultSelectedKey={selectedParentPath}
-          onSelect={handleFolderSelect}
-          className={styles.treeNav}
-        />
+      <div className={styles.pathHint}>
+        {parentFolder
+          ? `将在「${getFolderDisplayName(parentFolder.tagName)}」下创建`
+          : '当前目录未就绪'}
       </div>
-      <div className={styles.pathHint}>当前路径：{displayPath}</div>
       <Input
         placeholder="请输入文件夹名称"
         value={name}

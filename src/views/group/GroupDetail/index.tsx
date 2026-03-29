@@ -1,15 +1,16 @@
 /**
- * 小组详情：高级组且组长可见「token明细」（点卡充值 + 流水）与「Token 划拨」（个人池 ↔ 小组池）。
+ * 小组详情：展示/ Tab / 小组盘只读等由 getGroupDisplayConfig（如 showWalletTabs、driveReadOnlyMode）驱动。
  */
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { Avatar, Button, Spin, Tabs } from 'antd';
 import { AiOutlineEdit, AiOutlineDelete, AiOutlineLogout } from 'react-icons/ai';
-import FlatDrive from '@/components/Drive/FlatDrive';
+import FolderDrive from '@/components/Drive/TreeDrive/FolderDrive';
+import TagDrive from '@/components/Drive/TreeDrive/TagDrive';
 import MemberList from '@/components/Group/MemberList';
 import ComputeWallet from '@/components/Wallet/ComputeWallet';
 import OwnerGroupTokenTransfer from '@/components/Group/OwnerGroupTokenTransfer';
-import { getPermissionConfig } from '@/components/Group/MemberList/PermissionConfig';
+import { getGroupDisplayConfig } from '@/components/Group/GroupDisplayConfig';
 import {
   EditGroupInfoModal,
   DissolveGroupModal,
@@ -22,6 +23,7 @@ import { WALLET_TARGET_TYPE } from '@/constants/wallet';
 import layout from '../style.module.less';
 import page from './style.module.less';
 import { useAppMessage } from '@/hooks/useAppMessage';
+import type { GroupResConfig } from '@/types/group';
 
 const GroupDetail: React.FC = () => {
   const groupService = useGroupService();
@@ -30,7 +32,7 @@ const GroupDetail: React.FC = () => {
   const [group, setGroup] = useState<Group | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<'OWNER' | 'ADMIN' | 'MEMBER'>('MEMBER');
   const [loading, setLoading] = useState(true);
-
+  const [resConfig, setResConfig] = useState<GroupResConfig | null>(null);
   const loadGroup = useCallback(async () => {
     if (!id) {
       setGroup(null);
@@ -39,15 +41,18 @@ const GroupDetail: React.FC = () => {
     }
     setLoading(true);
     try {
-      const [groupData, role] = await Promise.all([
+      const [groupData, role, resConfig] = await Promise.all([
         groupService.fetchGroupInfo(id),
         groupService.fetchMyRoleInGroup(id),
+        groupService.fetchGroupResConfig(id),
       ]);
       setGroup(groupData);
       setCurrentUserRole(role);
+      setResConfig(resConfig);
     } catch {
       message.error('获取小组详情失败');
       setGroup(null);
+      setResConfig(null);
     } finally {
       setLoading(false);
     }
@@ -78,17 +83,17 @@ const GroupDetail: React.FC = () => {
   /** Tabs 受控，避免 items 因 syncRevision 更新而重置当前选中的 Tab */
   const [detailTabKey, setDetailTabKey] = useState<string>('files');
 
-  const permissionConfig = useMemo(
-    () => (group ? getPermissionConfig(group.groupType, currentUserRole) : null),
+  const groupDisplayConfig = useMemo(
+    () => (group ? getGroupDisplayConfig(group.groupType, currentUserRole) : null),
     [group, currentUserRole]
   );
 
   /**
    * Tabs 配置必须在任意 early return 之前计算，以符合 Hooks 规则。
-   * group/permissionConfig 为空时返回空数组（加载中或无效态不会渲染到 Tabs）。
+   * group/groupDisplayConfig 为空时返回空数组（加载中或无效态不会渲染到 Tabs）。
    */
   const tabItems = useMemo(() => {
-    if (!group || !permissionConfig) {
+    if (!group || !groupDisplayConfig) {
       return [];
     }
     const gid = group.groupId || id || '';
@@ -99,7 +104,11 @@ const GroupDetail: React.FC = () => {
         label: '文件',
         children: (
           <div className={layout.tabPane}>
-            <FlatDrive groupId={gid} />
+            {resConfig?.fileOrgLogic === 'FOLDER' ? (
+              <FolderDrive groupId={gid} readOnlyMode={groupDisplayConfig.driveReadOnlyMode} />
+            ) : (
+              <TagDrive groupId={gid} readOnlyMode={groupDisplayConfig.driveReadOnlyMode} />
+            )}
           </div>
         ),
       },
@@ -109,7 +118,7 @@ const GroupDetail: React.FC = () => {
         children: (
           <div className={layout.tabPane}>
             <MemberList
-              permissionConfig={permissionConfig}
+              groupDisplayConfig={groupDisplayConfig}
               groupId={gid}
               inviteCode={group.inviteCode}
               pagination={{
@@ -122,7 +131,7 @@ const GroupDetail: React.FC = () => {
         ),
       },
     ];
-    if (group.groupType === GROUP_TYPE.ADVANCED && currentUserRole === 'OWNER') {
+    if (groupDisplayConfig.showWalletTabs) {
       items.push({
         key: 'wallet',
         label: 'token 明细',
@@ -162,7 +171,7 @@ const GroupDetail: React.FC = () => {
       ),
     });
     return items;
-  }, [group, id, permissionConfig, currentUserRole, walletSyncRevision]);
+  }, [group, id, groupDisplayConfig, walletSyncRevision, resConfig?.fileOrgLogic]);
 
   const detailTabKeys = useMemo(() => tabItems.map((item) => String(item.key)), [tabItems]);
 

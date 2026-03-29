@@ -48,10 +48,12 @@
     "vite": "^7.2.4"
   },
   "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --max-warnings 0",
+      "prettier --write"
+    ],
     "*.js": "prettier --write",
-    "*.ts": "prettier --write",
     "*.jsx": "prettier --write",
-    "*.tsx": "prettier --write",
     "*.json": "prettier --write",
     "*.md": "prettier --write"
   }

@@ -23,53 +23,50 @@
   margin-bottom: var(--ant-margin-xs);
 }
 
-.navAndBreadcrumb {
-  flex: 1;
-  min-width: 0;
+.breadcrumb {
   display: flex;
   align-items: center;
-  gap: var(--ant-margin-xs);
-}
-
-.navButtons {
-  display: flex;
-  flex-shrink: 0;
   gap: 2px;
-
-  .ant-btn {
-    padding: 2px 4px;
-  }
-}
-
-.breadcrumbLink {
-  padding: 0;
-  margin: 0;
-  border: none;
-  background: none;
-  cursor: pointer;
-  font: inherit;
-  color: inherit;
-  font-size: inherit;
-}
-
-.breadcrumbTagBtn {
-  padding: 0 4px;
-  height: auto;
-  line-height: 1;
-
-  &:hover .ant-tag {
-    opacity: 0.85;
-  }
-}
-
-.breadcrumb {
-  flex: 1;
   min-width: 0;
-  padding: var(--ant-padding-xs) 0;
+  overflow: hidden;
+}
 
-  :global(.ant-breadcrumb-item) {
-    padding-inline: 2px;
+.breadcrumbItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: none;
+  background: transparent;
+  color: var(--ant-color-text-secondary);
+  font-size: var(--ant-font-size-sm);
+  line-height: 1.4;
+  border-radius: var(--ant-border-radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    color 0.2s,
+    background-color 0.2s;
+
+  &:hover {
+    color: var(--ant-color-text);
+    background-color: var(--ant-color-fill-tertiary);
   }
+}
+
+.breadcrumbItemActive {
+  color: var(--ant-color-text);
+  font-weight: 500;
+  cursor: default;
+
+  &:hover {
+    background-color: transparent;
+  }
+}
+
+.breadcrumbSep {
+  flex-shrink: 0;
+  color: var(--ant-color-text-quaternary);
 }
 
 .scrollArea {
@@ -79,38 +76,17 @@
   overflow-y: auto;
 }
 
-.mask {
-  position: absolute;
-  inset: 0;
-  z-index: 100;
-  pointer-events: auto;
-}
-
-.rowSelected,
-.rowSelected:hover {
-  background: var(--ant-table-row-hover-bg) !important;
-}
-
 .tableWrapper {
   margin-bottom: var(--ant-margin-md);
 }
 
-.nameHeader {
-  padding-left: 28px;
-}
-
-.sentinel {
-  height: 1px;
-  visibility: hidden;
-  pointer-events: none;
-}
-
 .nameCell {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: var(--ant-margin-sm);
   font-weight: 500;
   cursor: pointer;
+  vertical-align: middle;
 }
 
 .optionBtn {
@@ -133,7 +109,70 @@
   }
 }
 
+/** 只读模式保留操作列占位，与 optionBtn + 18px 图标同盒模型，避免行高与可编辑态不一致 */
+.actionCellPlaceholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ant-padding-xs);
+  color: transparent;
+  pointer-events: none;
+  user-select: none;
+}
+
+.expandBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-right: var(--ant-margin-xs);
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--ant-color-text-secondary);
+  cursor: pointer;
+  border-radius: var(--ant-border-radius-sm);
+  vertical-align: middle;
+  transition:
+    color 0.2s,
+    background-color 0.2s;
+
+  &:hover {
+    color: var(--ant-color-text);
+    background-color: var(--ant-color-fill-tertiary);
+  }
+}
+
+.expandPlaceholder {
+  display: inline-block;
+  width: 20px;
+  margin-right: var(--ant-margin-xs);
+  vertical-align: middle;
+}
+
+.loadMoreCell {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ant-margin-xs);
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--ant-color-primary);
+  font-size: var(--ant-font-size);
+  cursor: pointer;
+  transition: color 0.2s;
+
+  &:hover:not(:disabled) {
+    color: var(--ant-color-primary-hover);
+  }
+
+  &:disabled {
+    color: var(--ant-color-text-quaternary);
+    cursor: default;
+  }
+}
+
 .droppableOver {
   background: var(--ant-color-primary-bg) !important;
 }
-

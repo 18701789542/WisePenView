@@ -13,7 +13,7 @@ import {
 import styles from './style.module.less';
 
 const MemberList: React.FC<MemberListProps> = ({
-  permissionConfig,
+  groupDisplayConfig,
   pagination,
   groupId,
   inviteCode,
@@ -61,7 +61,7 @@ const MemberList: React.FC<MemberListProps> = ({
       <MemberListToolbar
         isEditMode={isEditMode}
         total={total}
-        permissionConfig={permissionConfig}
+        groupDisplayConfig={groupDisplayConfig}
         selectedCount={selectedRowKeys.length}
         onModifyPermission={() => handleEdit('editPermission')}
         onAssignQuota={() => handleEdit('assignQuota')}
@@ -72,7 +72,7 @@ const MemberList: React.FC<MemberListProps> = ({
 
       <MemberListTable
         groupId={groupId}
-        permissionConfig={permissionConfig}
+        groupDisplayConfig={groupDisplayConfig}
         pagination={pagination}
         isEditMode={isEditMode}
         selectedRowKeys={selectedRowKeys}
@@ -94,7 +94,7 @@ const MemberList: React.FC<MemberListProps> = ({
         groupId={groupId}
         memberIds={selectedMemberIds}
         members={selectedMembersList}
-        permissionConfig={permissionConfig}
+        groupDisplayConfig={groupDisplayConfig}
         onSuccess={onSuccessModal}
       />
 
@@ -105,7 +105,7 @@ const MemberList: React.FC<MemberListProps> = ({
         members={selectedMembersList}
         onSuccess={onSuccessModal}
         groupId={groupId}
-        permissionConfig={permissionConfig}
+        groupDisplayConfig={groupDisplayConfig}
       />
 
       <AssignQuotaModal
@@ -114,7 +114,7 @@ const MemberList: React.FC<MemberListProps> = ({
         groupId={groupId}
         memberIds={selectedMemberIds}
         members={selectedMembersList}
-        permissionConfig={permissionConfig}
+        groupDisplayConfig={groupDisplayConfig}
         onSuccess={onSuccessModal}
       />
     </div>

@@ -1,10 +1,15 @@
-import type { Group, GroupMemberList } from '@/types/group';
+import type { Group, GroupFileOrgLogic, GroupMemberList, GroupResConfig } from '@/types/group';
 
 /** GroupService 接口：供依赖注入使用 */
 export interface IGroupService {
   fetchGroupList(params: FetchGroupListRequest): Promise<{ groups: Group[]; total: number }>;
   fetchGroupInfo(groupId: string): Promise<Group>;
-  createGroup(params: CreateGroupRequest): Promise<void>;
+  /** GET /resource/groupConfig/getConfig；查不到时后端默认 FOLDER */
+  fetchGroupResConfig(groupId: string): Promise<GroupResConfig>;
+  /** POST /resource/groupConfig/changeConfig；仅 OWNER/ADMIN */
+  updateGroupResConfig(params: UpdateGroupResConfigRequest): Promise<void>;
+  /** POST /group/addGroup，成功时返回 data.groupId */
+  createGroup(params: CreateGroupRequest): Promise<string>;
   editGroup(params: EditGroupRequest): Promise<void>;
   deleteGroup(params: DeleteGroupRequest): Promise<void>;
   fetchGroupMembers(groupId: string | number, page: number, size: number): Promise<GroupMemberList>;
@@ -97,4 +102,10 @@ export interface UpdateMemberRoleRequest {
 export interface KickMembersRequest {
   groupId: string;
   targetUserIds: string[];
+}
+
+/** 设置小组资源配置（与 OpenAPI GroupResConfigUpdateRequest 对齐） */
+export interface UpdateGroupResConfigRequest {
+  groupId: string;
+  fileOrgLogic: GroupFileOrgLogic;
 }

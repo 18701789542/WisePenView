@@ -1,5 +1,5 @@
 import type { GroupMember } from '@/types/group';
-import type { PermissionConfig } from '../PermissionConfig';
+import type { GroupDisplayConfig } from '@/components/Group/GroupDisplayConfig';
 
 export interface MemberListPaginationConfig {
   defaultPageSize?: number;
@@ -9,7 +9,7 @@ export interface MemberListPaginationConfig {
 
 export interface MemberListTableProps {
   groupId: string | number;
-  permissionConfig: PermissionConfig;
+  groupDisplayConfig: GroupDisplayConfig;
   pagination?: MemberListPaginationConfig;
   isEditMode: boolean;
   selectedRowKeys: (string | number)[];

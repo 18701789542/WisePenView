@@ -11,9 +11,12 @@ export {
   usePendingVerifyEmailStore,
   usePdfPreviewProgressStore,
   useRecentFilesStore,
+  getTreeDriveCwdStore,
+  useTreeDriveCwdStore,
   type DriveViewMode,
   type PdfPreviewProgress,
   type RecentFileItem,
+  type BreadcrumbItem,
 } from './zustand';
 
 // IndexedDB (离线缓存)

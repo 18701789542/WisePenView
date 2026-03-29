@@ -13,7 +13,7 @@ import mockdata from './mockdata.json';
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 let mockTokenBalance = Number(mockdata.tokenBalance) || 0;
-let mockTokenUsed = Number(mockdata.tokenUsed) || 0;
+const mockTokenUsed = Number(mockdata.tokenUsed) || 0;
 const allRecords = [...(mockdata.transactions.records as WalletTransactionRecord[])];
 
 const getWalletInfo: IWalletService['getWalletInfo'] = async () => {

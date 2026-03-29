@@ -1,27 +1,105 @@
-import type { FlatTagTreeNode, ITagService, TagTreeNode } from '@/services/Tag';
+import type { ResourceItem } from '@/types/resource';
+import type { TagListByTagResponse } from '@/types/tag';
+import type { ITagService, TagTreeNode, GetResByTagRequest } from '@/services/Tag/index.type';
 import mockdata from './mockdata.json';
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-type TagMockJson = { tagTree: TagTreeNode[]; flatTagTree: FlatTagTreeNode[] };
+type TagMockJson = { tagTree: TagTreeNode[] };
 const md = mockdata as TagMockJson;
 
 const tagTree = md.tagTree;
-/** 与 tagTree 独立配置的平铺列表（勿含路径标签 / 前缀，与真实接口语义一致） */
-const flatTagTreeRaw = md.flatTagTree;
 
-const getTagTree = async (
-  _params?: Parameters<ITagService['getTagTree']>[0]
-): Promise<TagTreeNode[]> => {
+let flatMap: Map<string, TagTreeNode> | null = null;
+
+const buildFlatMap = (roots: TagTreeNode[]): Map<string, TagTreeNode> => {
+  const map = new Map<string, TagTreeNode>();
+  const walk = (node: TagTreeNode) => {
+    map.set(node.tagId, node);
+    (node.children ?? []).forEach(walk);
+  };
+  roots.forEach(walk);
+  return map;
+};
+
+const mockFilesByTagId: Record<string, ResourceItem[]> = {
+  'tag-work': [
+    {
+      resourceId: 'res-w-001',
+      resourceName: '工作计划.docx',
+      resourceType: 'FILE',
+      size: 15360,
+      currentTags: { 'tag-work': '工作' },
+    },
+    {
+      resourceId: 'res-w-002',
+      resourceName: '会议总结',
+      resourceType: 'NOTE',
+      size: 4096,
+      currentTags: { 'tag-work': '工作' },
+    },
+  ],
+  'tag-work-project-a': [
+    {
+      resourceId: 'res-pa-001',
+      resourceName: '项目A需求文档.md',
+      resourceType: 'NOTE',
+      size: 8192,
+      currentTags: { 'tag-work-project-a': '项目A' },
+    },
+  ],
+  'tag-study-tech': [
+    {
+      resourceId: 'res-st-001',
+      resourceName: 'React笔记',
+      resourceType: 'NOTE',
+      size: 6144,
+      currentTags: { 'tag-study-tech': '技术' },
+    },
+    {
+      resourceId: 'res-st-002',
+      resourceName: 'TypeScript手册.pdf',
+      resourceType: 'FILE',
+      size: 102400,
+      currentTags: { 'tag-study-tech': '技术' },
+    },
+  ],
+  'tag-life-reading': [
+    {
+      resourceId: 'res-lr-001',
+      resourceName: '2024书单',
+      resourceType: 'NOTE',
+      size: 3072,
+      currentTags: { 'tag-life-reading': '阅读' },
+    },
+  ],
+};
+
+const getTagTree = async (): Promise<TagTreeNode[]> => {
   await delay(200);
+  flatMap = buildFlatMap(tagTree);
   return tagTree;
 };
 
-const getFlatTagTree = async (
-  _params?: Parameters<ITagService['getFlatTagTree']>[0]
-): Promise<FlatTagTreeNode[]> => {
-  await delay(200);
-  return flatTagTreeRaw;
+const getTagById = (tagId: string): TagTreeNode | undefined => {
+  if (!flatMap) flatMap = buildFlatMap(tagTree);
+  return flatMap.get(tagId);
+};
+
+const getResByTag = async (params: GetResByTagRequest): Promise<TagListByTagResponse> => {
+  await delay(250);
+  if (!flatMap) flatMap = buildFlatMap(tagTree);
+  const tag = flatMap.get(params.tag.tagId);
+  const tags = tag?.children ?? [];
+  const allFiles = mockFilesByTagId[params.tag.tagId] ?? [];
+  const totalFiles = allFiles.length;
+
+  const page = params.filePage ?? 1;
+  const pageSize = params.filePageSize ?? 20;
+  const start = (page - 1) * pageSize;
+  const files = allFiles.slice(start, start + pageSize);
+
+  return { tags, files, totalFiles };
 };
 
 const updateTag = async (): Promise<void> => {
@@ -43,7 +121,8 @@ const moveTag = async (): Promise<void> => {
 
 export const TagServicesMock: ITagService = {
   getTagTree,
-  getFlatTagTree,
+  getTagById,
+  getResByTag,
   updateTag,
   addTag,
   deleteTag,

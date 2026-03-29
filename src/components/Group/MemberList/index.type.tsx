@@ -1,8 +1,8 @@
-import type { PermissionConfig } from './PermissionConfig';
+import type { GroupDisplayConfig } from '@/components/Group/GroupDisplayConfig';
 import type { MemberListPaginationConfig } from './MemberListTable/index.type';
 
 export interface MemberListProps {
-  permissionConfig: PermissionConfig;
+  groupDisplayConfig: GroupDisplayConfig;
   pagination?: MemberListPaginationConfig;
   groupId: string;
   inviteCode?: string;

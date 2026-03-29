@@ -35,6 +35,8 @@ export interface WisePenDB {
   noteSnapshots: {
     key: string;
     value: NoteSnapshotRecord;
+    //本模块后续重构会移除
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type -- 无索引定义的空 indexes 形状
     indexes: {};
   };
 }

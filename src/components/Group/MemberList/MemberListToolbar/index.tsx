@@ -8,7 +8,7 @@ import styles from './style.module.less';
 const MemberListToolbar: React.FC<MemberListToolbarProps> = ({
   isEditMode,
   total,
-  permissionConfig,
+  groupDisplayConfig,
   selectedCount,
   onModifyPermission,
   onAssignQuota,
@@ -21,7 +21,7 @@ const MemberListToolbar: React.FC<MemberListToolbarProps> = ({
       <div className={styles.toolbarEdit}>
         <div className={styles.toolbarEditContent}>
           <div className={styles.toolbarEditContentLeft}>
-            {permissionConfig.canModifyPermission && (
+            {groupDisplayConfig.canModifyPermission && (
               <Button
                 icon={<RiUserLine />}
                 onClick={onModifyPermission}
@@ -30,7 +30,7 @@ const MemberListToolbar: React.FC<MemberListToolbarProps> = ({
                 修改权限
               </Button>
             )}
-            {permissionConfig.canAssignQuota && (
+            {groupDisplayConfig.canAssignQuota && (
               <Button
                 icon={<RiMoneyDollarCircleLine />}
                 onClick={onAssignQuota}
@@ -39,7 +39,7 @@ const MemberListToolbar: React.FC<MemberListToolbarProps> = ({
                 分配配额
               </Button>
             )}
-            {permissionConfig.canRemoveMember && (
+            {groupDisplayConfig.canRemoveMember && (
               <Button
                 danger
                 icon={<AiOutlineDelete />}
@@ -60,7 +60,9 @@ const MemberListToolbar: React.FC<MemberListToolbarProps> = ({
     <div className={styles.toolbarDefault}>
       <span className={styles.toolbarDefaultText}>共 {total} 人</span>
       <div className={styles.toolbarDefaultButtons}>
-        {permissionConfig.canEnterEditMode && <Button onClick={onToggleEditMode}>编辑用户</Button>}
+        {groupDisplayConfig.canEnterEditMode && (
+          <Button onClick={onToggleEditMode}>编辑用户</Button>
+        )}
         <Button type="primary" onClick={onInviteUser}>
           邀请用户
         </Button>

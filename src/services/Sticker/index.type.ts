@@ -14,7 +14,7 @@ export interface IStickerService {
   /** 获取当前用户的贴纸树（已过滤路径标签） */
   getStickerList(): Promise<Sticker[]>;
   /** 新增贴纸，返回新建的 tagId */
-  addSticker(params: AddStickerRequest): Promise<string>;
+  addSticker(params: AddStickerRequest): Promise<void>;
   /** 更新贴纸名称/描述 */
   updateSticker(params: UpdateStickerRequest): Promise<void>;
   /** 删除贴纸（级联删除子节点） */

@@ -17,7 +17,7 @@ const DeleteFolderModal: React.FC<DeleteFolderModalProps> = ({
   const [loading, setLoading] = useState(false);
 
   const handleConfirm = async () => {
-    if (!folder) return;
+    if (!folder?.tagId) return;
     try {
       setLoading(true);
       await folderService.deleteFolder(folder);
@@ -31,7 +31,7 @@ const DeleteFolderModal: React.FC<DeleteFolderModalProps> = ({
     }
   };
 
-  const displayName = folder ? getFolderDisplayName(folder.tagName ?? '') : '';
+  const displayName = folder ? getFolderDisplayName(folder.tagName ?? '') : '未命名';
 
   return (
     <Modal
@@ -50,7 +50,7 @@ const DeleteFolderModal: React.FC<DeleteFolderModalProps> = ({
       width={500}
     >
       <Alert
-        description={`确定要删除「${displayName}」吗？将同时删除其下的所有子文件夹和文件，此操作不可撤销！`}
+        description={`确定要删除文件夹「${displayName}」及其下属所有内容吗？此操作不可撤销！`}
         type="warning"
         showIcon
       />

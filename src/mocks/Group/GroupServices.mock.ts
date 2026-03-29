@@ -1,5 +1,5 @@
 import type { IGroupService } from '@/services/Group';
-import type { Group, GroupMember, GroupMemberList } from '@/types/group';
+import type { Group, GroupMember, GroupMemberList, GroupResConfig } from '@/types/group';
 import mockdata from './mockdata.json';
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -19,8 +19,18 @@ const fetchGroupInfo = async (_groupId: string): Promise<Group> => {
   return groupDetail;
 };
 
-const createGroup = async (): Promise<void> => {
+const fetchGroupResConfig = async (groupId: string): Promise<GroupResConfig> => {
+  await delay(100);
+  return { groupId, fileOrgLogic: 'FOLDER' };
+};
+
+const updateGroupResConfig = async (): Promise<void> => {
   await delay(200);
+};
+
+const createGroup = async (): Promise<string> => {
+  await delay(200);
+  return 'mock-new-group-id';
 };
 
 const editGroup = async (): Promise<void> => {
@@ -64,6 +74,8 @@ const kickMembers = async (): Promise<void> => {
 export const GroupServicesMock: IGroupService = {
   fetchGroupList,
   fetchGroupInfo,
+  fetchGroupResConfig,
+  updateGroupResConfig,
   createGroup,
   editGroup,
   deleteGroup,

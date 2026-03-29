@@ -14,7 +14,7 @@ const AssignQuotaModal: React.FC<AssignQuotaModalProps> = ({
   groupId,
   memberIds,
   members,
-  permissionConfig,
+  groupDisplayConfig,
 }) => {
   const quotaService = useQuotaService();
   const message = useAppMessage();
@@ -28,7 +28,7 @@ const AssignQuotaModal: React.FC<AssignQuotaModalProps> = ({
   const maxUsed = Math.max(0, ...members.map((m) => m.used ?? 0));
   const { canEdit, confirmDisabled } = useMemberEditGuard(
     members,
-    permissionConfig.editableRolesForQuota,
+    groupDisplayConfig.editableRolesForQuota,
     { checkOwner: false, forQuota: true }
   );
 

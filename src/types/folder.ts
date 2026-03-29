@@ -7,7 +7,29 @@ import type { ResourceItem } from './resource';
 import type { TagTreeNode } from '@/services/Tag/index.type';
 
 /** 文件夹（路径 tag 节点），TagTreeNode 的语义别名 */
-export type Folder = TagTreeNode;
+export type Folder = Pick<TagTreeNode, 'tagId' | 'tagName' | 'groupId' | 'parentId' | 'children'>;
+
+export const mapTagToFolder = (tag: TagTreeNode): Folder => {
+  const { tagId, tagName, groupId, parentId, children } = tag;
+  return {
+    tagId,
+    tagName,
+    groupId,
+    parentId,
+    children: Array.isArray(children) ? children.map(mapTagToFolder) : [],
+  };
+};
+
+/** 将 Folder（路径树缓存模型）展宽为 TagTreeNode，供与标签树共用的树逻辑使用 */
+export function mapFolderToTagTreeNode(folder: Folder): TagTreeNode {
+  return {
+    tagId: folder.tagId,
+    tagName: folder.tagName,
+    groupId: folder.groupId,
+    parentId: folder.parentId,
+    children: folder.children?.map(mapFolderToTagTreeNode),
+  };
+}
 
 /** 按路径获取的文件夹+文件列表响应（getResByFolder 用） */
 export interface FolderListByPathResponse {

@@ -17,6 +17,8 @@ const MessageList: React.FC<MessageListProps> = ({ messages }) => {
       // 简单的滚动，如果需要平滑滚动且不打扰用户回看，需要更复杂的逻辑
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
+    // ChatPanel 待重构：依赖数组含表达式，exhaustive-deps 对该行告警
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages, messages.length > 0 ? messages[messages.length - 1].content : null]);
 
   return (

@@ -27,6 +27,15 @@ export interface GroupOwnerInfo {
   identityType?: number;
 }
 
+/** 小组文件组织模式（与 OpenAPI GroupResConfigResponse.fileOrgLogic 对齐） */
+export type GroupFileOrgLogic = 'FOLDER' | 'TAG';
+
+/** 小组资源配置（与 OpenAPI GroupResConfigResponse 对齐） */
+export interface GroupResConfig {
+  groupId: string;
+  fileOrgLogic: GroupFileOrgLogic;
+}
+
 /** 小组结构（与 OpenAPI GroupDetailInfoResponse/GroupItemInfoResponse 对齐） */
 export interface Group {
   groupId: string;

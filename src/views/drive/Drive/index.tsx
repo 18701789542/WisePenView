@@ -29,9 +29,11 @@ const Drive: React.FC = () => {
           <span className={styles.pageSubtitle}>管理您的项目和文档</span>
         </div>
         <div className={styles.actionsRow}>
-          <Button icon={<LuTags size={16} />} onClick={() => setStickerManageOpen(true)}>
-            管理标签
-          </Button>
+          {viewMode === 'flat' && (
+            <Button icon={<LuTags size={16} />} onClick={() => setStickerManageOpen(true)}>
+              管理标签
+            </Button>
+          )}
           <Button
             type="primary"
             icon={<AiOutlineCloudUpload size={16} />}

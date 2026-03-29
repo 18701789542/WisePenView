@@ -12,7 +12,7 @@ type TableRowSelection<T extends object = object> = TableProps<T>['rowSelection'
 
 const MemberListTable: React.FC<MemberListTableProps> = ({
   groupId,
-  permissionConfig,
+  groupDisplayConfig,
   pagination,
   isEditMode,
   selectedRowKeys,
@@ -98,7 +98,7 @@ const MemberListTable: React.FC<MemberListTableProps> = ({
     }
   }, [members, selectedRowKeys, onSelectedMembersChange]);
 
-  const columns = useMemo(() => getColumns(permissionConfig, styles), [permissionConfig]);
+  const columns = useMemo(() => getColumns(groupDisplayConfig, styles), [groupDisplayConfig]);
 
   const rowSelection: TableRowSelection<GroupMember & { key: React.Key }> = useMemo(() => {
     if (!isEditMode) return undefined;

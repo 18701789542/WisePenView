@@ -209,6 +209,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ value, onChange }) => {
           <LogoFactory provider={(currentModel as Model).provider} size={16} />
         )}
 
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- ChatPanel 待重构 */}
         <span>{loading ? '模型加载中' : (currentModel as any).name}</span>
         <RiArrowDownSLine style={{ fontSize: 10 }} />
       </div>

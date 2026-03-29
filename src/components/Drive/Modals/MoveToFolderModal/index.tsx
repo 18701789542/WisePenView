@@ -1,11 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Modal, Button } from 'antd';
-import type { Folder } from '@/types/folder';
-import type { ResourceItem } from '@/types/resource';
-import { useResourceService, useTagService } from '@/contexts/ServicesContext';
+import type { TagTreeNode } from '@/services/Tag/index.type';
+import { useFolderService } from '@/contexts/ServicesContext';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
-import { isValidFolderMove } from '@/utils/path';
-import TreeNav from '@/components/Common/TreeNav';
+import TreeNav from '@/components/Drive/TreeNav';
+import ReadOnlyBreadcrumb from '@/components/Common/ReadOnlyBreadcrumb';
 import type { MoveToFolderModalProps } from './index.type';
 import { useAppMessage } from '@/hooks/useAppMessage';
 import styles from './index.module.less';
@@ -15,55 +14,32 @@ const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
   onCancel,
   onSuccess,
   target,
+  groupId,
 }) => {
-  const resourceService = useResourceService();
-  const tagService = useTagService();
+  const folderService = useFolderService();
   const message = useAppMessage();
-  const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
+  const [selectedNode, setSelectedNode] = useState<TagTreeNode | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (open) setSelectedFolder(null);
+    if (open) setSelectedNode(null);
   }, [open]);
 
-  const handleFolderSelect = useCallback(
-    (item: { type: 'file'; data: ResourceItem } | { type: 'folder'; data: Folder } | null) => {
-      if (item === null) {
-        setSelectedFolder(null);
-        return;
-      }
-      if (item.type === 'folder') {
-        setSelectedFolder(item.data);
-      }
-    },
-    []
-  );
+  const handleTreeChange = useCallback((selected: TagTreeNode[]) => {
+    setSelectedNode(selected.length > 0 ? selected[0] : null);
+  }, []);
 
   const handleSubmit = useCallback(async () => {
-    if (!target || !selectedFolder) return;
-    if (target.type === 'folder' && !isValidFolderMove(target.data, selectedFolder)) {
-      message.error('不能将文件夹移动到自身或其子目录下');
-      return;
-    }
+    if (!target || !selectedNode) return;
+
     setSubmitting(true);
     try {
       if (target.type === 'file') {
-        const rid = target.data.resourceId;
-        if (rid == null || rid === '') return;
-        const targetPath = selectedFolder.tagName ?? '/';
-        await resourceService.updateResourcePath({
-          resourceId: rid,
-          path: targetPath,
-        });
-        message.success(`已移动到 ~${targetPath === '/' ? '根目录' : targetPath}`);
+        await folderService.moveResourceToFolder(selectedNode, target.data);
+        message.success('文件已移动');
       } else {
-        const sourceName = target.data.tagName;
-        const destName = selectedFolder.tagName || '~';
-        await tagService.moveTag({
-          targetTagId: target.data.tagId,
-          newParentId: selectedFolder.tagId === 'path-root' ? undefined : selectedFolder.tagId,
-        });
-        message.success(`已将「${sourceName}」移动到「${destName}」下`);
+        await folderService.moveFolderToFolder(target.data, selectedNode);
+        message.success('文件夹已移动');
       }
       onSuccess?.();
       onCancel();
@@ -72,10 +48,10 @@ const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
     } finally {
       setSubmitting(false);
     }
-  }, [resourceService, tagService, target, selectedFolder, onSuccess, onCancel, message]);
+  }, [folderService, target, selectedNode, onSuccess, onCancel, message]);
 
   const handleCancel = useCallback(() => {
-    setSelectedFolder(null);
+    setSelectedNode(null);
     onCancel();
   }, [onCancel]);
 
@@ -99,7 +75,7 @@ const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
           type="primary"
           onClick={handleSubmit}
           loading={submitting}
-          disabled={!selectedFolder}
+          disabled={!selectedNode}
         >
           确定
         </Button>,
@@ -108,9 +84,14 @@ const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
     >
       <div className={styles.wrapper}>
         <div className={styles.targetName}>即将移动：{displayName}</div>
-        <div className={styles.treeSection}>
-          <span className={styles.treeLabel}>选择目标文件夹：</span>
-          <TreeNav onSelect={handleFolderSelect} showNewFolderButton className={styles.treeNav} />
+        <div className={styles.breadcrumbSection}>
+          <span className={styles.treeLabel}>
+            {selectedNode ? '目标位置：' : '请在下方选择目标文件夹'}
+          </span>
+          {selectedNode && <ReadOnlyBreadcrumb node={selectedNode} mode="folder" />}
+        </div>
+        <div className={`${styles.treeSection} ${styles.treeNav}`}>
+          <TreeNav mode="folder" groupId={groupId} onChange={handleTreeChange} />
         </div>
       </div>
     </Modal>

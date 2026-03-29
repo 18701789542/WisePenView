@@ -1,4 +1,4 @@
-// memberList 渲染与操作权限由 {GroupType} x {UserRole} 决定，查表解包配置
+// 小组模块展示与操作能力由 {GroupType} x {UserRole} 查表决定（详情 Tab、成员列表等共用）
 // 设计：OWNER 全部权限，ADMIN 可修改 MEMBER 的配额、可踢出 MEMBER，MEMBER 无编辑权限
 // 注意：组长(OWNER)的权限修改和删除不被允许；配额单独用 editableRolesForQuota，组长可修改自己的配额
 
@@ -10,7 +10,7 @@ export type EditableRole = 'ADMIN' | 'MEMBER';
 /** 配额分配时可编辑的角色（含 OWNER，组长可修改自己的配额） */
 export type EditableRoleForQuota = 'OWNER' | 'ADMIN' | 'MEMBER';
 
-export interface PermissionConfig {
+export interface GroupDisplayConfig {
   groupType: number;
   userRole: string;
   /** 表格列：是否展示姓名 */
@@ -29,9 +29,13 @@ export interface PermissionConfig {
   canAssignQuota: boolean;
   /** 是否可删除/踢出成员（OWNER 可踢 ADMIN/MEMBER，ADMIN 仅可踢 MEMBER） */
   canRemoveMember: boolean;
+  /** 高级组且当前用户为组长时，小组详情展示 token 明细与 token 划拨 Tab */
+  showWalletTabs: boolean;
+  /** 小组详情「文件」Tab 内 TreeDrive 是否只读；管理员与组长可编辑（false），普通成员只读（true） */
+  driveReadOnlyMode: boolean;
 }
 
-const PermissionConfigs: Record<number, Record<string, PermissionConfig>> = {
+const GroupDisplayConfigs: Record<number, Record<string, GroupDisplayConfig>> = {
   [GROUP_TYPE.NORMAL]: {
     MEMBER: {
       groupType: GROUP_TYPE.NORMAL,
@@ -44,6 +48,8 @@ const PermissionConfigs: Record<number, Record<string, PermissionConfig>> = {
       canModifyPermission: false,
       canAssignQuota: false,
       canRemoveMember: false,
+      showWalletTabs: false,
+      driveReadOnlyMode: true,
     },
     ADMIN: {
       groupType: GROUP_TYPE.NORMAL,
@@ -56,6 +62,8 @@ const PermissionConfigs: Record<number, Record<string, PermissionConfig>> = {
       canModifyPermission: false,
       canAssignQuota: true,
       canRemoveMember: true,
+      showWalletTabs: false,
+      driveReadOnlyMode: false,
     },
     OWNER: {
       groupType: GROUP_TYPE.NORMAL,
@@ -68,6 +76,8 @@ const PermissionConfigs: Record<number, Record<string, PermissionConfig>> = {
       canModifyPermission: true,
       canAssignQuota: true,
       canRemoveMember: true,
+      showWalletTabs: false,
+      driveReadOnlyMode: false,
     },
   },
   [GROUP_TYPE.ADVANCED]: {
@@ -82,6 +92,8 @@ const PermissionConfigs: Record<number, Record<string, PermissionConfig>> = {
       canModifyPermission: false,
       canAssignQuota: false,
       canRemoveMember: false,
+      showWalletTabs: false,
+      driveReadOnlyMode: true,
     },
     ADMIN: {
       groupType: GROUP_TYPE.ADVANCED,
@@ -94,6 +106,8 @@ const PermissionConfigs: Record<number, Record<string, PermissionConfig>> = {
       canModifyPermission: false,
       canAssignQuota: true,
       canRemoveMember: true,
+      showWalletTabs: false,
+      driveReadOnlyMode: false,
     },
     OWNER: {
       groupType: GROUP_TYPE.ADVANCED,
@@ -106,6 +120,8 @@ const PermissionConfigs: Record<number, Record<string, PermissionConfig>> = {
       canModifyPermission: true,
       canAssignQuota: true,
       canRemoveMember: true,
+      showWalletTabs: true,
+      driveReadOnlyMode: false,
     },
   },
   [GROUP_TYPE.PUBLIC]: {
@@ -120,6 +136,8 @@ const PermissionConfigs: Record<number, Record<string, PermissionConfig>> = {
       canModifyPermission: false,
       canAssignQuota: false,
       canRemoveMember: false,
+      showWalletTabs: false,
+      driveReadOnlyMode: true,
     },
     ADMIN: {
       groupType: GROUP_TYPE.PUBLIC,
@@ -132,6 +150,8 @@ const PermissionConfigs: Record<number, Record<string, PermissionConfig>> = {
       canModifyPermission: false,
       canAssignQuota: true,
       canRemoveMember: true,
+      showWalletTabs: false,
+      driveReadOnlyMode: false,
     },
     OWNER: {
       groupType: GROUP_TYPE.PUBLIC,
@@ -144,12 +164,14 @@ const PermissionConfigs: Record<number, Record<string, PermissionConfig>> = {
       canModifyPermission: true,
       canAssignQuota: true,
       canRemoveMember: true,
+      showWalletTabs: false,
+      driveReadOnlyMode: false,
     },
   },
 };
 
-export const getPermissionConfig = (groupType: number, userRole: string): PermissionConfig => {
-  const config = PermissionConfigs[groupType]?.[userRole];
+export const getGroupDisplayConfig = (groupType: number, userRole: string): GroupDisplayConfig => {
+  const config = GroupDisplayConfigs[groupType]?.[userRole];
 
   return (
     config ?? {
@@ -163,6 +185,8 @@ export const getPermissionConfig = (groupType: number, userRole: string): Permis
       canModifyPermission: false,
       canAssignQuota: false,
       canRemoveMember: false,
+      showWalletTabs: false,
+      driveReadOnlyMode: true,
     }
   );
 };
@@ -194,4 +218,4 @@ export const canEditSelectedMembersForQuota = (
 /** 选中有不可编辑成员时的提示文案（权限/删除） */
 export const UNAUTHORIZED_TARGET_MESSAGE = '您不能编辑组长/管理员的权限/配额。';
 
-export default PermissionConfigs;
+export default GroupDisplayConfigs;

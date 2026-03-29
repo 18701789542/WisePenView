@@ -5,7 +5,7 @@
 
 /** 资源项（与 OpenAPI ResourceItemResponse 字段一致） */
 export interface ResourceItem {
-  resourceId?: string;
+  resourceId: string;
   resourceName?: string;
   resourceType?: string;
   ownerId?: string;

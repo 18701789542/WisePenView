@@ -14,7 +14,7 @@ const DeleteMemberModal: React.FC<DeleteMemberModalProps> = ({
   memberIds,
   members,
   groupId,
-  permissionConfig,
+  groupDisplayConfig,
 }) => {
   const groupService = useGroupService();
   const message = useAppMessage();
@@ -22,7 +22,7 @@ const DeleteMemberModal: React.FC<DeleteMemberModalProps> = ({
 
   const { memberContainsOwner, canEdit, confirmDisabled } = useMemberEditGuard(
     members,
-    permissionConfig.editableRoles,
+    groupDisplayConfig.editableRoles,
     { checkOwner: true }
   );
 

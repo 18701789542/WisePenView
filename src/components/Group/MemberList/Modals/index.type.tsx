@@ -1,5 +1,5 @@
 import type { GroupMember } from '@/types/group';
-import type { PermissionConfig } from '../PermissionConfig';
+import type { GroupDisplayConfig } from '@/components/Group/GroupDisplayConfig';
 
 export interface InviteUserModalProps {
   open: boolean;
@@ -15,7 +15,7 @@ export interface EditPermissionModalProps {
   groupId: string;
   memberIds: string[];
   members: GroupMember[];
-  permissionConfig: Pick<PermissionConfig, 'editableRoles' | 'canModifyPermission'>;
+  groupDisplayConfig: Pick<GroupDisplayConfig, 'editableRoles' | 'canModifyPermission'>;
 }
 
 export interface DeleteMemberModalProps {
@@ -25,7 +25,7 @@ export interface DeleteMemberModalProps {
   memberIds: string[];
   members: GroupMember[];
   groupId: string;
-  permissionConfig: Pick<PermissionConfig, 'editableRoles'>;
+  groupDisplayConfig: Pick<GroupDisplayConfig, 'editableRoles'>;
 }
 
 export interface AssignQuotaModalProps {
@@ -35,5 +35,5 @@ export interface AssignQuotaModalProps {
   groupId: string;
   memberIds: string[];
   members: GroupMember[];
-  permissionConfig: Pick<PermissionConfig, 'editableRolesForQuota'>;
+  groupDisplayConfig: Pick<GroupDisplayConfig, 'editableRolesForQuota'>;
 }

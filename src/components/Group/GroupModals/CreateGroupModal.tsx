@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Modal, Button, Form, Input, Select, Upload } from 'antd';
+import { Modal, Button, Form, Input, Radio, Select, Upload } from 'antd';
 import type { UploadFile } from 'antd';
 import { LuUpload } from 'react-icons/lu';
 import { useGroupService, useImageService, useUserService } from '@/contexts/ServicesContext';
 import type { CreateGroupRequest } from '@/services/Group';
+import type { GroupFileOrgLogic } from '@/types/group';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import { createBeforeUploadImageWithinLimit } from '@/utils/image';
 import { useAppMessage } from '@/hooks/useAppMessage';
@@ -16,6 +17,7 @@ const { Option } = Select;
 
 type CreateGroupFormValues = Omit<CreateGroupRequest, 'groupCoverUrl'> & {
   cover?: UploadFile[];
+  fileOrgLogic: GroupFileOrgLogic;
 };
 
 const fileFromCoverField = (fileList?: UploadFile[]): File | undefined => {
@@ -73,13 +75,23 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ open, onCancel, onS
         });
         groupCoverUrl = publicUrl;
       }
-      await groupService.createGroup({
+      const groupId = await groupService.createGroup({
         groupName: values.groupName,
         groupType: values.groupType,
         groupDesc: values.groupDesc,
         groupCoverUrl,
       });
-      message.success('创建成功');
+      try {
+        await groupService.updateGroupResConfig({
+          groupId,
+          fileOrgLogic: values.fileOrgLogic,
+        });
+        message.success('创建成功');
+      } catch (configErr: unknown) {
+        message.warning(
+          parseErrorMessage(configErr, '小组已创建，但文件管理方式未保存，请稍后在小组内重试')
+        );
+      }
       form.resetFields();
       onCancel();
       onSuccess?.();
@@ -141,6 +153,17 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ open, onCancel, onS
               </Option>
             ))}
           </Select>
+        </Form.Item>
+        <Form.Item
+          label="文件管理方式"
+          name="fileOrgLogic"
+          initialValue={'FOLDER' satisfies GroupFileOrgLogic}
+          rules={[{ required: true, message: '请选择文件管理方式（创建后无法更改）' }]}
+        >
+          <Radio.Group>
+            <Radio value="FOLDER">文件夹管理（推荐）</Radio>
+            <Radio value="TAG">按标签管理（Beta）</Radio>
+          </Radio.Group>
         </Form.Item>
         <Form.Item
           label="封面图片"
