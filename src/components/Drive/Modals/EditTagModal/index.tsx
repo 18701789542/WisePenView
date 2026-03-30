@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Modal, Button } from 'antd';
 import type { TagTreeNode } from '@/services/Tag/index.type';
+import type { ResourceItem } from '@/types/resource';
 import { useResourceService } from '@/contexts/ServicesContext';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import TreeNav from '@/components/Drive/TreeNav';
@@ -32,7 +33,7 @@ const EditTagModal: React.FC<EditTagModalProps> = ({
     if (!open) setSelectedNodes([]);
   }, [open]);
 
-  const handleTreeChange = useCallback((selected: TagTreeNode[]) => {
+  const handleTreeChange = useCallback((selected: TagTreeNode[], _leaves: ResourceItem[]) => {
     setSelectedNodes(selected);
   }, []);
 
@@ -93,7 +94,8 @@ const EditTagModal: React.FC<EditTagModalProps> = ({
             <div className={styles.hint}>勾选或取消勾选以调整该文件关联的标签</div>
             <div className={`${styles.treeSection} ${styles.treeNav}`}>
               <TreeNav
-                mode="tag"
+                viewMode="tag"
+                selectMode="nodes"
                 groupId={groupId}
                 tagInitialCheckedIds={tagInitialCheckedIds}
                 onChange={handleTreeChange}

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Modal, Button } from 'antd';
 import type { TagTreeNode } from '@/services/Tag/index.type';
+import type { ResourceItem } from '@/types/resource';
 import { useFolderService } from '@/contexts/ServicesContext';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import TreeNav from '@/components/Drive/TreeNav';
@@ -25,7 +26,7 @@ const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
     if (open) setSelectedNode(null);
   }, [open]);
 
-  const handleTreeChange = useCallback((selected: TagTreeNode[]) => {
+  const handleTreeNavChange = useCallback((selected: TagTreeNode[], _leaves: ResourceItem[]) => {
     setSelectedNode(selected.length > 0 ? selected[0] : null);
   }, []);
 
@@ -91,7 +92,12 @@ const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
           {selectedNode && <ReadOnlyBreadcrumb node={selectedNode} mode="folder" />}
         </div>
         <div className={`${styles.treeSection} ${styles.treeNav}`}>
-          <TreeNav mode="folder" groupId={groupId} onChange={handleTreeChange} />
+          <TreeNav
+            viewMode="folder"
+            selectMode="nodes"
+            groupId={groupId}
+            onChange={handleTreeNavChange}
+          />
         </div>
       </div>
     </Modal>
