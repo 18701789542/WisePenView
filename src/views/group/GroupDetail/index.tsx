@@ -105,7 +105,12 @@ const GroupDetail: React.FC = () => {
         children: (
           <div className={layout.tabPane}>
             {resConfig?.fileOrgLogic === 'FOLDER' ? (
-              <FolderDrive groupId={gid} readOnlyMode={groupDisplayConfig.driveReadOnlyMode} />
+              <FolderDrive
+                groupId={gid}
+                readOnlyMode={groupDisplayConfig.driveReadOnlyMode}
+                allowUpload={!groupDisplayConfig.driveReadOnlyMode}
+                fileOrgLogic={resConfig.fileOrgLogic}
+              />
             ) : (
               <TagDrive groupId={gid} readOnlyMode={groupDisplayConfig.driveReadOnlyMode} />
             )}

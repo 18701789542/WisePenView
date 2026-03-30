@@ -10,6 +10,7 @@ export { default as EditStickerModal } from './EditStickerModal';
 export { default as EditTagModal } from './EditTagModal';
 export { default as MoveToFolderModal } from './MoveToFolderModal';
 export { default as StickerManageModal } from './StickerManageModal';
+export { default as UploadFileToGroupModal } from './UploadFileToGroupModal';
 
 export type { MoveToFolderTarget } from './types';
 export type { NewFolderModalProps } from './NewFolderModal/index.type';
@@ -24,3 +25,4 @@ export type { EditStickerModalProps } from './EditStickerModal/index.type';
 export type { EditTagModalProps } from './EditTagModal/index.type';
 export type { MoveToFolderModalProps } from './MoveToFolderModal/index.type';
 export type { StickerManageModalProps } from './StickerManageModal/index.type';
+export type { UploadFileToGroupModalProps } from './UploadFileToGroupModal/index.type';
