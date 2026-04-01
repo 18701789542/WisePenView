@@ -80,7 +80,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
 
   const { loading: creatingNote, run: runCreateNote } = useRequest(
     async () => {
-      const { resourceId } = await noteService.createNote({});
+      const { resourceId } = await noteService.createNote({ title: '未命名笔记' });
       if (!resourceId) {
         throw new Error('创建笔记失败：未获取到资源ID');
       }
@@ -91,7 +91,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle }) => {
       onSuccess: (resourceId) => {
         addRecentFile({
           resourceId,
-          resourceName: '未命名',
+          resourceName: '未命名笔记',
           resourceType: RESOURCE_TYPE.NOTE,
         });
         navigate(`/app/note/${encodeURIComponent(resourceId)}`);

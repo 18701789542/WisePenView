@@ -6,7 +6,6 @@ export interface NoteEditorHandle {
 
 export interface NoteEditorProps {
   resourceId: string;
-  userId: string;
   /** Yjs / WebSocket 会话可用（如已 connected）时调用，至多一次 */
   onSessionReady?: () => void;
   /** 长时间未连上或连接失败时由子层上报 */

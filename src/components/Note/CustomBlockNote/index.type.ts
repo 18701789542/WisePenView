@@ -6,6 +6,4 @@ export interface CustomBlockNoteProps {
   resourceId: string;
   doc: Doc;
   provider: WisepenProvider;
-  userId: string;
-  cursorColor: string;
 }

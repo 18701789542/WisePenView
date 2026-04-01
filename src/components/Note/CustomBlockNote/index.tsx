@@ -36,7 +36,7 @@ function readInsertedBlockId(insertedBlock: unknown): string | undefined {
 
 // CustomBlockNote 组件是 NoteEditor 的子组件，用于创建 BlockNote 实例并接入 YJS 协同连接
 const CustomBlockNote = forwardRef<NoteEditorHandle, CustomBlockNoteProps>(
-  ({ resourceId, doc, provider, userId, cursorColor }, ref) => {
+  ({ resourceId, doc, provider }, ref) => {
     const imageService = useImageService();
     const editorRef = useLatest<CustomBlockNoteEditor | null>(null);
 
@@ -94,8 +94,9 @@ const CustomBlockNote = forwardRef<NoteEditorHandle, CustomBlockNoteProps>(
         provider: provider as BlockNoteCollaborationConfig['provider'],
         fragment: doc.getXmlFragment(NOTE_YJS_DOCUMENT_FRAGMENT),
         user: {
-          name: userId,
-          color: cursorColor,
+          // 单人模式下使用固定身份，避免业务层传 userId/color
+          name: '',
+          color: '#4096ff',
         },
       },
     });

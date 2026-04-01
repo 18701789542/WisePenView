@@ -1,5 +1,4 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { useRequest, useUpdateEffect } from 'ahooks';
 import { Alert, Button, Result, Spin } from 'antd';
 import { Link, useParams } from 'react-router-dom';
 import { RiArrowLeftLine } from 'react-icons/ri';
@@ -9,15 +8,8 @@ import NoteEditor from '@/components/Note/NoteEditor';
 import type { NoteEditorHandle } from '@/components/Note/NoteEditor/index.type';
 import NoteInfoBar from '@/components/Note/NoteInfoBar';
 import NoteTitle from '@/components/Note/NoteTitle';
-import { useUserService } from '@/contexts/ServicesContext';
 import { useParamsEffect } from '@/hooks/useParamsEffect';
-import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import styles from './style.module.less';
-
-type UserLoadState =
-  | { phase: 'idle' | 'loading' }
-  | { phase: 'error'; message: string }
-  | { phase: 'ready'; userId: string };
 
 /**
  * 笔记路由页：在 SystemLayout 中间栏内全幅 Spin，直至用户信息 + Yjs 会话就绪；失败分两类，可重试。
@@ -25,8 +17,6 @@ type UserLoadState =
 const NoteView: React.FC = () => {
   const { noteId } = useParams<{ noteId?: string }>();
   const resourceId = noteId ?? '';
-  const userService = useUserService();
-  const [userLoad, setUserLoad] = useState<UserLoadState>({ phase: 'idle' });
   const [editorSessionReady, setEditorSessionReady] = useState(false);
   const [sessionErrorMessage, setSessionErrorMessage] = useState<string | null>(null);
   const [sessionStatus, setSessionStatus] = useState<'connected' | 'disconnected'>('disconnected');
@@ -38,48 +28,14 @@ const NoteView: React.FC = () => {
     setSessionStatus('connected');
   }, []);
 
-  const { runAsync: runLoadUserRequest } = useRequest(
-    async () => {
-      const u = await userService.getUserInfo();
-      return u.id;
-    },
-    {
-      manual: true,
-      onBefore: () => {
-        setUserLoad({ phase: 'loading' });
-      },
-      onSuccess: (userId) => {
-        setUserLoad({ phase: 'ready', userId });
-      },
-      onError: (err) => {
-        setUserLoad({
-          phase: 'error',
-          message: parseErrorMessage(err, '加载用户信息失败'),
-        });
-      },
-    }
-  );
-
   useParamsEffect([resourceId], (nextResourceId) => {
     resetSessionState();
     if (!nextResourceId) return;
-    void runLoadUserRequest();
   });
-
-  useUpdateEffect(() => {
-    if (userLoad.phase !== 'ready') {
-      resetSessionState();
-    }
-  }, [resetSessionState, userLoad.phase]);
 
   const focusBody = useCallback(() => {
     bodyEditorRef.current?.focus();
   }, []);
-
-  const retryUser = useCallback(() => {
-    if (!resourceId) return;
-    void runLoadUserRequest();
-  }, [resourceId, runLoadUserRequest]);
 
   const retrySession = useCallback(() => {
     setSessionErrorMessage(null);
@@ -98,14 +54,9 @@ const NoteView: React.FC = () => {
     setEditorSessionReady(false);
   }, []);
 
-  const userId = userLoad.phase === 'ready' ? userLoad.userId : null;
-  const mountEditorSubtree = Boolean(resourceId) && userId !== null && sessionErrorMessage === null;
+  const mountEditorSubtree = Boolean(resourceId) && sessionErrorMessage === null;
 
-  const showFullPageSpin =
-    Boolean(resourceId) &&
-    (userLoad.phase === 'loading' ||
-      userLoad.phase === 'idle' ||
-      (userLoad.phase === 'ready' && mountEditorSubtree && !editorSessionReady));
+  const showFullPageSpin = Boolean(resourceId) && mountEditorSubtree && !editorSessionReady;
 
   if (!resourceId) {
     return (
@@ -129,7 +80,7 @@ const NoteView: React.FC = () => {
 
   return (
     <div className={styles.pageWrap}>
-      {mountEditorSubtree && userId ? (
+      {mountEditorSubtree ? (
         <div
           className={clsx(styles.noteContent, editorSessionReady && styles.noteContentVisible)}
           aria-hidden={!editorSessionReady}
@@ -155,7 +106,6 @@ const NoteView: React.FC = () => {
               <NoteEditor
                 ref={bodyEditorRef}
                 resourceId={resourceId}
-                userId={userId}
                 onSessionReady={handleSessionReady}
                 onSessionError={handleSessionError}
                 onSessionStatusChange={(isConnected) => {
@@ -163,23 +113,6 @@ const NoteView: React.FC = () => {
                 }}
               />
             </div>
-          </div>
-        </div>
-      ) : null}
-
-      {userLoad.phase === 'error' ? (
-        <div className={styles.middleOverlay}>
-          <div className={styles.middleOverlayInner}>
-            <Result
-              status="error"
-              title="加载失败"
-              subTitle={userLoad.message}
-              extra={
-                <Button type="default" onClick={retryUser}>
-                  重试
-                </Button>
-              }
-            />
           </div>
         </div>
       ) : null}

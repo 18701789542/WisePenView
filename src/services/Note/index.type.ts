@@ -30,7 +30,7 @@ export interface NoteInfoDisplayData {
 /** 与 docs/apis/note-api.md「新建文档接口」请求体一致 */
 export interface CreateNoteRequest {
   initial_content?: Block[];
-  title?: string;
+  title: string;
   /** 从已有文档创建副本时传入源文档 ID */
   source?: string;
 }

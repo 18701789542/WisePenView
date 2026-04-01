@@ -41,7 +41,7 @@ const syncTitle = async (params: SyncTitleRequest): Promise<void> => {
 };
 
 const createNote = async (params: CreateNoteRequest): Promise<CreateNoteResponse> => {
-  const res = (await Axios.post('/addNote', params)) as ApiResponse<string>;
+  const res = (await Axios.post('/note/addNote', params)) as ApiResponse<string>;
   checkResponse(res);
   return {
     resourceId: res.data || undefined,
@@ -49,12 +49,12 @@ const createNote = async (params: CreateNoteRequest): Promise<CreateNoteResponse
 };
 
 const deleteNote = async (params: DeleteNoteRequest): Promise<void> => {
-  const res = (await Axios.post('/removeNote', null, { params })) as ApiResponse;
+  const res = (await Axios.post('/note/removeNote', null, { params })) as ApiResponse;
   checkResponse(res);
 };
 
 const getNoteInfoDisplay = async (params: GetNoteInfoRequest): Promise<NoteInfoDisplayData> => {
-  const res = (await Axios.get('/getNoteInfo', { params })) as ApiResponse<NoteInfoResponse>;
+  const res = (await Axios.get('/note/getNoteInfo', { params })) as ApiResponse<NoteInfoResponse>;
   checkResponse(res);
   const noteInfoData = res.data;
   const allAuthors = noteInfoData.noteInfo.authors ?? [];

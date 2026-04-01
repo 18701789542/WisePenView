@@ -33,24 +33,17 @@ export interface SessionConnectionSubscription {
 }
 
 /**
- * 笔记协同 WebSocket：在 y-websocket 上固定 path、query（resourceId / userId），并支持发送意图元数据帧。
+ * 笔记协同 WebSocket：在 y-websocket 上固定 path、query（resourceId），并支持发送意图元数据帧。
  * 与 HTTP 类 NoteService 分离，供 EditorRoom 等协同层使用。
  */
 export class WisepenProvider extends WebsocketProvider {
-  constructor(
-    serverUrl: string,
-    resourceId: string,
-    doc: Y.Doc,
-    userId: string,
-    options?: { connect?: boolean }
-  ) {
+  constructor(serverUrl: string, resourceId: string, doc: Y.Doc, options?: { connect?: boolean }) {
     // y-websocket 默认把第二参数拼在 URL 后；传 'ws' 最终形如 ws://host/note-collab/ws?resourceId=...
     // connect: false 时由调用方在注册好 status/sync 监听后再 connect()，避免本地极快连上时错过 connected 事件
     super(serverUrl, 'ws', doc, {
       connect: options?.connect ?? true,
       params: {
         resourceId,
-        userId,
       },
     });
   }

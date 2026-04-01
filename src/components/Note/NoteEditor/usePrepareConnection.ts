@@ -13,7 +13,7 @@ const SESSION_CONNECT_TIMEOUT_MS = 5_000;
 
 export type UsePrepareConnectionParams = Pick<
   NoteEditorProps,
-  'resourceId' | 'userId' | 'onSessionReady' | 'onSessionError' | 'onSessionStatusChange'
+  'resourceId' | 'onSessionReady' | 'onSessionError' | 'onSessionStatusChange'
 >;
 
 export interface UsePrepareConnectionResult {
@@ -22,15 +22,21 @@ export interface UsePrepareConnectionResult {
 }
 
 /**
- * 创建 Y.Doc、IndexedDB 持久化与 WisepenProvider；就绪或超时后通过 ref 中的回调通知父层（effect 只依赖 resourceId / userId）。
+ * 创建 Y.Doc、IndexedDB 持久化与 WisepenProvider；就绪或超时后通过 ref 中的回调通知父层（effect 只依赖 resourceId）。
  */
 export function usePrepareConnection({
   resourceId,
-  userId,
   onSessionReady,
   onSessionError,
   onSessionStatusChange,
 }: UsePrepareConnectionParams): UsePrepareConnectionResult {
+  console.log(
+    'usePrepareConnection start',
+    resourceId,
+    onSessionReady,
+    onSessionError,
+    onSessionStatusChange
+  );
   const [doc, setDoc] = useState<Y.Doc | null>(null);
   const [provider, setProvider] = useState<WisepenProvider | null>(null);
 
@@ -39,7 +45,7 @@ export function usePrepareConnection({
   const onSessionStatusChangeRef = useLatest(onSessionStatusChange);
 
   /**
-   * 这里保留单一 effect（依赖 resourceId / userId）是最合适的实现：
+   * 这里保留单一 effect（依赖 resourceId）是最合适的实现：
    * - 本段是“会话资源作用域”生命周期：创建 Y.Doc / Provider / 订阅 / 超时器，并在依赖变化或卸载时统一清理；
    * - 必须保证 cleanup(old) -> init(new) 的原子时序，避免串房间、重复连接和事件泄漏；
    * - 若拆成 useMount/useUnmount/useUpdateEffect，时序会分散到多个入口，资源边界更难维护。
@@ -59,7 +65,6 @@ export function usePrepareConnection({
       `${protocol}//${window.location.host}/note-collab`,
       resourceId,
       newDoc,
-      userId,
       { connect: false }
     );
 
@@ -127,7 +132,7 @@ export function usePrepareConnection({
     setDoc(newDoc);
     setProvider(wsProvider);
 
-    // 换笔记、换用户或卸载：结束本段会话，避免泄漏与串房间
+    // 换笔记或卸载：结束本段会话，避免泄漏与串房间
     return () => {
       sessionSetupDone = true;
       clearConnectTimeout();
@@ -136,7 +141,7 @@ export function usePrepareConnection({
       void idbPersistence.destroy();
       newDoc.destroy();
     };
-  }, [resourceId, userId]);
+  }, [resourceId]);
 
   // 供 NoteEditor 使用；未就绪前为 null
   return { doc, provider };
