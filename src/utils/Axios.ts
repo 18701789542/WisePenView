@@ -6,7 +6,7 @@ export const baseServerAddr = 'wisepen-dev-server:9080';
 export const baseURL = 'http://' + baseServerAddr + '/';
 
 const Axios = axios.create({
-  baseURL: '/api',
+  baseURL: baseURL,
   timeout: 5000,
   withCredentials: true,
 });
