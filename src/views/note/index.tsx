@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { useMount, useRequest, useUpdateEffect } from 'ahooks';
+import { useRequest, useUpdateEffect } from 'ahooks';
 import { Alert, Button, Result, Spin } from 'antd';
 import { Link, useParams } from 'react-router-dom';
 import { RiArrowLeftLine } from 'react-icons/ri';
@@ -10,6 +10,7 @@ import type { NoteEditorHandle } from '@/components/Note/NoteEditor/index.type';
 import NoteInfoBar from '@/components/Note/NoteInfoBar';
 import NoteTitle from '@/components/Note/NoteTitle';
 import { useUserService } from '@/contexts/ServicesContext';
+import { useParamsEffect } from '@/hooks/useParamsEffect';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import styles from './style.module.less';
 
@@ -25,56 +26,51 @@ const NoteView: React.FC = () => {
   const { noteId } = useParams<{ noteId?: string }>();
   const resourceId = noteId ?? '';
   const userService = useUserService();
-  const devFixedUserId =
-    import.meta.env.DEV && (import.meta.env.VITE_NOTE_LOCAL_USER_ID?.trim() || 'local-dev-user');
   const [userLoad, setUserLoad] = useState<UserLoadState>({ phase: 'idle' });
   const [editorSessionReady, setEditorSessionReady] = useState(false);
   const [sessionErrorMessage, setSessionErrorMessage] = useState<string | null>(null);
   const [sessionStatus, setSessionStatus] = useState<'connected' | 'disconnected'>('disconnected');
   const bodyEditorRef = useRef<NoteEditorHandle>(null);
 
-  const loadUser = useCallback(async () => {
-    if (devFixedUserId) {
-      setUserLoad({ phase: 'ready', userId: devFixedUserId });
-      return;
-    }
-    setUserLoad({ phase: 'loading' });
-    try {
+  const resetSessionState = useCallback(() => {
+    setEditorSessionReady(false);
+    setSessionErrorMessage(null);
+    setSessionStatus('connected');
+  }, []);
+
+  const { runAsync: runLoadUserRequest } = useRequest(
+    async () => {
       const u = await userService.getUserInfo();
-      setUserLoad({ phase: 'ready', userId: u.id });
-    } catch (err: unknown) {
-      setUserLoad({
-        phase: 'error',
-        message: parseErrorMessage(err, '加载用户信息失败'),
-      });
+      return u.id;
+    },
+    {
+      manual: true,
+      onBefore: () => {
+        setUserLoad({ phase: 'loading' });
+      },
+      onSuccess: (userId) => {
+        setUserLoad({ phase: 'ready', userId });
+      },
+      onError: (err) => {
+        setUserLoad({
+          phase: 'error',
+          message: parseErrorMessage(err, '加载用户信息失败'),
+        });
+      },
     }
-  }, [devFixedUserId, userService]);
+  );
 
-  useMount(() => {
-    if (!resourceId) return;
-    void loadUser();
-  });
-
-  useUpdateEffect(() => {
-    if (!resourceId) return;
-    void loadUser();
-  }, [loadUser, resourceId]);
-
-  useMount(() => {
-    if (userLoad.phase !== 'ready') {
-      setEditorSessionReady(false);
-      setSessionErrorMessage(null);
-      setSessionStatus('connected');
-    }
+  useParamsEffect([resourceId], (nextResourceId) => {
+    resetSessionState();
+    if (!nextResourceId) return;
+    void runLoadUserRequest();
   });
 
   useUpdateEffect(() => {
     if (userLoad.phase !== 'ready') {
-      setEditorSessionReady(false);
-      setSessionErrorMessage(null);
-      setSessionStatus('connected');
+      resetSessionState();
     }
-  }, [userLoad.phase]);
+  }, [resetSessionState, userLoad.phase]);
 
   const focusBody = useCallback(() => {
     bodyEditorRef.current?.focus();
@@ -82,8 +78,8 @@ const NoteView: React.FC = () => {
 
   const retryUser = useCallback(() => {
     if (!resourceId) return;
-    void loadUser();
-  }, [loadUser, resourceId]);
+    void runLoadUserRequest();
+  }, [resourceId, runLoadUserRequest]);
 
   const retrySession = useCallback(() => {
     setSessionErrorMessage(null);

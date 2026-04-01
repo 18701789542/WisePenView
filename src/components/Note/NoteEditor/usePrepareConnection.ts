@@ -38,7 +38,12 @@ export function usePrepareConnection({
   const onSessionErrorRef = useLatest(onSessionError);
   const onSessionStatusChangeRef = useLatest(onSessionStatusChange);
 
-  // 这段逻辑异常复杂，Q1没有时间重构，useEffect在这里的语义其实是正确的，是挂载时执行，变化时也执行，TODO: 或许有必要拆解成小函数
+  /**
+   * 这里保留单一 effect（依赖 resourceId / userId）是最合适的实现：
+   * - 本段是“会话资源作用域”生命周期：创建 Y.Doc / Provider / 订阅 / 超时器，并在依赖变化或卸载时统一清理；
+   * - 必须保证 cleanup(old) -> init(new) 的原子时序，避免串房间、重复连接和事件泄漏；
+   * - 若拆成 useMount/useUnmount/useUpdateEffect，时序会分散到多个入口，资源边界更难维护。
+   */
   useEffectForce(() => {
     // 创建新的 Y.Doc 实例
     const newDoc = new Y.Doc();
