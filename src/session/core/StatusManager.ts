@@ -1,7 +1,6 @@
-import type { StatusAdapter } from './StatusAdapter';
+import type { StatusAdapter, Status } from './index.type';
 import type { RetryStrategy } from './RetryStrategy';
 import { RetryStrategies } from './RetryStrategy';
-import type { Status } from './Status';
 
 /**
  * StatusManager is the fsm manager of the connection status.
@@ -46,6 +45,7 @@ export class StatusManager {
     this._retryCount = 0;
     this._lastDelay = undefined;
     this.updateStatus('connected');
+    console.log('Connected');
   }
 
   private handleError() {
@@ -76,7 +76,7 @@ export class StatusManager {
       this._lastDelay = delay;
 
       this._retryTimerId = setTimeout(() => {
-        console.log('startReconnecting', delay);
+        console.log('startReconnecting');
         this._retryTimerId = undefined;
         this._retryCount++;
         void this.adapter.open().catch(() => this.handleError());
@@ -105,6 +105,7 @@ export class StatusManager {
   public async connect() {
     if (this._status === 'connected' || this._status === 'connecting') return;
     this.clearRetryTimer();
+    console.log('start connecting');
     this.updateStatus('connecting');
     try {
       await this.adapter.open();

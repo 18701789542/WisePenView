@@ -44,7 +44,7 @@ const assertDocumentUploadAllowed = (file: File): void => {
 const initUpload = async (
   body: DocumentUploadInitRequestBody
 ): Promise<DocumentUploadInitResponse> => {
-  const res = (await Axios.post('/document/initDocUpload', body, {
+  const res = (await Axios.post('/document/uploadDoc', body, {
     timeout: DOCUMENT_UPLOAD_INIT_TIMEOUT_MS,
   })) as ApiResponse<DocumentUploadInitResponse>;
   checkResponse(res);
@@ -65,7 +65,7 @@ const uploadDocument = async (params: UploadDocumentParams): Promise<UploadDocum
     filename: file.name,
     extension,
     md5,
-    size: file.size,
+    expectedSize: file.size,
   });
 
   if (init.flashUploaded) {
@@ -113,9 +113,8 @@ const deleteDocument = async (documentId: string): Promise<void> => {
   checkResponse(res);
 };
 
-/** dev：/api/document/... 经 Vite 剥离 /api → 网关 /document/... */
 const getDocumentPreviewUrl = (resourceId: string): string => {
-  const path = `/api/document/getDocPreview?documentId=${encodeURIComponent(resourceId)}`;
+  const path = `/document/getDocPreview?documentId=${encodeURIComponent(resourceId)}`;
   return new URL(path, window.location.origin).href;
 };
 

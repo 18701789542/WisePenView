@@ -7,7 +7,6 @@ import { useLatest, useMount, useUnmount } from 'ahooks';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
 
-import { NOTE_YJS_DOCUMENT_FRAGMENT } from '@/session/plugins/note/constants';
 import { useImageService } from '@/contexts/ServicesContext';
 
 import type { CustomBlockNoteProps, NoteBodyEditorHandle } from './index.type';
@@ -17,6 +16,9 @@ import { blockNoteSchema, type CustomBlockNoteEditor } from './blockNoteSchema';
 import { inlineMathDollarExtension } from './LatexSupport/inlineMathDollarExtension';
 import { stripEscapeCharExtension, stripEscapeEditorProps } from './stripEscapeCharExtension';
 import styles from './style.module.less';
+
+/** 笔记正文在 Y.Doc 中的 XmlFragment 名；需与后端 observeDeep 及 BlockNote 绑定名一致 */
+const NOTE_YJS_DOCUMENT_FRAGMENT = 'document-store' as const;
 
 type CreateBlockNoteOptions = NonNullable<Parameters<typeof useCreateBlockNote>[0]>;
 type BlockNoteCollaborationConfig = NonNullable<CreateBlockNoteOptions['collaboration']>;

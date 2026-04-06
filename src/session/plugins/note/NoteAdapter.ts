@@ -1,4 +1,4 @@
-import type { StatusAdapter } from '@/session/core/StatusAdapter';
+import type { StatusAdapter } from '@/session/core/index.type';
 
 import type { NoteInstance } from './NoteInstance';
 import type { WisepenProvider } from './WisepenProvider';

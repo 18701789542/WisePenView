@@ -1,4 +1,4 @@
-import type { ConnectionInstance } from '@/session/core/SessionInstance';
+import type { SessionInstance } from '@/session/core/index.type';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import type { Doc } from 'yjs';
 import * as Y from 'yjs';
@@ -11,7 +11,7 @@ export type NoteInstanceRuntime = {
   provider: WisepenProvider;
 };
 
-export class NoteInstance implements ConnectionInstance {
+export class NoteInstance implements SessionInstance {
   private readonly yDoc: Y.Doc;
   private readonly idb: IndexeddbPersistence;
   private readonly wsProvider: WisepenProvider;

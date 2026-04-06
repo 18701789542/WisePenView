@@ -1,31 +1,3 @@
-/**
- * Retry delay strategies for `ConnectionManager`: after disconnect/error, the manager calls the
- * strategy to get milliseconds to wait before the next `adapter.open()`. Return `null` to stop
- * retrying and move to `error`.
- *
- * @example Default (exponential backoff) — same as omitting the second ctor arg:
- * ```ts
- * new ConnectionManager(adapter);
- * ```
- *
- * @example Pick a built-in factory:
- * ```ts
- * new ConnectionManager(adapter, RetryStrategies.exponential(500, 20000, 6, 3));
- * new ConnectionManager(adapter, RetryStrategies.fibonacci(1000, 8, 3));
- * new ConnectionManager(adapter, RetryStrategies.polling(3000, 10, 3));
- * ```
- *
- * @example Custom strategy:
- * ```ts
- * const custom: RetryStrategy = {
- *   allowSelfRecoverCount: 2,
- *   delay: ({ retryCount, lastDelay }) =>
- *     retryCount >= 3 ? null : (lastDelay ?? 1000) * 2,
- * };
- * new ConnectionManager(adapter, custom);
- * ```
- */
-
 interface RetryStrategyInput {
   retryCount: number;
   lastDelay: number | undefined;
@@ -35,14 +7,14 @@ export type RetryDelayStrategy = (input: RetryStrategyInput) => number | null;
 
 export type RetryStrategy = {
   /**
-   * Number of retries allowed for silent self-recovery before exposing `reconnecting`.
+   * 允许的静默自恢复重试次数，超过该次数后暴露 `reconnecting` 状态。
    */
   allowSelfRecoverCount?: number;
   delay: RetryDelayStrategy;
 };
 
 export const RetryStrategies = {
-  // 1. Exponential Backoff
+  // 指数退避
   exponential: (
     base = 1000,
     max = 30000,
@@ -56,7 +28,7 @@ export const RetryStrategies = {
     },
   }),
 
-  // 2. Fibonacci Backoff
+  // 斐波那契退避
   fibonacci: (base = 1000, maxRetries = 8, allowSelfRecoverCount = 0): RetryStrategy => {
     const fib = (n: number): number => (n <= 1 ? n : fib(n - 1) + fib(n - 2));
     return {
@@ -68,7 +40,7 @@ export const RetryStrategies = {
     };
   },
 
-  // 3. Fixed Interval
+  // 固定间隔重试
   polling: (interval = 3000, maxRetries = 10, allowSelfRecoverCount = 0): RetryStrategy => ({
     allowSelfRecoverCount,
     delay: ({ retryCount }) => (retryCount >= maxRetries ? null : interval),

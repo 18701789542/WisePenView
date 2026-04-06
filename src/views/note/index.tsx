@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { Alert, Button, Result, Spin } from 'antd';
-import { useUnmount, useUpdateEffect } from 'ahooks';
+import { useRequest, useUnmount, useUpdateEffect } from 'ahooks';
 import { Link, useParams } from 'react-router-dom';
 import { RiArrowLeftLine } from 'react-icons/ri';
 
@@ -8,7 +8,8 @@ import CustomBlockNote from '@/components/Note/CustomBlockNote';
 import type { NoteBodyEditorHandle } from '@/components/Note/CustomBlockNote/index.type';
 import NoteInfoBar from '@/components/Note/NoteInfoBar';
 import NoteTitle from '@/components/Note/NoteTitle';
-import { useNoteConnection } from '@/session/plugins/note/NoteSessionUnit';
+import { useNoteService } from '@/contexts/ServicesContext';
+import { useNoteSession } from '@/session/plugins/note/NoteSessionUnit';
 import styles from './style.module.less';
 
 /**
@@ -25,9 +26,17 @@ const NoteViewConnected: React.FC<NoteViewConnectedProps> = ({ noteId, resourceI
   const bodyEditorRef = useRef<NoteBodyEditorHandle>(null);
   const reconnectBannerShownAtRef = useRef<number | null>(null);
   const reconnectBannerHideTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
-  const { manager, instance } = useNoteConnection(resourceId);
+  const noteService = useNoteService();
+  const { manager, instance } = useNoteSession(resourceId);
   const sessionStatus = manager.status;
   const [showReconnectBanner, setShowReconnectBanner] = useState(false);
+  const { data: noteInfoDisplay } = useRequest(
+    () => noteService.getNoteInfoDisplay({ resourceId }),
+    {
+      ready: Boolean(resourceId),
+      refreshDeps: [resourceId],
+    }
+  );
 
   const isConnected = sessionStatus === 'connected';
   const isReconnecting = sessionStatus === 'reconnecting';
@@ -117,12 +126,13 @@ const NoteViewConnected: React.FC<NoteViewConnectedProps> = ({ noteId, resourceI
             />
           ) : null}
           <NoteTitle
-            key={resourceId}
+            key={`${resourceId}-${noteInfoDisplay?.noteTitle ?? ''}`}
             id={noteId}
+            initialContent={noteInfoDisplay?.noteTitle}
             focusOnMount={isConnected}
             onEnterKey={focusBody}
           />
-          <NoteInfoBar resourceId={resourceId} />
+          <NoteInfoBar noteInfoDisplay={noteInfoDisplay} />
           <div className={styles.body}>
             <CustomBlockNote
               key={resourceId}

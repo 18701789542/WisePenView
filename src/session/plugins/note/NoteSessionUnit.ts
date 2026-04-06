@@ -4,12 +4,15 @@ import { IndexeddbPersistence } from 'y-indexeddb';
 import * as Y from 'yjs';
 
 import { NoteAdapter } from './NoteAdapter';
-import { NoteGateway } from './NoteGateway';
 import { NoteInstance } from './NoteInstance';
-import { noteYjsIdbRoomName } from './idbRoom';
 import { WisepenProvider } from './WisepenProvider';
 
-export const NoteConnectionUnit = {
+/** y-indexeddb 存储键：单条笔记一个 room，与 resourceId 对应（不承诺离线冷启动可打开） */
+export function noteYjsIdbRoomName(resourceId: string): string {
+  return `wisepen-note:${resourceId}`;
+}
+
+export const NoteSessionUnit = {
   type: 'note',
   create: (resourceId: string) => {
     const doc = new Y.Doc();
@@ -19,10 +22,9 @@ export const NoteConnectionUnit = {
     const adapter = new NoteAdapter(instance, provider);
     return { instance, adapter };
   },
-  gateway: NoteGateway,
   config: {
     retryStrategy: RetryStrategies.exponential(1000, 30000, 5, 3),
   },
 } as const;
 
-export const useNoteConnection = createSessionHook(NoteConnectionUnit);
+export const useNoteSession = createSessionHook(NoteSessionUnit);

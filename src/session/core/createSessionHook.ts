@@ -1,17 +1,15 @@
 import { useMemo, useSyncExternalStore } from 'react';
 
-import type { StatusAdapter } from './StatusAdapter';
+import type { StatusAdapter, SessionInstance } from './index.type';
 import type { RetryStrategy } from './RetryStrategy';
 import { StatusManager } from './StatusManager';
 import { useEffectForce } from '@/hooks/useEffectForce';
-import type { ConnectionInstance } from './SessionInstance';
-import type { GatewayFactory } from './GatewayFactory';
 
 /**
- * createConnectionHook is the hook to create a connection.
- * It is used to create a connection and return the status and data flow.
+ * createSessionHook is the hook to create a session.
+ * It is used to create a session and return the status and data flow.
  * @example
- * const { manager, instance } = createConnectionHook('note-1');
+ * const { manager, instance } = createSessionHook('note-1');
  * manager.status;
  * instance;
  */
@@ -19,18 +17,17 @@ export type SessionUnitConfig = {
   retryStrategy?: RetryStrategy;
 };
 
-type SessionUnit<TInstance extends ConnectionInstance, TAdapter extends StatusAdapter> = {
+type SessionUnit<TInstance extends SessionInstance, TAdapter extends StatusAdapter> = {
   type: string;
   create: (id: string) => {
     instance: TInstance;
     adapter: TAdapter;
   };
-  gateway: GatewayFactory<TInstance>;
   config?: SessionUnitConfig;
 };
 
 export function createSessionHook<
-  TInstance extends ConnectionInstance,
+  TInstance extends SessionInstance,
   TAdapter extends StatusAdapter,
 >(unit: SessionUnit<TInstance, TAdapter>) {
   const retryStrategy = unit.config?.retryStrategy;
@@ -39,13 +36,9 @@ export function createSessionHook<
     // create one connection tuple per hook instance (no shared pool)
     const session = useMemo(() => {
       const createdUnit = unit.create(id);
-      const rawInstance = createdUnit.instance;
+      const instance = createdUnit.instance;
       const adapter = createdUnit.adapter;
       const manager = new StatusManager(adapter, retryStrategy);
-      const instance = unit.gateway({
-        status: () => manager.status,
-        instance: rawInstance,
-      });
       return { manager, instance };
     }, [id]);
 
