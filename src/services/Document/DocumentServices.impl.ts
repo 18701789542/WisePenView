@@ -126,7 +126,6 @@ const syncPendingDocStatus = async (documentId: string): Promise<void> => {
   const res = (await Axios.post('/document/syncDocStatus', null, {
     params: { documentId },
   })) as ApiResponse<unknown>;
-  console.log(res);
   checkResponse(res);
 };
 

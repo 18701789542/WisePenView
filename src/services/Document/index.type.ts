@@ -1,4 +1,4 @@
-import type { DocumentProcessStatus, DocumentResourceType } from '@/constants/document';
+import type { DocumentResourceType } from '@/constants/document';
 
 /** `POST /document/initDocUpload` 请求体，与后端 DocumentUploadInitRequest 一致 */
 export interface DocumentUploadInitRequestBody {
@@ -17,9 +17,6 @@ export interface DocumentUploadInitResponse {
   flashUploaded: boolean;
 }
 
-/** 与后端 DocumentStatusEnum 的 code 对齐 */
-export type DocumentStatusCode = DocumentProcessStatus;
-
 export interface DocumentUploadMeta {
   documentName: string;
   uploaderId: number | null;
@@ -28,7 +25,7 @@ export interface DocumentUploadMeta {
 }
 
 export interface PendingDocumentStatus {
-  status: DocumentStatusCode;
+  status: string;
 }
 
 export interface PendingDocItem {

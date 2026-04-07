@@ -1,5 +1,4 @@
 export type {
-  DocumentStatusCode,
   DocumentUploadInitRequestBody,
   DocumentUploadInitResponse,
   IDocumentService,

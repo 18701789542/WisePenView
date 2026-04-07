@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useRequest } from 'ahooks';
 import { Button, Tabs } from 'antd';
 import { AiOutlineCloudUpload } from 'react-icons/ai';
@@ -8,6 +8,7 @@ import { LuTags } from 'react-icons/lu';
 import FlatDrive from '@/components/Drive/FlatDrive';
 import TreeDrive from '@/components/Drive/TreeDrive';
 import UploadQueueTab from '@/components/Drive/UploadQueueTab';
+import type { UploadQueueTabRef } from '@/components/Drive/UploadQueueTab';
 import { StickerManageModal } from '@/components/Drive/Modals';
 import { useNoteService, useUserService } from '@/contexts/ServicesContext';
 import { useAppMessage } from '@/hooks/useAppMessage';
@@ -33,6 +34,7 @@ const Drive: React.FC = () => {
   const messageApi = useAppMessage();
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [stickerManageOpen, setStickerManageOpen] = useState(false);
+  const uploadQueueRef = useRef<UploadQueueTabRef>(null);
   const { loading: creatingNote, run: runCreateNote } = useRequest(
     async () => {
       const { resourceId } = await noteService.createNote({ title: '未命名笔记' });
@@ -66,6 +68,10 @@ const Drive: React.FC = () => {
     if (creatingNote) return;
     runCreateNote();
   }, [creatingNote, runCreateNote]);
+
+  const handleUploadSuccess = useCallback(() => {
+    uploadQueueRef.current?.refresh();
+  }, []);
 
   return (
     <div className={styles.pageContainer}>
@@ -105,10 +111,14 @@ const Drive: React.FC = () => {
       <div className={styles.previewContent}>
         {viewMode === 'flat' && <FlatDrive />}
         {viewMode === 'folder' && <TreeDrive />}
-        {viewMode === 'uploadQueue' && <UploadQueueTab />}
+        {viewMode === 'uploadQueue' && <UploadQueueTab ref={uploadQueueRef} />}
       </div>
 
-      <UploadDocumentModal open={uploadModalOpen} onClose={() => setUploadModalOpen(false)} />
+      <UploadDocumentModal
+        open={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+        onSuccess={handleUploadSuccess}
+      />
       <StickerManageModal open={stickerManageOpen} onCancel={() => setStickerManageOpen(false)} />
     </div>
   );

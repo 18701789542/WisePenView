@@ -1,70 +1,27 @@
-import React, { useMemo, useState } from 'react';
+import React, { forwardRef, useImperativeHandle, useMemo, useState } from 'react';
 import { useMount, useRequest, useInterval, useUnmount } from 'ahooks';
-import { Button, Empty, Space, Table, Tag } from 'antd';
+import { Button, Empty, Space, Table } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useDocumentService } from '@/contexts/ServicesContext';
-import { DOCUMENT_PROCESS_STATUS, DOCUMENT_PROCESS_STATUS_LABELS } from '@/constants/document';
 import { useAppMessage } from '@/hooks/useAppMessage';
 import { formatSize } from '@/utils/format';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
-import type { DocumentStatusCode, PendingDocItem } from '@/services/Document';
+import { getDocumentStatusLabel, isDocumentTerminalStatus } from '@/constants/document';
+import type { PendingDocItem } from '@/services/Document';
 import styles from './style.module.less';
 
 const SYNC_INTERVAL_MS = 5000;
-const TERMINAL_STATUS_SET = new Set<DocumentStatusCode>([
-  DOCUMENT_PROCESS_STATUS.READY,
-  DOCUMENT_PROCESS_STATUS.TRANSFER_TIMEOUT,
-  DOCUMENT_PROCESS_STATUS.REGISTERING_RES_TIMEOUT,
-  DOCUMENT_PROCESS_STATUS.FAILED,
-]);
-
-const toStatusCode = (input: unknown): DocumentStatusCode | null => {
-  if (typeof input === 'number' && Number.isFinite(input)) {
-    return Object.prototype.hasOwnProperty.call(DOCUMENT_PROCESS_STATUS_LABELS, input)
-      ? (input as DocumentStatusCode)
-      : null;
-  }
-  if (typeof input === 'string' && input.trim() !== '') {
-    const parsed = Number(input);
-    if (
-      Number.isFinite(parsed) &&
-      Object.prototype.hasOwnProperty.call(DOCUMENT_PROCESS_STATUS_LABELS, parsed)
-    ) {
-      return parsed as DocumentStatusCode;
-    }
-  }
-  return null;
-};
-
-const isTerminalStatus = (status: unknown): boolean => {
-  const normalizedStatus = toStatusCode(status);
-  return normalizedStatus != null && TERMINAL_STATUS_SET.has(normalizedStatus);
-};
-
-const getStatusTag = (status: unknown): { color: string; label: string } => {
-  const normalizedStatus = toStatusCode(status);
-  if (normalizedStatus == null) return { color: 'default', label: '未知状态' };
-  if (normalizedStatus === DOCUMENT_PROCESS_STATUS.READY) {
-    return { color: 'success', label: DOCUMENT_PROCESS_STATUS_LABELS[normalizedStatus] };
-  }
-  if (normalizedStatus === DOCUMENT_PROCESS_STATUS.FAILED) {
-    return { color: 'error', label: DOCUMENT_PROCESS_STATUS_LABELS[normalizedStatus] };
-  }
-  if (
-    normalizedStatus === DOCUMENT_PROCESS_STATUS.TRANSFER_TIMEOUT ||
-    normalizedStatus === DOCUMENT_PROCESS_STATUS.REGISTERING_RES_TIMEOUT
-  ) {
-    return { color: 'warning', label: DOCUMENT_PROCESS_STATUS_LABELS[normalizedStatus] };
-  }
-  return { color: 'processing', label: DOCUMENT_PROCESS_STATUS_LABELS[normalizedStatus] };
-};
 
 const formatFileType = (fileType: string): string => {
   const value = fileType.toUpperCase();
   return value === '' ? 'UNKNOWN' : value;
 };
 
-const UploadQueueTab: React.FC = () => {
+export interface UploadQueueTabRef {
+  refresh: () => void;
+}
+
+const UploadQueueTab = forwardRef<UploadQueueTabRef>((_, ref) => {
   const documentService = useDocumentService();
   const message = useAppMessage();
   const [list, setList] = useState<PendingDocItem[]>([]);
@@ -81,7 +38,7 @@ const UploadQueueTab: React.FC = () => {
       if (withSync) {
         const current = await documentService.listPendingDocs();
         const nonTerminalItems = current.filter(
-          (item) => !isTerminalStatus(item.documentStatus.status)
+          (item) => !isDocumentTerminalStatus(item.documentStatus.status)
         );
         await Promise.all(
           nonTerminalItems
@@ -95,7 +52,9 @@ const UploadQueueTab: React.FC = () => {
       manual: true,
       onSuccess: (nextList) => {
         setList(nextList);
-        setPollingActive(nextList.some((item) => !isTerminalStatus(item.documentStatus.status)));
+        setPollingActive(
+          nextList.some((item) => !isDocumentTerminalStatus(item.documentStatus.status))
+        );
       },
       onError: (err) => {
         setPollingActive(false);
@@ -166,6 +125,16 @@ const UploadQueueTab: React.FC = () => {
     cancelPolling();
   });
 
+  useImperativeHandle(
+    ref,
+    () => ({
+      refresh: () => {
+        runFetchPendingList(false);
+      },
+    }),
+    [runFetchPendingList]
+  );
+
   const columns = useMemo<ColumnsType<PendingDocItem>>(
     () => [
       {
@@ -193,10 +162,7 @@ const UploadQueueTab: React.FC = () => {
         dataIndex: ['documentStatus', 'status'],
         key: 'status',
         width: 160,
-        render: (value: unknown) => {
-          const tag = getStatusTag(value);
-          return <Tag color={tag.color}>{tag.label}</Tag>;
-        },
+        render: (value: string) => getDocumentStatusLabel(value),
       },
       {
         title: '',
@@ -204,7 +170,7 @@ const UploadQueueTab: React.FC = () => {
         width: 180,
         align: 'right',
         render: (_: unknown, record: PendingDocItem) => {
-          const terminal = isTerminalStatus(record.documentStatus.status);
+          const terminal = isDocumentTerminalStatus(record.documentStatus.status);
           const disabled = terminal || record.documentId == null || record.documentId === '';
           return (
             <Space size={4}>
@@ -256,6 +222,6 @@ const UploadQueueTab: React.FC = () => {
       </main>
     </div>
   );
-};
+});
 
 export default UploadQueueTab;

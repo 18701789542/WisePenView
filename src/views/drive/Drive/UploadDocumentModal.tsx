@@ -14,12 +14,17 @@ import styles from './UploadDocumentModal.module.less';
 export interface UploadDocumentModalProps {
   open: boolean;
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
 /**
  * 文档上传：MD5 → init → OSS PUT，成功后跳转 PDF 预览。
  */
-export const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({ open, onClose }) => {
+export const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
+  open,
+  onClose,
+  onSuccess,
+}) => {
   const documentService = useDocumentService();
   const navigate = useNavigate();
   const message = useAppMessage();
@@ -54,6 +59,7 @@ export const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({ open, 
       },
       onSuccess: (result) => {
         message.success('上传成功');
+        onSuccess?.();
         resetState();
         onClose();
       },
