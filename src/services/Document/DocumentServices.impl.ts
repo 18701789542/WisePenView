@@ -8,6 +8,7 @@ import { checkResponse } from '@/utils/response';
 import type { ApiResponse } from '@/types/api';
 import { computeFileMd5 } from '@/utils/computeFileMd5';
 import { putOssPresignedUrl } from '@/utils/ossPresignedPut';
+import { serializeRepeatKeyQuery } from '@/utils/serializeRepeatKeyQuery';
 import type {
   DocumentUploadInitRequestBody,
   DocumentUploadInitResponse,
@@ -108,58 +109,24 @@ const retryConvert = async (documentId: string): Promise<void> => {
 };
 
 const deleteDocument = async (documentId: string): Promise<void> => {
-  const res = (await Axios.post('/document/deletedDoc', null, {
-    params: { documentId },
-  })) as ApiResponse<unknown>;
+  const res = (await Axios.post('/resource/item/removeResources', null, {
+    params: { resourceIds: [documentId] },
+    paramsSerializer: serializeRepeatKeyQuery,
+  })) as ApiResponse<void>;
   checkResponse(res);
-};
-
-const normalizePendingDocItem = (input: unknown): PendingDocItem | null => {
-  if (input == null || typeof input !== 'object') return null;
-  const raw = input as Record<string, unknown>;
-  const documentIdRaw = raw.documentId;
-  if (typeof documentIdRaw !== 'string' || documentIdRaw.trim() === '') return null;
-
-  const filenameRaw = raw.filename;
-  const statusRaw = raw.status;
-  return {
-    documentId: documentIdRaw,
-    filename:
-      typeof filenameRaw === 'string' && filenameRaw.trim() !== '' ? filenameRaw : '未命名文档',
-    status: typeof statusRaw === 'string' && statusRaw.trim() !== '' ? statusRaw : 'UNKNOWN',
-    createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : undefined,
-    updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : undefined,
-    errorMessage: typeof raw.errorMessage === 'string' ? raw.errorMessage : null,
-  };
-};
-
-const normalizePendingDocList = (input: unknown): PendingDocItem[] => {
-  if (Array.isArray(input)) {
-    return input
-      .map(normalizePendingDocItem)
-      .filter((item): item is PendingDocItem => item != null);
-  }
-  if (input != null && typeof input === 'object') {
-    const data = input as Record<string, unknown>;
-    if (Array.isArray(data.list)) {
-      return data.list
-        .map(normalizePendingDocItem)
-        .filter((item): item is PendingDocItem => item != null);
-    }
-  }
-  return [];
 };
 
 const listPendingDocs = async (): Promise<PendingDocItem[]> => {
-  const res = (await Axios.get('/document/listPendingDoc')) as ApiResponse<unknown>;
+  const res = (await Axios.get('/document/listPendingDocs')) as ApiResponse<PendingDocItem[]>;
   checkResponse(res);
-  return normalizePendingDocList(res.data);
+  return res.data ?? [];
 };
 
 const syncPendingDocStatus = async (documentId: string): Promise<void> => {
   const res = (await Axios.post('/document/syncDocStatus', null, {
     params: { documentId },
   })) as ApiResponse<unknown>;
+  console.log(res);
   checkResponse(res);
 };
 

@@ -9,27 +9,10 @@ import type {
 import { TAG_QUERY_LOGIC_MODE } from './index.type';
 import type { IResourceService } from './index.type';
 import Axios from '@/utils/Axios';
+import { serializeRepeatKeyQuery } from '@/utils/serializeRepeatKeyQuery';
 import { checkResponse } from '@/utils/response';
 import type { ApiResponse } from '@/types/api';
 import { useRecentFilesStore } from '@/store';
-
-/** GET query：数组用重复键，兼容 Spring @RequestParam List */
-const serializeResourceListQuery = (params: Record<string, unknown>): string => {
-  const sp = new URLSearchParams();
-  Object.entries(params).forEach(([key, value]) => {
-    if (value === undefined || value === null) return;
-    if (Array.isArray(value)) {
-      value.forEach((v) => {
-        if (v !== undefined && v !== null && String(v) !== '') {
-          sp.append(key, String(v));
-        }
-      });
-    } else {
-      sp.append(key, String(value));
-    }
-  });
-  return sp.toString();
-};
 
 const requestResourceItemList = async (
   params: GetUserResourcesRequest,
@@ -51,7 +34,7 @@ const requestResourceItemList = async (
   }
   const res = (await Axios.get('/resource/item/listResources', {
     params: query,
-    paramsSerializer: serializeResourceListQuery,
+    paramsSerializer: serializeRepeatKeyQuery,
   })) as ApiResponse<ResourceListPage>;
   checkResponse(res);
   const d = res.data;

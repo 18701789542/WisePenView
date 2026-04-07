@@ -1,3 +1,5 @@
+import type { DocumentProcessStatus, DocumentResourceType } from '@/constants/document';
+
 /** `POST /document/initDocUpload` 请求体，与后端 DocumentUploadInitRequest 一致 */
 export interface DocumentUploadInitRequestBody {
   filename: string;
@@ -15,13 +17,26 @@ export interface DocumentUploadInitResponse {
   flashUploaded: boolean;
 }
 
+/** 与后端 DocumentStatusEnum 的 code 对齐 */
+export type DocumentStatusCode = DocumentProcessStatus;
+
+export interface DocumentUploadMeta {
+  documentName: string;
+  uploaderId: number | null;
+  fileType: DocumentResourceType;
+  size: number;
+}
+
+export interface PendingDocumentStatus {
+  status: DocumentStatusCode;
+}
+
 export interface PendingDocItem {
-  documentId: string;
-  filename: string;
-  status: string;
-  createdAt?: string;
-  updatedAt?: string;
-  errorMessage?: string | null;
+  /** 部分接口实现可能不返回该字段；缺失时前端仅展示，不允许重试/取消/sync */
+  documentId?: string;
+  uploadMeta: DocumentUploadMeta;
+  documentStatus: PendingDocumentStatus;
+  maxPreviewPages: number | null;
 }
 
 /** DocumentService：文档上传、重试转换、删除（路径与当前后端 DocumentController 一致） */

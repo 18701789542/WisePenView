@@ -45,7 +45,7 @@ const buildColumns = (props: ColumnBuildProps): ColumnsType<ResourceItem> => [
     key: 'currentTags',
     width: 200,
     render: (raw?: Record<string, string>) => {
-      const entries = raw ? Object.entries(raw) : [];
+      const entries = raw ? Object.entries(raw).filter(([, name]) => !name.startsWith('/')) : [];
       return entries.length ? (
         <span className={styles.tagList}>
           {entries.map(([id, name]) => (

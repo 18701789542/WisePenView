@@ -3,34 +3,65 @@ import { useMount, useRequest, useInterval, useUnmount } from 'ahooks';
 import { Button, Empty, Space, Table, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useDocumentService } from '@/contexts/ServicesContext';
+import { DOCUMENT_PROCESS_STATUS, DOCUMENT_PROCESS_STATUS_LABELS } from '@/constants/document';
 import { useAppMessage } from '@/hooks/useAppMessage';
+import { formatSize } from '@/utils/format';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
-import type { PendingDocItem } from '@/services/Document';
+import type { DocumentStatusCode, PendingDocItem } from '@/services/Document';
 import styles from './style.module.less';
 
 const SYNC_INTERVAL_MS = 5000;
-const TERMINAL_STATUS_SET = new Set(['SUCCESS', 'FAILED', 'CANCELED', 'CANCELLED']);
+const TERMINAL_STATUS_SET = new Set<DocumentStatusCode>([
+  DOCUMENT_PROCESS_STATUS.READY,
+  DOCUMENT_PROCESS_STATUS.TRANSFER_TIMEOUT,
+  DOCUMENT_PROCESS_STATUS.REGISTERING_RES_TIMEOUT,
+  DOCUMENT_PROCESS_STATUS.FAILED,
+]);
 
-const normalizeStatus = (status: string): string => status.trim().toUpperCase();
-
-const isTerminalStatus = (status: string): boolean =>
-  TERMINAL_STATUS_SET.has(normalizeStatus(status));
-
-const getStatusTag = (status: string): { color: string; label: string } => {
-  const normalized = normalizeStatus(status);
-  if (normalized === 'SUCCESS') return { color: 'success', label: '成功' };
-  if (normalized === 'FAILED') return { color: 'error', label: '失败' };
-  if (normalized === 'CANCELED' || normalized === 'CANCELLED')
-    return { color: 'default', label: '已取消' };
-  if (normalized === 'PENDING') return { color: 'processing', label: '处理中' };
-  return { color: 'processing', label: status || '处理中' };
+const toStatusCode = (input: unknown): DocumentStatusCode | null => {
+  if (typeof input === 'number' && Number.isFinite(input)) {
+    return Object.prototype.hasOwnProperty.call(DOCUMENT_PROCESS_STATUS_LABELS, input)
+      ? (input as DocumentStatusCode)
+      : null;
+  }
+  if (typeof input === 'string' && input.trim() !== '') {
+    const parsed = Number(input);
+    if (
+      Number.isFinite(parsed) &&
+      Object.prototype.hasOwnProperty.call(DOCUMENT_PROCESS_STATUS_LABELS, parsed)
+    ) {
+      return parsed as DocumentStatusCode;
+    }
+  }
+  return null;
 };
 
-const formatTimeText = (value?: string): string => {
-  if (value == null || value.trim() === '') return '-';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString();
+const isTerminalStatus = (status: unknown): boolean => {
+  const normalizedStatus = toStatusCode(status);
+  return normalizedStatus != null && TERMINAL_STATUS_SET.has(normalizedStatus);
+};
+
+const getStatusTag = (status: unknown): { color: string; label: string } => {
+  const normalizedStatus = toStatusCode(status);
+  if (normalizedStatus == null) return { color: 'default', label: '未知状态' };
+  if (normalizedStatus === DOCUMENT_PROCESS_STATUS.READY) {
+    return { color: 'success', label: DOCUMENT_PROCESS_STATUS_LABELS[normalizedStatus] };
+  }
+  if (normalizedStatus === DOCUMENT_PROCESS_STATUS.FAILED) {
+    return { color: 'error', label: DOCUMENT_PROCESS_STATUS_LABELS[normalizedStatus] };
+  }
+  if (
+    normalizedStatus === DOCUMENT_PROCESS_STATUS.TRANSFER_TIMEOUT ||
+    normalizedStatus === DOCUMENT_PROCESS_STATUS.REGISTERING_RES_TIMEOUT
+  ) {
+    return { color: 'warning', label: DOCUMENT_PROCESS_STATUS_LABELS[normalizedStatus] };
+  }
+  return { color: 'processing', label: DOCUMENT_PROCESS_STATUS_LABELS[normalizedStatus] };
+};
+
+const formatFileType = (fileType: string): string => {
+  const value = fileType.toUpperCase();
+  return value === '' ? 'UNKNOWN' : value;
 };
 
 const UploadQueueTab: React.FC = () => {
@@ -49,9 +80,13 @@ const UploadQueueTab: React.FC = () => {
     async (withSync: boolean) => {
       if (withSync) {
         const current = await documentService.listPendingDocs();
-        const nonTerminalItems = current.filter((item) => !isTerminalStatus(item.status));
+        const nonTerminalItems = current.filter(
+          (item) => !isTerminalStatus(item.documentStatus.status)
+        );
         await Promise.all(
-          nonTerminalItems.map((item) => documentService.syncPendingDocStatus(item.documentId))
+          nonTerminalItems
+            .filter((item) => item.documentId != null && item.documentId !== '')
+            .map((item) => documentService.syncPendingDocStatus(item.documentId as string))
         );
       }
       return await documentService.listPendingDocs();
@@ -60,7 +95,7 @@ const UploadQueueTab: React.FC = () => {
       manual: true,
       onSuccess: (nextList) => {
         setList(nextList);
-        setPollingActive(nextList.some((item) => !isTerminalStatus(item.status)));
+        setPollingActive(nextList.some((item) => !isTerminalStatus(item.documentStatus.status)));
       },
       onError: (err) => {
         setPollingActive(false);
@@ -135,34 +170,33 @@ const UploadQueueTab: React.FC = () => {
     () => [
       {
         title: '文件名',
-        dataIndex: 'filename',
+        dataIndex: ['uploadMeta', 'documentName'],
         key: 'filename',
         render: (value: string) => <span className={styles.nameText}>{value || '未命名文档'}</span>,
       },
       {
+        title: '类型',
+        dataIndex: ['uploadMeta', 'fileType'],
+        key: 'fileType',
+        width: 120,
+        render: (value: string) => formatFileType(value),
+      },
+      {
+        title: '大小',
+        dataIndex: ['uploadMeta', 'size'],
+        key: 'size',
+        width: 120,
+        render: (value: number) => formatSize(value),
+      },
+      {
         title: '状态',
-        dataIndex: 'status',
+        dataIndex: ['documentStatus', 'status'],
         key: 'status',
-        width: 140,
-        render: (value: string) => {
+        width: 160,
+        render: (value: unknown) => {
           const tag = getStatusTag(value);
           return <Tag color={tag.color}>{tag.label}</Tag>;
         },
-      },
-      {
-        title: '更新时间',
-        dataIndex: 'updatedAt',
-        key: 'updatedAt',
-        width: 220,
-        render: (value: string | undefined, record: PendingDocItem) =>
-          formatTimeText(value ?? record.createdAt),
-      },
-      {
-        title: '失败原因',
-        dataIndex: 'errorMessage',
-        key: 'errorMessage',
-        width: 260,
-        render: (value?: string | null) => value ?? '-',
       },
       {
         title: '',
@@ -170,15 +204,18 @@ const UploadQueueTab: React.FC = () => {
         width: 180,
         align: 'right',
         render: (_: unknown, record: PendingDocItem) => {
-          const terminal = isTerminalStatus(record.status);
+          const terminal = isTerminalStatus(record.documentStatus.status);
+          const disabled = terminal || record.documentId == null || record.documentId === '';
           return (
             <Space size={4}>
               <Button
                 type="link"
                 size="small"
-                disabled={terminal}
+                disabled={disabled}
                 loading={retryingId === record.documentId}
-                onClick={() => runRetryPendingDoc(record.documentId)}
+                onClick={() => {
+                  if (record.documentId) runRetryPendingDoc(record.documentId);
+                }}
               >
                 重试
               </Button>
@@ -186,9 +223,11 @@ const UploadQueueTab: React.FC = () => {
                 type="link"
                 size="small"
                 danger
-                disabled={terminal}
+                disabled={disabled}
                 loading={cancelingId === record.documentId}
-                onClick={() => runCancelPendingDoc(record.documentId)}
+                onClick={() => {
+                  if (record.documentId) runCancelPendingDoc(record.documentId);
+                }}
               >
                 取消
               </Button>
@@ -204,7 +243,10 @@ const UploadQueueTab: React.FC = () => {
     <div className={styles.wrapper}>
       <main className={styles.listArea}>
         <Table<PendingDocItem>
-          rowKey="documentId"
+          rowKey={(record, index) =>
+            record.documentId ??
+            `${record.uploadMeta.documentName}-${record.uploadMeta.uploaderId ?? 'unknown'}-${String(index ?? 0)}`
+          }
           dataSource={list}
           columns={columns}
           loading={listLoading}

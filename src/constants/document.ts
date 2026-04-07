@@ -16,6 +16,11 @@ export const DOCUMENT_ALLOWED_EXTENSIONS = [
 
 export type DocumentAllowedExtension = (typeof DOCUMENT_ALLOWED_EXTENSIONS)[number];
 
+/** 文档资源类型（与后端 ResourceType 枚举序列化值对齐） */
+export const DOCUMENT_RESOURCE_TYPES = [...DOCUMENT_ALLOWED_EXTENSIONS, 'unknown'] as const;
+
+export type DocumentResourceType = (typeof DOCUMENT_RESOURCE_TYPES)[number];
+
 /** 文档处理状态，对应后端 DocumentStatusEnum 枚举 */
 export const DOCUMENT_PROCESS_STATUS = {
   UPLOADING: 0,

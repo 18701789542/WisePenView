@@ -42,7 +42,7 @@ export interface CreateNoteResponse {
 }
 
 export interface DeleteNoteRequest {
-  resourceId: string;
+  resourceIds: string[];
 }
 
 export interface SyncTitleRequest {

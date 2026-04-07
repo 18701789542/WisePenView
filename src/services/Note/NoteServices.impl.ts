@@ -8,6 +8,7 @@ import type {
   NoteInfoDisplayData,
 } from './index.type';
 import Axios from '@/utils/Axios';
+import { serializeRepeatKeyQuery } from '@/utils/serializeRepeatKeyQuery';
 import { checkResponse } from '@/utils/response';
 import type { ApiResponse } from '@/types/api';
 import type { NoteInfoResponse } from '@/types/note';
@@ -51,7 +52,10 @@ const createNote = async (params: CreateNoteRequest): Promise<CreateNoteResponse
 };
 
 const deleteNote = async (params: DeleteNoteRequest): Promise<void> => {
-  const res = (await Axios.post('/note/removeNote', null, { params })) as ApiResponse;
+  const res = (await Axios.post('/resource/item/removeResources', null, {
+    params: { resourceIds: params.resourceIds },
+    paramsSerializer: serializeRepeatKeyQuery,
+  })) as ApiResponse<void>;
   checkResponse(res);
 };
 

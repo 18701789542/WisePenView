@@ -18,7 +18,7 @@ const DeleteFileModal: React.FC<DeleteFileModalProps> = ({ open, onCancel, onSuc
     async () => {
       const resourceId = file!.resourceId!;
       if (file!.resourceType === RESOURCE_TYPE.NOTE) {
-        await noteService.deleteNote({ resourceId });
+        await noteService.deleteNote({ resourceIds: [resourceId] });
         return;
       }
       await documentService.deleteDocument(resourceId);

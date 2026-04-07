@@ -44,7 +44,7 @@ const SystemLayout: React.FC = () => {
       {/* 右侧 AI Panel */}
       <Sider
         className={styles.rightSider}
-        width={380}
+        width={400}
         theme="light"
         collapsed={chatPanelCollapsed}
         collapsedWidth={0}
