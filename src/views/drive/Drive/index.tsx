@@ -7,6 +7,7 @@ import { RiPenNibFill } from 'react-icons/ri';
 import { LuTags } from 'react-icons/lu';
 import FlatDrive from '@/components/Drive/FlatDrive';
 import TreeDrive from '@/components/Drive/TreeDrive';
+import UploadQueueTab from '@/components/Drive/UploadQueueTab';
 import { StickerManageModal } from '@/components/Drive/Modals';
 import { useNoteService, useUserService } from '@/contexts/ServicesContext';
 import { useAppMessage } from '@/hooks/useAppMessage';
@@ -19,6 +20,7 @@ import styles from './style.module.less';
 const VIEW_TABS: { key: DriveViewMode; label: string }[] = [
   { key: 'folder', label: '文件夹管理' },
   { key: 'flat', label: '按标签管理' },
+  { key: 'uploadQueue', label: '上传队列' },
 ];
 
 const Drive: React.FC = () => {
@@ -103,6 +105,7 @@ const Drive: React.FC = () => {
       <div className={styles.previewContent}>
         {viewMode === 'flat' && <FlatDrive />}
         {viewMode === 'folder' && <TreeDrive />}
+        {viewMode === 'uploadQueue' && <UploadQueueTab />}
       </div>
 
       <UploadDocumentModal open={uploadModalOpen} onClose={() => setUploadModalOpen(false)} />

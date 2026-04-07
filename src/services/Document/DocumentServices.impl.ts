@@ -12,6 +12,7 @@ import type {
   DocumentUploadInitRequestBody,
   DocumentUploadInitResponse,
   IDocumentService,
+  PendingDocItem,
   UploadDocumentParams,
   UploadDocumentResult,
 } from './index.type';
@@ -113,13 +114,52 @@ const deleteDocument = async (documentId: string): Promise<void> => {
   checkResponse(res);
 };
 
-const getPendingDocList = async (): Promise<void> => {
+const normalizePendingDocItem = (input: unknown): PendingDocItem | null => {
+  if (input == null || typeof input !== 'object') return null;
+  const raw = input as Record<string, unknown>;
+  const documentIdRaw = raw.documentId;
+  if (typeof documentIdRaw !== 'string' || documentIdRaw.trim() === '') return null;
+
+  const filenameRaw = raw.filename;
+  const statusRaw = raw.status;
+  return {
+    documentId: documentIdRaw,
+    filename:
+      typeof filenameRaw === 'string' && filenameRaw.trim() !== '' ? filenameRaw : '未命名文档',
+    status: typeof statusRaw === 'string' && statusRaw.trim() !== '' ? statusRaw : 'UNKNOWN',
+    createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : undefined,
+    updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : undefined,
+    errorMessage: typeof raw.errorMessage === 'string' ? raw.errorMessage : null,
+  };
+};
+
+const normalizePendingDocList = (input: unknown): PendingDocItem[] => {
+  if (Array.isArray(input)) {
+    return input
+      .map(normalizePendingDocItem)
+      .filter((item): item is PendingDocItem => item != null);
+  }
+  if (input != null && typeof input === 'object') {
+    const data = input as Record<string, unknown>;
+    if (Array.isArray(data.list)) {
+      return data.list
+        .map(normalizePendingDocItem)
+        .filter((item): item is PendingDocItem => item != null);
+    }
+  }
+  return [];
+};
+
+const listPendingDocs = async (): Promise<PendingDocItem[]> => {
   const res = (await Axios.get('/document/listPendingDoc')) as ApiResponse<unknown>;
   checkResponse(res);
+  return normalizePendingDocList(res.data);
 };
 
 const syncPendingDocStatus = async (documentId: string): Promise<void> => {
-  const res = (await Axios.post('/document/syncDocStatus')) as ApiResponse<unknown>;
+  const res = (await Axios.post('/document/syncDocStatus', null, {
+    params: { documentId },
+  })) as ApiResponse<unknown>;
   checkResponse(res);
 };
 
@@ -146,5 +186,9 @@ export const DocumentServicesImpl: IDocumentService = {
   uploadDocument,
   retryConvert,
   deleteDocument,
+  listPendingDocs,
+  syncPendingDocStatus,
+  retryPendingDoc,
+  cancelPendingDoc,
   getDocumentPreviewUrl,
 };

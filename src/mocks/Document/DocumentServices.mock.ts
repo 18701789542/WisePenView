@@ -1,4 +1,9 @@
-import type { IDocumentService, UploadDocumentParams, UploadDocumentResult } from '@/services/Document';
+import type {
+  IDocumentService,
+  PendingDocItem,
+  UploadDocumentParams,
+  UploadDocumentResult,
+} from '@/services/Document';
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -20,6 +25,23 @@ const deleteDocument = async (_documentId: string): Promise<void> => {
   await delay(200);
 };
 
+const listPendingDocs = async (): Promise<PendingDocItem[]> => {
+  await delay(200);
+  return [];
+};
+
+const syncPendingDocStatus = async (_documentId: string): Promise<void> => {
+  await delay(200);
+};
+
+const retryPendingDoc = async (_documentId: string): Promise<void> => {
+  await delay(200);
+};
+
+const cancelPendingDoc = async (_documentId: string): Promise<void> => {
+  await delay(200);
+};
+
 const getDocumentPreviewUrl = (resourceId: string): string => {
   const path = `/api/document/${encodeURIComponent(resourceId)}/preview`;
   return new URL(path, window.location.origin).href;
@@ -29,5 +51,9 @@ export const DocumentServicesMock: IDocumentService = {
   uploadDocument,
   retryConvert,
   deleteDocument,
+  listPendingDocs,
+  syncPendingDocStatus,
+  retryPendingDoc,
+  cancelPendingDoc,
   getDocumentPreviewUrl,
 };

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type DriveViewMode = 'folder' | 'flat';
+export type DriveViewMode = 'folder' | 'flat' | 'uploadQueue';
 
 type DrivePreferencesState = {
   viewMode: DriveViewMode;

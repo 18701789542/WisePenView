@@ -15,6 +15,15 @@ export interface DocumentUploadInitResponse {
   flashUploaded: boolean;
 }
 
+export interface PendingDocItem {
+  documentId: string;
+  filename: string;
+  status: string;
+  createdAt?: string;
+  updatedAt?: string;
+  errorMessage?: string | null;
+}
+
 /** DocumentService：文档上传、重试转换、删除（路径与当前后端 DocumentController 一致） */
 export interface IDocumentService {
   /** 计算 MD5 → 初始化上传 → 非秒传时 PUT 至 OSS，返回 documentId（即 resourceId） */
@@ -23,6 +32,14 @@ export interface IDocumentService {
   retryConvert(documentId: string): Promise<void>;
   /** 取消上传或删除文档 */
   deleteDocument(documentId: string): Promise<void>;
+  /** 拉取待处理文档队列 */
+  listPendingDocs(): Promise<PendingDocItem[]>;
+  /** 触发单条文档状态同步 */
+  syncPendingDocStatus(documentId: string): Promise<void>;
+  /** 重试待处理文档 */
+  retryPendingDoc(documentId: string): Promise<void>;
+  /** 取消待处理文档 */
+  cancelPendingDoc(documentId: string): Promise<void>;
   /** 文档预览 PDF 同源 URL（GET `/document/getDocPreview?documentId=...`；dev 下经 `/api` 代理） */
   getDocumentPreviewUrl(resourceId: string): string;
 }
