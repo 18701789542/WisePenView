@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import type { KeyboardEvent } from 'react';
 
-import type { WisepenProvider } from '@/session/plugins/note/WisepenProvider';
+import type { WisepenProvider } from '@/session/note/WisepenProvider';
 
 /**
  * 捕获阶段仅上报 sendIntent，不 preventDefault / 不手动 editor.undo。

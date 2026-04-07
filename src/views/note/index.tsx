@@ -9,7 +9,8 @@ import type { NoteBodyEditorHandle } from '@/components/Note/CustomBlockNote/ind
 import NoteInfoBar from '@/components/Note/NoteInfoBar';
 import NoteTitle from '@/components/Note/NoteTitle';
 import { useNoteService } from '@/contexts/ServicesContext';
-import { useNoteSession } from '@/session/plugins/note/useNoteSession';
+import { useSmoothFlag } from '@/hooks/useSmoothFlag';
+import { useNoteSession } from '@/session/note/useNoteSession';
 import styles from './style.module.less';
 
 interface NoteViewConnectedProps {
@@ -30,7 +31,7 @@ const NoteViewConnected: React.FC<NoteViewConnectedProps> = ({ noteId, resourceI
   );
 
   const isConnected = status === 'connected';
-  const isDisconnected = status === 'disconnected';
+  const isDisconnected = useSmoothFlag(status === 'disconnected', 2000, 2000);
   const isEditorReadOnly = status === 'connecting';
   const showFullPageSpin = status === 'connecting';
 
