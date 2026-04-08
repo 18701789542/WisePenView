@@ -57,10 +57,38 @@ export const DOCUMENT_TERMINAL_STATUS = [
 
 const DOCUMENT_TERMINAL_STATUS_SET = new Set<string>(DOCUMENT_TERMINAL_STATUS);
 
+export const DOCUMENT_RETRYABLE_STATUS = [
+  DOCUMENT_PROCESS_STATUS.TRANSFER_TIMEOUT,
+  DOCUMENT_PROCESS_STATUS.REGISTERING_RES_TIMEOUT,
+  DOCUMENT_PROCESS_STATUS.FAILED,
+] as const;
+
+const DOCUMENT_RETRYABLE_STATUS_SET = new Set<string>(DOCUMENT_RETRYABLE_STATUS);
+
+export const DOCUMENT_CANCELABLE_STATUS = [
+  DOCUMENT_PROCESS_STATUS.UPLOADING,
+  DOCUMENT_PROCESS_STATUS.UPLOADED,
+  DOCUMENT_PROCESS_STATUS.CONVERTING_AND_PARSING,
+  DOCUMENT_PROCESS_STATUS.REGISTERING_RES,
+  DOCUMENT_PROCESS_STATUS.TRANSFER_TIMEOUT,
+  DOCUMENT_PROCESS_STATUS.REGISTERING_RES_TIMEOUT,
+  DOCUMENT_PROCESS_STATUS.FAILED,
+] as const;
+
+const DOCUMENT_CANCELABLE_STATUS_SET = new Set<string>(DOCUMENT_CANCELABLE_STATUS);
+
 export const getDocumentStatusLabel = (status: string): string => {
   return DOCUMENT_PROCESS_STATUS_LABELS[status as DocumentProcessStatus] ?? status;
 };
 
 export const isDocumentTerminalStatus = (status: string): boolean => {
   return DOCUMENT_TERMINAL_STATUS_SET.has(status);
+};
+
+export const isDocumentRetryableStatus = (status: string): boolean => {
+  return DOCUMENT_RETRYABLE_STATUS_SET.has(status);
+};
+
+export const isDocumentCancelableStatus = (status: string): boolean => {
+  return DOCUMENT_CANCELABLE_STATUS_SET.has(status);
 };

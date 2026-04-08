@@ -6,7 +6,12 @@ import { useDocumentService } from '@/contexts/ServicesContext';
 import { useAppMessage } from '@/hooks/useAppMessage';
 import { formatSize } from '@/utils/format';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
-import { getDocumentStatusLabel, isDocumentTerminalStatus } from '@/constants/document';
+import {
+  isDocumentCancelableStatus,
+  getDocumentStatusLabel,
+  isDocumentRetryableStatus,
+  isDocumentTerminalStatus,
+} from '@/constants/document';
 import type { PendingDocItem } from '@/services/Document';
 import styles from './style.module.less';
 
@@ -170,14 +175,16 @@ const UploadQueueTab = forwardRef<UploadQueueTabRef>((_, ref) => {
         width: 180,
         align: 'right',
         render: (_: unknown, record: PendingDocItem) => {
-          const terminal = isDocumentTerminalStatus(record.documentStatus.status);
-          const disabled = terminal || record.documentId == null || record.documentId === '';
+          const status = record.documentStatus.status;
+          const hasDocumentId = record.documentId != null && record.documentId !== '';
+          const retryDisabled = !hasDocumentId || !isDocumentRetryableStatus(status);
+          const cancelDisabled = !hasDocumentId || !isDocumentCancelableStatus(status);
           return (
             <Space size={4}>
               <Button
                 type="link"
                 size="small"
-                disabled={disabled}
+                disabled={retryDisabled}
                 loading={retryingId === record.documentId}
                 onClick={() => {
                   if (record.documentId) runRetryPendingDoc(record.documentId);
@@ -189,7 +196,7 @@ const UploadQueueTab = forwardRef<UploadQueueTabRef>((_, ref) => {
                 type="link"
                 size="small"
                 danger
-                disabled={disabled}
+                disabled={cancelDisabled}
                 loading={cancelingId === record.documentId}
                 onClick={() => {
                   if (record.documentId) runCancelPendingDoc(record.documentId);
