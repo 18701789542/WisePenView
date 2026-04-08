@@ -5,8 +5,8 @@ export const WALLET_TARGET_TYPE = { USER: 1, GROUP: 2 } as const;
 export type WalletTargetType = (typeof WALLET_TARGET_TYPE)[keyof typeof WALLET_TARGET_TYPE];
 
 /**
- * listTransactions 的 type（与后端枚举一致）。
- * 「全部」不传 type；Tab「充值」→ 1；「消费」→ 2；3/4 仅在「全部」中出现。
+ * listTransactions 可选 type（与后端 TokenTransactionType 数值一致，Service 层会转为枚举名）。
+ * 「全部」不传；Tab「充值」→ REFILL；「消费」→ SPEND。
  */
 export const WALLET_TOKEN_TX_TYPE = {
   REFILL: 1,
@@ -14,6 +14,17 @@ export const WALLET_TOKEN_TX_TYPE = {
   TRANSFER_IN: 3,
   TRANSFER_OUT: 4,
 } as const;
+
+/**
+ * listTransactions 查询参数 type 的取值：须与后端 TokenTransactionType.name 一致。
+ * Spring 对枚举 Query 一般按枚举名绑定，传数字会 400。
+ */
+export const WALLET_LIST_TX_TYPE_QUERY_VALUE = {
+  [WALLET_TOKEN_TX_TYPE.REFILL]: 'REFILL',
+  [WALLET_TOKEN_TX_TYPE.SPEND]: 'SPEND',
+  [WALLET_TOKEN_TX_TYPE.TRANSFER_IN]: 'TRANSFER_IN',
+  [WALLET_TOKEN_TX_TYPE.TRANSFER_OUT]: 'TRANSFER_OUT',
+} as const satisfies Record<number, string>;
 
 /** Owner↔Group 划拨：1 转入小组，2 转回组长 */
 export const WALLET_TOKEN_TRANSFER_TYPE = { TO_GROUP: 1, TO_OWNER: 2 } as const;

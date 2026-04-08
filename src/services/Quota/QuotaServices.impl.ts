@@ -7,25 +7,39 @@ import type { GroupQuotaInfo } from '@/types/quota';
 import type { SetGroupQuotaRequest } from './index.type';
 import type { IQuotaService } from './index.type';
 
+const toNum = (v: unknown, fallback = 0): number => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+};
+
+/** GET /group/member/getAllMyGroupTokenInfo → PageResult<GroupMemberTokenDetailResponse> */
 const fetchUserGroupQuotas = async (
   page: number,
   pageSize: number
 ): Promise<{ quotas: UserGroupQuota[]; total: number }> => {
-  const res = (await Axios.get('/group/member/getAllGroupToken', {
+  const res = (await Axios.get('/group/member/getAllMyGroupTokenInfo', {
     params: { page, size: pageSize },
-  })) as ApiResponse<{
-    total: number;
-    list: { groupId?: string; groupName?: string; tokenLimit?: number; tokenUsed?: number }[];
-  }>;
+  })) as ApiResponse<Record<string, unknown>>;
   checkResponse(res);
-  const list = res.data?.list ?? [];
-  const quotas: UserGroupQuota[] = list.map((item) => ({
-    groupId: toIdString(item.groupId),
-    groupName: item.groupName ?? '',
-    quotaLimit: item.tokenLimit ?? 0,
-    quotaUsed: item.tokenUsed ?? 0,
-  }));
-  return { quotas, total: res.data?.total ?? 0 };
+  const data = (res.data ?? {}) as Record<string, unknown>;
+  const rawList = data.list ?? data.records ?? [];
+  const list = Array.isArray(rawList) ? rawList : [];
+  const quotas: UserGroupQuota[] = list
+    .filter((r): r is Record<string, unknown> => r != null && typeof r === 'object')
+    .map((item) => {
+      const baseRaw = item.groupDisplayBase;
+      const base =
+        baseRaw != null && typeof baseRaw === 'object' ? (baseRaw as Record<string, unknown>) : {};
+      return {
+        groupId: toIdString(base.groupId ?? base.GroupId ?? item.groupId ?? item.GroupId),
+        groupName: String(
+          base.groupName ?? base.GroupName ?? item.groupName ?? item.GroupName ?? ''
+        ),
+        quotaLimit: toNum(item.tokenLimit ?? item.TokenLimit),
+        quotaUsed: toNum(item.tokenUsed ?? item.TokenUsed),
+      };
+    });
+  return { quotas, total: toNum(data.total ?? data.Total, quotas.length) };
 };
 
 const fetchGroupQuota = async (groupId: string | number): Promise<GroupQuotaInfo> => {

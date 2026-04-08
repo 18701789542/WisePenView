@@ -1,6 +1,7 @@
 /**
  * 通用计算点钱包：/user/wallet；个人无参拉余额，小组传 groupId。
  * 点卡充值仅个人（redeemVoucher）；小组余额由组长通过「token 划拨」转入。
+ * 交易明细支持 Tab：全部 / 充值 / 消费（对应 listTransactions 的 type 筛选）。
  * 数据请求使用 ahooks（不使用 useEffect）。
  */
 import React, { useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
@@ -16,11 +17,11 @@ import RechargeModal from '@/components/Wallet/RechargeModal';
 import type { ComputeWalletProps, ComputeWalletRef } from './index.type';
 import styles from './style.module.less';
 
-type TabKey = 'all' | 'recharge' | 'spend';
-
 const PAGE_SIZE = 20;
 
-const tabToListType = (key: TabKey): number | undefined => {
+type TxTabKey = 'all' | 'recharge' | 'spend';
+
+const tabToListType = (key: TxTabKey): number | undefined => {
   if (key === 'recharge') return WALLET_TOKEN_TX_TYPE.REFILL;
   if (key === 'spend') return WALLET_TOKEN_TX_TYPE.SPEND;
   return undefined;
@@ -44,7 +45,17 @@ const typeLabel = (k: WalletTransactionKind): string => {
 };
 
 const ComputeWallet = React.forwardRef<ComputeWalletRef, ComputeWalletProps>(
-  ({ targetType, targetId, canRecharge, groupDisplayName, showOperatorColumn = false }, ref) => {
+  (
+    {
+      targetType,
+      targetId,
+      canRecharge,
+      groupDisplayName,
+      showOperatorColumn = false,
+      surface = 'card',
+    },
+    ref
+  ) => {
     const walletService = useWalletService();
     const message = useAppMessage();
 
@@ -53,7 +64,7 @@ const ComputeWallet = React.forwardRef<ComputeWalletRef, ComputeWalletProps>(
 
     const [displayBalance, setDisplayBalance] = useState(0);
     const [loadingWallet, setLoadingWallet] = useState(true);
-    const [tab, setTab] = useState<TabKey>('all');
+    const [txTab, setTxTab] = useState<TxTabKey>('all');
     const [rechargeOpen, setRechargeOpen] = useState(false);
     const [flashFirstRow, setFlashFirstRow] = useState(false);
     const firstBalanceRef = useRef(true);
@@ -136,7 +147,7 @@ const ComputeWallet = React.forwardRef<ComputeWalletRef, ComputeWalletProps>(
       pagination: { current: page = 1, total = 0, onChange: onTxPageChange },
     } = usePagination(
       async ({ current, pageSize }) => {
-        const listType = tabToListType(tab);
+        const listType = tabToListType(txTab);
         const { total: nextTotal, records } = await walletService.listTransactions({
           groupId:
             targetType === WALLET_TARGET_TYPE.GROUP && effectiveGroupId
@@ -152,7 +163,7 @@ const ComputeWallet = React.forwardRef<ComputeWalletRef, ComputeWalletProps>(
         ready: walletReady,
         defaultCurrent: 1,
         defaultPageSize: PAGE_SIZE,
-        refreshDeps: [walletService, targetType, effectiveGroupId, tab],
+        refreshDeps: [walletService, targetType, effectiveGroupId, txTab],
         onError: (err) => {
           message.error(parseErrorMessage(err, '获取交易明细失败'));
         },
@@ -206,8 +217,8 @@ const ComputeWallet = React.forwardRef<ComputeWalletRef, ComputeWalletProps>(
       await runRecharge(code);
     };
 
-    const handleTabChange = (key: string) => {
-      setTab(key as TabKey);
+    const handleTxTabChange = (key: string) => {
+      setTxTab(key as TxTabKey);
       onTxPageChange(1, PAGE_SIZE);
     };
 
@@ -305,8 +316,10 @@ const ComputeWallet = React.forwardRef<ComputeWalletRef, ComputeWalletProps>(
       [txData?.list]
     );
 
+    const rootClass = surface === 'plain' ? styles.plain : styles.card;
+
     return (
-      <div className={styles.card}>
+      <div className={rootClass}>
         <div className={styles.assetRow}>
           <div className={styles.balanceBlock}>
             <p className={styles.balanceLabel}>计算点余额</p>
@@ -329,8 +342,8 @@ const ComputeWallet = React.forwardRef<ComputeWalletRef, ComputeWalletProps>(
         <h3 className={styles.panelTitle}>交易明细</h3>
         <Tabs
           className={styles.tabs}
-          activeKey={tab}
-          onChange={handleTabChange}
+          activeKey={txTab}
+          onChange={handleTxTabChange}
           items={[
             { key: 'all', label: '全部' },
             { key: 'recharge', label: '充值' },

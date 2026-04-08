@@ -2,6 +2,7 @@
  * 钱包 Service：/user/wallet/*，成功码与全局一致 `code === 200`。
  */
 import Axios from '@/utils/Axios';
+import { WALLET_LIST_TX_TYPE_QUERY_VALUE } from '@/constants/wallet';
 import { checkResponse } from '@/utils/response';
 import type { ApiResponse } from '@/types/api';
 import type { WalletTransactionKind, WalletTransactionRecord } from '@/types/wallet';
@@ -83,7 +84,7 @@ const getUserWalletInfo = async (
   const q: Record<string, string | number> = {};
   const gid = params?.groupId;
   if (gid != null && gid !== '') {
-    q.groupId = typeof gid === 'string' ? gid : gid;
+    q.groupId = String(gid);
   }
   const res = (await Axios.get('/user/wallet/getUserWalletInfo', {
     params: q,
@@ -118,10 +119,14 @@ const listTransactions = async (
   };
   const gid = params.groupId;
   if (gid != null && gid !== '') {
-    query.groupId = typeof gid === 'number' ? gid : gid;
+    query.groupId = String(gid);
   }
   if (params.type !== undefined && params.type !== null) {
-    query.type = params.type;
+    const typeName =
+      WALLET_LIST_TX_TYPE_QUERY_VALUE[params.type as keyof typeof WALLET_LIST_TX_TYPE_QUERY_VALUE];
+    if (typeName != null) {
+      query.type = typeName;
+    }
   }
   const res = (await Axios.get('/user/wallet/listTransactions', {
     params: query,
@@ -139,9 +144,8 @@ const listTransactions = async (
 const transferTokenBetweenGroupAndUser = async (
   params: TransferTokenBetweenGroupAndUserRequest
 ): Promise<void> => {
-  const gid = typeof params.groupId === 'string' ? Number(params.groupId) : params.groupId;
   const res = (await Axios.post('/user/wallet/transferTokenBetweenGroupAndUser', {
-    groupId: gid,
+    groupId: String(params.groupId),
     tokenCount: params.tokenCount,
     tokenTransferType: params.tokenTransferType,
   })) as ApiResponse<unknown>;

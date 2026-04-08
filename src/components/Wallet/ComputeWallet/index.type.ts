@@ -29,4 +29,8 @@ export interface ComputeWalletProps {
    * 小组组长查看组账户流水时打开，用于展示充值人/消费人；个人钱包一般关闭。
    */
   showOperatorColumn?: boolean;
+  /**
+   * `card`：独立卡片（小组详情等）；`plain`：无外层卡片，由父级统一铺底（个人「余额与使用量」与外层 formSection 合一，避免叠两层）。
+   */
+  surface?: 'card' | 'plain';
 }
