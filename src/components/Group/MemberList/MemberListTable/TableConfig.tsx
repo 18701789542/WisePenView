@@ -42,16 +42,24 @@ export const getColumns = (
       title: '头像',
       dataIndex: 'avatar',
       width: 80,
-      render: (avatar: string, record: MemberRecord) => (
-        <Avatar src={avatar} alt={record.nickname || record.realname || '?'} />
-      ),
+      render: (avatar: string, record: MemberRecord) => {
+        const displayName = record.nickname?.trim() || record.realname?.trim() || '?';
+        const avatarSrc = avatar?.trim() || undefined;
+        return (
+          <Avatar src={avatarSrc} alt={displayName}>
+            {displayName.charAt(0).toUpperCase()}
+          </Avatar>
+        );
+      },
     },
     {
       key: 'realname',
       title: '姓名',
       dataIndex: 'realname',
       width: 100,
-      render: (realname: string) => <span className={styles.nameItem}>{realname}</span>,
+      render: (realname: string) => (
+        <span className={styles.nameItem}>{realname.trim() === '' ? '-' : realname}</span>
+      ),
       sorter: (a, b) => (a.realname || '').localeCompare(b.realname || '', 'zh-CN'),
     },
     {
@@ -59,7 +67,11 @@ export const getColumns = (
       title: '昵称',
       dataIndex: 'nickname',
       width: 100,
-      render: (nickname: string) => <span className={styles.nicknameItem}>{nickname ?? ''}</span>,
+      render: (nickname: string) => (
+        <span className={styles.nicknameItem}>
+          {nickname ? (nickname.trim() === '' ? '-' : nickname) : '-'}
+        </span>
+      ),
       sorter: (a, b) => (a.nickname ?? '').localeCompare(b.nickname ?? '', 'zh-CN'),
     },
     {

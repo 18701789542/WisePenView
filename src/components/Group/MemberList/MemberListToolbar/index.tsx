@@ -63,9 +63,11 @@ const MemberListToolbar: React.FC<MemberListToolbarProps> = ({
         {groupDisplayConfig.canEnterEditMode && (
           <Button onClick={onToggleEditMode}>编辑用户</Button>
         )}
-        <Button type="primary" onClick={onInviteUser}>
-          邀请用户
-        </Button>
+        {groupDisplayConfig.canInviteMember && (
+          <Button type="primary" onClick={onInviteUser}>
+            邀请用户
+          </Button>
+        )}
       </div>
     </div>
   );

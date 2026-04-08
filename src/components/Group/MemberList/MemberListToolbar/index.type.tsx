@@ -7,6 +7,7 @@ export interface MemberListToolbarProps {
     canModifyPermission: boolean;
     canAssignQuota: boolean;
     canRemoveMember: boolean;
+    canInviteMember: boolean;
   };
   selectedCount: number;
   onModifyPermission: () => void;

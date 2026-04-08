@@ -44,9 +44,10 @@ const fetchGroupList = async (
 };
 
 const fetchGroupInfo = async (groupId: string): Promise<Group> => {
-  const res = (await Axios.get('/group/getGroupDetailInfo', {
-    params: { groupId },
-  })) as ApiResponse<Group>;
+  const myRole = await fetchMyRoleInGroup(groupId);
+  const res: ApiResponse<Group> = await (myRole === 'MEMBER'
+    ? Axios.get('/group/getGroupBaseInfo', { params: { groupId } })
+    : Axios.get('/group/getGroupDetailInfo', { params: { groupId } }));
   checkResponse(res);
   if (!res.data) throw new Error('获取小组详情失败');
   return normalizeGroup(res.data as unknown as GroupRaw);

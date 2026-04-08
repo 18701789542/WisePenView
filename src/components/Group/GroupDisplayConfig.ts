@@ -33,6 +33,8 @@ export interface GroupDisplayConfig {
   showWalletTabs: boolean;
   /** 小组详情「文件」Tab 内 TreeDrive 是否只读；管理员与组长可编辑（false），普通成员只读（true） */
   driveReadOnlyMode: boolean;
+  /** 是否可邀请成员（OWNER、ADMIN） */
+  canInviteMember: boolean;
 }
 
 const GroupDisplayConfigs: Record<number, Record<string, GroupDisplayConfig>> = {
@@ -50,6 +52,7 @@ const GroupDisplayConfigs: Record<number, Record<string, GroupDisplayConfig>> = 
       canRemoveMember: false,
       showWalletTabs: false,
       driveReadOnlyMode: true,
+      canInviteMember: false,
     },
     ADMIN: {
       groupType: GROUP_TYPE.NORMAL,
@@ -64,6 +67,7 @@ const GroupDisplayConfigs: Record<number, Record<string, GroupDisplayConfig>> = 
       canRemoveMember: true,
       showWalletTabs: false,
       driveReadOnlyMode: false,
+      canInviteMember: true,
     },
     OWNER: {
       groupType: GROUP_TYPE.NORMAL,
@@ -78,6 +82,7 @@ const GroupDisplayConfigs: Record<number, Record<string, GroupDisplayConfig>> = 
       canRemoveMember: true,
       showWalletTabs: false,
       driveReadOnlyMode: false,
+      canInviteMember: true,
     },
   },
   [GROUP_TYPE.ADVANCED]: {
@@ -94,6 +99,7 @@ const GroupDisplayConfigs: Record<number, Record<string, GroupDisplayConfig>> = 
       canRemoveMember: false,
       showWalletTabs: false,
       driveReadOnlyMode: true,
+      canInviteMember: false,
     },
     ADMIN: {
       groupType: GROUP_TYPE.ADVANCED,
@@ -108,6 +114,7 @@ const GroupDisplayConfigs: Record<number, Record<string, GroupDisplayConfig>> = 
       canRemoveMember: true,
       showWalletTabs: false,
       driveReadOnlyMode: false,
+      canInviteMember: true,
     },
     OWNER: {
       groupType: GROUP_TYPE.ADVANCED,
@@ -122,6 +129,7 @@ const GroupDisplayConfigs: Record<number, Record<string, GroupDisplayConfig>> = 
       canRemoveMember: true,
       showWalletTabs: true,
       driveReadOnlyMode: false,
+      canInviteMember: true,
     },
   },
   [GROUP_TYPE.PUBLIC]: {
@@ -138,6 +146,7 @@ const GroupDisplayConfigs: Record<number, Record<string, GroupDisplayConfig>> = 
       canRemoveMember: false,
       showWalletTabs: false,
       driveReadOnlyMode: true,
+      canInviteMember: false,
     },
     ADMIN: {
       groupType: GROUP_TYPE.PUBLIC,
@@ -152,6 +161,7 @@ const GroupDisplayConfigs: Record<number, Record<string, GroupDisplayConfig>> = 
       canRemoveMember: true,
       showWalletTabs: false,
       driveReadOnlyMode: false,
+      canInviteMember: true,
     },
     OWNER: {
       groupType: GROUP_TYPE.PUBLIC,
@@ -166,6 +176,7 @@ const GroupDisplayConfigs: Record<number, Record<string, GroupDisplayConfig>> = 
       canRemoveMember: true,
       showWalletTabs: false,
       driveReadOnlyMode: false,
+      canInviteMember: true,
     },
   },
 };
@@ -187,6 +198,7 @@ export const getGroupDisplayConfig = (groupType: number, userRole: string): Grou
       canRemoveMember: false,
       showWalletTabs: false,
       driveReadOnlyMode: true,
+      canInviteMember: false,
     }
   );
 };

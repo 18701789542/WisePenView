@@ -226,9 +226,7 @@ const GroupDetail: React.FC = () => {
               </Avatar>
               <span>
                 创建者：
-                {group.groupType === GROUP_TYPE.NORMAL
-                  ? ownerInfo.nickname
-                  : ownerInfo.realName || ownerInfo.nickname}
+                {ownerInfo.nickname?.trim() || '-'}
               </span>
             </div>
           )}
