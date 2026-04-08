@@ -17,7 +17,6 @@ import {
   RenameFileModal,
   DeleteFileModal,
   MoveToFolderModal,
-  UploadFileToGroupModal,
   type MoveToFolderTarget,
 } from '@/components/Drive/Modals';
 import { useClickFile, useTreeDriveDrop, useTreeDrive } from '@/hooks/drive';
@@ -31,28 +30,12 @@ import {
 } from '../config/rowConfig';
 import styles from '../style.module.less';
 
-export interface FolderDriveProps {
-  groupId?: string;
-  /** 只读：隐藏新建文件夹与行内操作，且不可拖拽移动 */
-  readOnlyMode?: boolean;
-  /** 是否展示「关联个人文件」入口（需同时传入 groupId；权限一般与新建文件夹一致） */
-  allowUpload?: boolean;
-  /** 小组文件组织方式；在开启 allowUpload 时用于第二步 TreeNav 与小组主盘一致 */
-  fileOrgLogic?: GroupFileOrgLogic;
-}
-
-const FolderDrive: React.FC<FolderDriveProps> = ({
-  groupId,
-  readOnlyMode = false,
-  allowUpload = false,
-  fileOrgLogic,
-}) => {
+const FolderDrive: React.FC = () => {
   const folderService = useFolderService();
   const message = useAppMessage();
   const clickFile = useClickFile();
   const [newFolderOpen, setNewFolderOpen] = useState(false);
   const [newFolderParent, setNewFolderParent] = useState<Folder | null>(null);
-  const [uploadToGroupOpen, setUploadToGroupOpen] = useState(false);
 
   // 将folderService的方法交给TreeDrive的适配器
   const adapter = useMemo<ITreeDriveAdapter>(
@@ -87,17 +70,17 @@ const FolderDrive: React.FC<FolderDriveProps> = ({
     handleLoadMore,
     resetCwd,
     navigateToIndex,
-  } = useTreeDrive({ adapter, groupId, cwdStoreKey: 'folder' });
+  } = useTreeDrive({ adapter, cwdStoreKey: 'folder' });
 
   const { handleDrop, handleDropFolder } = useTreeDriveDrop({ folderService, refresh });
 
   const handleOpenNewFolder = useCallback(async () => {
     try {
-      const root = await folderService.getFolderTree({ groupId });
+      const root = await folderService.getFolderTree({});
       const parent: Folder | undefined =
         breadcrumb.length === 0
           ? root
-          : folderService.getFolderById(breadcrumb[breadcrumb.length - 1].tagId, groupId);
+          : folderService.getFolderById(breadcrumb[breadcrumb.length - 1].tagId);
       if (!parent) {
         message.error('无法确定当前目录，请稍后重试');
         return;
@@ -107,7 +90,7 @@ const FolderDrive: React.FC<FolderDriveProps> = ({
     } catch (err) {
       message.error(parseErrorMessage(err, '加载目录失败'));
     }
-  }, [folderService, groupId, breadcrumb, message]);
+  }, [folderService, breadcrumb, message]);
 
   const handleCloseNewFolder = useCallback(() => {
     setNewFolderOpen(false);
@@ -161,21 +144,19 @@ const FolderDrive: React.FC<FolderDriveProps> = ({
     () =>
       getTreeDriveRowProps({
         mode: 'folder',
-        readOnlyMode,
         setIsDragging,
         styles: styles as TreeDriveRowConfigOptions['styles'],
         onRowClick: handleRowClick,
         onDropFile: handleDrop,
         onDropFolder: handleDropFolder,
       }),
-    [handleRowClick, handleDrop, handleDropFolder, readOnlyMode]
+    [handleRowClick, handleDrop, handleDropFolder]
   );
 
   const columns = useMemo(
     () =>
       getTreeDriveColumns({
         mode: 'folder',
-        readOnlyMode,
         styles: styles as TreeDriveColumnConfigOptions['styles'],
         openDropdownKey,
         setOpenDropdownKey,
@@ -188,7 +169,6 @@ const FolderDrive: React.FC<FolderDriveProps> = ({
         loadingMoreKeys,
       }),
     [
-      readOnlyMode,
       openDropdownKey,
       handleMoveToFolder,
       handleRenameFolder,
@@ -256,30 +236,14 @@ const FolderDrive: React.FC<FolderDriveProps> = ({
             ))}
           </nav>
 
-          {((allowUpload && groupId) || !readOnlyMode) && (
-            <div className={styles.toolbarActions}>
-              {allowUpload && groupId ? (
-                <Button
-                  type="default"
-                  size="small"
-                  icon={<LuUpload size={16} />}
-                  onClick={() => setUploadToGroupOpen(true)}
-                >
-                  上传文件
-                </Button>
-              ) : null}
-              {!readOnlyMode ? (
-                <Button
-                  type="default"
-                  size="small"
-                  icon={<LuFolderPlus size={16} />}
-                  onClick={handleOpenNewFolder}
-                >
-                  新建文件夹
-                </Button>
-              ) : null}
-            </div>
-          )}
+          <Button
+            type="default"
+            size="small"
+            icon={<LuFolderPlus size={16} />}
+            onClick={handleOpenNewFolder}
+          >
+            新建文件夹
+          </Button>
         </div>
 
         <NewFolderModal
@@ -317,20 +281,9 @@ const FolderDrive: React.FC<FolderDriveProps> = ({
         <MoveToFolderModal
           open={moveTarget !== null}
           target={moveTarget}
-          groupId={groupId}
           onCancel={handleCloseMoveToFolder}
           onSuccess={refresh}
         />
-
-        {allowUpload && groupId && fileOrgLogic ? (
-          <UploadFileToGroupModal
-            open={uploadToGroupOpen}
-            groupId={groupId}
-            fileOrgLogic={fileOrgLogic}
-            onCancel={() => setUploadToGroupOpen(false)}
-            onSuccess={refresh}
-          />
-        ) : null}
 
         <div className={styles.scrollArea}>
           <div className={styles.tableWrapper}>

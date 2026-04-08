@@ -16,7 +16,6 @@ const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
   onCancel,
   onSuccess,
   target,
-  groupId,
 }) => {
   const folderService = useFolderService();
   const message = useAppMessage();
@@ -104,12 +103,7 @@ const MoveToFolderModal: React.FC<MoveToFolderModalProps> = ({
           {selectedNode && <ReadOnlyBreadcrumb node={selectedNode} mode="folder" />}
         </div>
         <div className={`${styles.treeSection} ${styles.treeNav}`}>
-          <TreeNav
-            viewMode="folder"
-            selectMode="nodes"
-            groupId={groupId}
-            onChange={handleTreeNavChange}
-          />
+          <TreeNav viewMode="folder" selectMode="nodes" onChange={handleTreeNavChange} />
         </div>
       </div>
     </Modal>
