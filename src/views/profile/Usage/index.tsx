@@ -1,8 +1,9 @@
 /**
- * 个人中心「余额与使用量」：上半部分为个人计算点钱包（余额 + 点卡充值 + 流水），
- * 下半部分仍为各小组配额（QuotaByGroup），二者数据来源不同、互不替代。
+ * 个人中心「余额与使用量」（左下角入口）：个人钱包 + 各小组配额放在同一 formSection，
+ * 钱包使用 ComputeWallet surface="plain"，避免外层盒子与组件内 card 叠成双层页签感。
  */
 import React from 'react';
+import { Divider } from 'antd';
 import QuotaByGroup from '@/components/Profile/QuotaByGroup';
 import ComputeWallet from '@/components/Wallet/ComputeWallet';
 import { WALLET_TARGET_TYPE } from '@/constants/wallet';
@@ -17,16 +18,17 @@ const Usage: React.FC = () => {
           查看个人计算点余额、点卡充值记录，以及在各小组中的配额使用情况
         </span>
       </div>
-      <div className={`${layout.formSection} ${layout.walletSkeletonWrap}`}>
-        <ComputeWallet targetType={WALLET_TARGET_TYPE.USER} canRecharge />
+      <div className={layout.formSection}>
+        <ComputeWallet targetType={WALLET_TARGET_TYPE.USER} canRecharge surface="plain" />
+        <Divider className={layout.sectionDivider} />
+        <QuotaByGroup
+          pagination={{
+            defaultPageSize: 10,
+            pageSizeOptions: [10, 20, 50],
+            showSizeChanger: true,
+          }}
+        />
       </div>
-      <QuotaByGroup
-        pagination={{
-          defaultPageSize: 10,
-          pageSizeOptions: [10, 20, 50],
-          showSizeChanger: true,
-        }}
-      />
     </div>
   );
 };

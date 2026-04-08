@@ -149,8 +149,7 @@ const GroupDetail: React.FC = () => {
             <ComputeWallet
               targetType={WALLET_TARGET_TYPE.GROUP}
               targetId={gid}
-              canRecharge
-              groupDisplayName={group.groupName}
+              canRecharge={false}
               showOperatorColumn
               ref={walletRef}
             />

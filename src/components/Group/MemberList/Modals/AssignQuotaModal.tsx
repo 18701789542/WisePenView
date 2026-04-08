@@ -8,6 +8,7 @@ import SelectedMemberList from '@/components/Common/SelectedMemberList';
 import styles from './style.module.less';
 import { useAppMessage } from '@/hooks/useAppMessage';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
+import { GROUP_MEMBER_TOKEN_LIMIT_MAX } from '@/constants/quota';
 
 const AssignQuotaModal: React.FC<AssignQuotaModalProps> = ({
   open,
@@ -27,6 +28,8 @@ const AssignQuotaModal: React.FC<AssignQuotaModalProps> = ({
   });
 
   const maxUsed = Math.max(0, ...members.map((m) => m.used ?? 0));
+  const quotaMin = Math.max(1, maxUsed);
+  const quotaOverGlobalMax = maxUsed > GROUP_MEMBER_TOKEN_LIMIT_MAX;
   const { canEdit, confirmDisabled } = useMemberEditGuard(
     members,
     groupDisplayConfig.editableRolesForQuota,
@@ -50,7 +53,7 @@ const AssignQuotaModal: React.FC<AssignQuotaModalProps> = ({
       quotaService.setGroupQuota({
         groupId,
         targetUserIds: memberIds,
-        newTokenLimit: Math.floor(value),
+        newTokenLimit: Math.min(Math.floor(value), GROUP_MEMBER_TOKEN_LIMIT_MAX),
       }),
     {
       manual: true,
@@ -70,6 +73,12 @@ const AssignQuotaModal: React.FC<AssignQuotaModalProps> = ({
     const value = form.getFieldValue('quota');
     if (!value || value <= 0) {
       message.warning('请输入有效的配额值');
+      return;
+    }
+    if (value > GROUP_MEMBER_TOKEN_LIMIT_MAX) {
+      message.warning(
+        `配额限额不能超过 ${GROUP_MEMBER_TOKEN_LIMIT_MAX.toLocaleString()}（避免超出整型上限）`
+      );
       return;
     }
     if (value < maxUsed) {
@@ -95,7 +104,7 @@ const AssignQuotaModal: React.FC<AssignQuotaModalProps> = ({
           type="primary"
           onClick={handleConfirm}
           loading={loading}
-          disabled={confirmDisabled}
+          disabled={confirmDisabled || quotaOverGlobalMax}
         >
           确定
         </Button>,
@@ -111,9 +120,17 @@ const AssignQuotaModal: React.FC<AssignQuotaModalProps> = ({
             style={{ marginBottom: 16 }}
           />
         )}
+        {quotaOverGlobalMax && (
+          <Alert
+            description={`成员当前用量已超过允许设置的上限（${GROUP_MEMBER_TOKEN_LIMIT_MAX.toLocaleString()}），无法在此调整配额。`}
+            type="warning"
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
+        )}
         <div className={styles.quotaInfo}>
           小组配额使用：{groupQuota.used.toLocaleString()} / {groupQuota.limit.toLocaleString()}{' '}
-          计算点
+          计算点（单成员限额不超过 {GROUP_MEMBER_TOKEN_LIMIT_MAX.toLocaleString()}）
         </div>
         <Form.Item
           label="配额限额"
@@ -122,20 +139,30 @@ const AssignQuotaModal: React.FC<AssignQuotaModalProps> = ({
             { required: true, message: '请输入配额限额' },
             { type: 'number', min: 1, message: '配额必须大于0' },
             {
-              validator: (_, val) =>
-                val == null || val >= maxUsed
-                  ? Promise.resolve()
-                  : Promise.reject(
-                      new Error(`不能小于成员当前用量（最大：${maxUsed.toLocaleString()}）`)
-                    ),
+              validator: (_, val) => {
+                if (val == null) return Promise.resolve();
+                if (val > GROUP_MEMBER_TOKEN_LIMIT_MAX) {
+                  return Promise.reject(
+                    new Error(`不能超过 ${GROUP_MEMBER_TOKEN_LIMIT_MAX.toLocaleString()}`)
+                  );
+                }
+                if (val < maxUsed) {
+                  return Promise.reject(
+                    new Error(`不能小于成员当前用量（最大：${maxUsed.toLocaleString()}）`)
+                  );
+                }
+                return Promise.resolve();
+              },
             },
           ]}
         >
           <InputNumber
             className={styles.fullWidth}
             placeholder="请输入整数"
-            min={maxUsed || 1}
+            min={quotaOverGlobalMax ? 1 : quotaMin}
+            max={GROUP_MEMBER_TOKEN_LIMIT_MAX}
             precision={0}
+            disabled={quotaOverGlobalMax}
           />
         </Form.Item>
         <SelectedMemberList members={members} />
