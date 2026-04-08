@@ -10,7 +10,7 @@ import {
   RenameTagModal,
   DeleteTagModal,
   RenameFileModal,
-  DeleteFileModal,
+  RemoveFileFromGroupModal,
   EditTagModal,
   UploadFileToGroupModal,
   type MoveToFolderTarget,
@@ -230,7 +230,7 @@ const TagDrive: React.FC<TagDriveProps> = ({ groupId, fileOrgLogic, canCreateTag
               onClick={() => resetCwd()}
             >
               <LuHouse size={14} />
-              <span>小组云盘</span>
+              <span>小组空间</span>
             </button>
             {breadcrumb.map((item, idx) => (
               <React.Fragment key={item.tagId}>
@@ -310,8 +310,9 @@ const TagDrive: React.FC<TagDriveProps> = ({ groupId, fileOrgLogic, canCreateTag
           onCancel={() => setRenameFileTarget(null)}
           onSuccess={refresh}
         />
-        <DeleteFileModal
+        <RemoveFileFromGroupModal
           open={deleteFileTarget !== null}
+          groupId={groupId}
           file={deleteFileTarget}
           onCancel={() => setDeleteFileTarget(null)}
           onSuccess={refresh}

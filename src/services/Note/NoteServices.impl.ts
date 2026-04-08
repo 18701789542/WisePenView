@@ -12,25 +12,7 @@ import { serializeRepeatKeyQuery } from '@/utils/serializeRepeatKeyQuery';
 import { checkResponse } from '@/utils/response';
 import type { ApiResponse } from '@/types/api';
 import type { NoteInfoResponse } from '@/types/note';
-import type { UserDisplayBase } from '@/types/user';
 import { useRecentFilesStore } from '@/store';
-
-const getAuthorName = (author: UserDisplayBase): string => {
-  return author.nickname || author.realName || '未知用户';
-};
-
-const formatLastEditedAt = (value?: string): string => {
-  if (!value) return '暂无';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date);
-};
 
 // syncTitle是一个resource的工作，但是语义上属于note服务
 const syncTitle = async (params: SyncTitleRequest): Promise<void> => {
@@ -63,14 +45,17 @@ const getNoteInfoDisplay = async (params: GetNoteInfoRequest): Promise<NoteInfoD
   const res = (await Axios.get('/note/getNoteInfo', { params })) as ApiResponse<NoteInfoResponse>;
   checkResponse(res);
   const noteInfoData = res.data;
-  const allAuthors = noteInfoData.noteInfo.authors ?? [];
+  const authorIds = noteInfoData.noteInfo.authors ?? [];
   return {
     noteTitle: noteInfoData.resourceInfo.resourceName,
-    authors: allAuthors.map((author) => ({
-      name: getAuthorName(author),
-      avatar: author.avatar,
-    })),
-    lastEditedAtText: formatLastEditedAt(noteInfoData.noteInfo.lastUpdatedAt),
+    authors: authorIds.map((authorId) => {
+      const author = noteInfoData.authorsDisplay?.[authorId];
+      return {
+        name: author?.nickname || author?.realName || '未知用户',
+        avatar: author?.avatar,
+      };
+    }),
+    lastEditedAtText: noteInfoData.noteInfo.lastUpdatedAt ?? '暂无',
   };
 };
 

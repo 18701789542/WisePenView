@@ -158,7 +158,8 @@ export function getTreeDriveColumns(
           );
         }
         const rowKey = record.key;
-        const showEditTag = mode === 'tag' && record._type === 'file';
+        const disableTagTreeMutationOps = mode === 'tag';
+        const showEditTag = false;
         const showMoveToFolder = mode === 'folder';
         const handleEditTag = (info: Parameters<NonNullable<MenuProps['onClick']>>[0]) => {
           info.domEvent.stopPropagation();
@@ -198,16 +199,20 @@ export function getTreeDriveColumns(
           record._type === 'folder'
             ? [
                 ...firstItem,
-                {
-                  key: 'rename',
-                  label: '重命名',
-                  icon: <LuPencil size={14} />,
-                  onClick: (info: Parameters<NonNullable<MenuProps['onClick']>>[0]) => {
-                    info.domEvent.stopPropagation();
-                    setOpenDropdownKey(null);
-                    onRenameFolder(record.data);
-                  },
-                },
+                ...(!disableTagTreeMutationOps
+                  ? [
+                      {
+                        key: 'rename',
+                        label: '重命名',
+                        icon: <LuPencil size={14} />,
+                        onClick: (info: Parameters<NonNullable<MenuProps['onClick']>>[0]) => {
+                          info.domEvent.stopPropagation();
+                          setOpenDropdownKey(null);
+                          onRenameFolder(record.data);
+                        },
+                      },
+                    ]
+                  : []),
                 {
                   key: 'delete',
                   label: '删除',
@@ -222,19 +227,23 @@ export function getTreeDriveColumns(
               ]
             : [
                 ...firstItem,
-                {
-                  key: 'rename',
-                  label: '重命名',
-                  icon: <LuPencil size={14} />,
-                  onClick: (info: Parameters<NonNullable<MenuProps['onClick']>>[0]) => {
-                    info.domEvent.stopPropagation();
-                    setOpenDropdownKey(null);
-                    onRenameFile(record.data as ResourceItem);
-                  },
-                },
+                ...(!disableTagTreeMutationOps
+                  ? [
+                      {
+                        key: 'rename',
+                        label: '重命名',
+                        icon: <LuPencil size={14} />,
+                        onClick: (info: Parameters<NonNullable<MenuProps['onClick']>>[0]) => {
+                          info.domEvent.stopPropagation();
+                          setOpenDropdownKey(null);
+                          onRenameFile(record.data as ResourceItem);
+                        },
+                      },
+                    ]
+                  : []),
                 {
                   key: 'delete',
-                  label: '删除',
+                  label: mode === 'tag' ? '移出' : '删除',
                   icon: <LuTrash2 size={14} />,
                   danger: true,
                   onClick: (info: Parameters<NonNullable<MenuProps['onClick']>>[0]) => {

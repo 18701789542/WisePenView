@@ -5,6 +5,10 @@ import type { LoadMoreRowItem, TreeRowItem } from '@/components/Drive/TreeDrive/
 // 将 TagTreeNode（树节点）与 ResourceItem（资源叶子）转为 TreeRowItem[]，供 Table 树渲染
 // 语义上，Node对应folder/tag，Leaf对应file
 
+function buildFileRowKey(scopeKey: string, resourceId: string): string {
+  return `file-${scopeKey}-${resourceId}`;
+}
+
 /** 将子节点列表转为占位行：children=[]，展开后再加载真实子行 */
 export function buildNodePlaceholderRows(rootChildNodes: TagTreeNode[]): TreeRowItem[] {
   return rootChildNodes.map(nodeToPlaceholderRow);
@@ -35,9 +39,10 @@ export function buildNodeChildRows(
   meta?: BuildNodeChildRowsMeta
 ): TreeRowItem[] {
   const nodeRows: TreeRowItem[] = childNodes.map(nodeToPlaceholderRow);
+  const fileScopeKey = meta?.parentKey ?? 'cwd';
 
   const leafRows: TreeRowItem[] = leaves.map((item) => ({
-    key: `file-${item.resourceId}`,
+    key: buildFileRowKey(fileScopeKey, item.resourceId),
     _type: 'file' as const,
     data: item,
   }));
@@ -102,8 +107,9 @@ export function buildCurrentNodeView(
   leafPageSize: number
 ): TreeRowItem[] {
   const nodeRows = buildNodePlaceholderRows(childNodes);
+  const fileScopeKey = `folder-${currentNode.tagId}`;
   const leafRows: TreeRowItem[] = leaves.map((item) => ({
-    key: `file-${item.resourceId}`,
+    key: buildFileRowKey(fileScopeKey, item.resourceId),
     _type: 'file' as const,
     data: item,
   }));
@@ -131,10 +137,10 @@ export function replaceTopLevelLoadMore(
   newLeaves: ResourceItem[],
   latestTotalLeaves: number
 ): TreeRowItem[] {
-  const { loadedFiles, nextPage, treeNode } = loadMoreRecord;
+  const { loadedFiles, nextPage, treeNode, parentKey } = loadMoreRecord;
   const filtered = nodes.filter((c) => c._type !== 'loadMore');
   const leafRows: TreeRowItem[] = newLeaves.map((item) => ({
-    key: `file-${item.resourceId}`,
+    key: buildFileRowKey(parentKey, item.resourceId),
     _type: 'file' as const,
     data: item,
   }));
@@ -169,7 +175,7 @@ export function replaceLoadMoreInNode(
     if (node.key === parentKey && node._type === 'folder') {
       const existingChildren = (node.children ?? []).filter((c) => c._type !== 'loadMore');
       const leafRows: TreeRowItem[] = newLeaves.map((item) => ({
-        key: `file-${item.resourceId}`,
+        key: buildFileRowKey(parentKey, item.resourceId),
         _type: 'file' as const,
         data: item,
       }));

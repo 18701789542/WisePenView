@@ -3,16 +3,18 @@ import { SuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
 import { zh } from '@blocknote/core/locales';
 import { filterSuggestionItems } from '@blocknote/core/extensions';
-import { useLatest, useMount, useUnmount } from 'ahooks';
+import { useMount, useUnmount } from 'ahooks';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
 
 import { useImageService } from '@/contexts/ServicesContext';
+import { useAppMessage } from '@/hooks/useAppMessage';
+import { assertImageProxyUploadLimit } from '@/services/Image';
 import { useNoteSelectionStore } from '@/store';
 import type { CustomBlockNoteProps, NoteBodyEditorHandle } from './index.type';
 import { useNoteCaptureKeyEvent } from './useNoteCaptureKeyEvent';
 import { buildNoteSlashMenuItems } from './slashMenuConfig';
-import { blockNoteSchema, type CustomBlockNoteEditor } from './blockNoteSchema';
+import { blockNoteSchema } from './blockNoteSchema';
 import { inlineMathDollarExtension } from './LatexSupport/inlineMathDollarExtension';
 import { stripEscapeCharExtension, stripEscapeEditorProps } from './stripEscapeCharExtension';
 import styles from './style.module.less';
@@ -23,64 +25,34 @@ const NOTE_YJS_DOCUMENT_FRAGMENT = 'document-store' as const;
 type CreateBlockNoteOptions = NonNullable<Parameters<typeof useCreateBlockNote>[0]>;
 type BlockNoteCollaborationConfig = NonNullable<CreateBlockNoteOptions['collaboration']>;
 
-function readInsertedBlockId(insertedBlock: unknown): string | undefined {
-  if (
-    typeof insertedBlock === 'object' &&
-    insertedBlock !== null &&
-    'id' in insertedBlock &&
-    typeof (insertedBlock as { id: unknown }).id === 'string'
-  ) {
-    return (insertedBlock as { id: string }).id;
-  }
-  return undefined;
-}
-
 const CustomBlockNote = forwardRef<NoteBodyEditorHandle, CustomBlockNoteProps>(
   ({ resourceId, doc, provider, readOnly = false }, ref) => {
     const imageService = useImageService();
+    const message = useAppMessage();
     const setSelectedText = useNoteSelectionStore((state) => state.setSelectedText);
     const clearSelectedText = useNoteSelectionStore((state) => state.clearSelectedText);
-    const editorRef = useLatest<CustomBlockNoteEditor | null>(null);
 
     const uploadFile = useCallback(
-      async (file: File, insertedBlock: unknown) => {
+      async (file: File) => {
         // 只拦截图片：非图片文件让 BlockNote 走默认行为（或抛错以阻止插入）
         if (!file.type.startsWith('image/')) {
           throw new Error('仅支持插入图片文件');
         }
-        // 优先本机立刻可见 + 尽快换成公网 URL
-        const blockId = readInsertedBlockId(insertedBlock);
-        const previewUrl = URL.createObjectURL(file);
-
-        void (async () => {
-          try {
-            const { publicUrl } = await imageService.uploadImage({
-              file,
-              scene: 'PRIVATE_IMAGE_FOR_NOTE',
-              bizTag: `notes/${resourceId}`,
-            });
-            const currentEd = editorRef.current;
-            if (!currentEd || blockId === undefined) {
-              return;
-            }
-            const block = currentEd.getBlock(blockId);
-            if (!block || block.type !== 'image') {
-              return;
-            }
-            currentEd.updateBlock(block, {
-              props: { ...block.props, url: publicUrl },
-            });
-            queueMicrotask(() => {
-              URL.revokeObjectURL(previewUrl);
-            });
-          } catch {
-            // 上传失败时保留 blob 预览，避免立刻空白；刷新后仍会丢图，可后续接 Toast / 重试
-          }
-        })();
-
-        return previewUrl;
+        try {
+          assertImageProxyUploadLimit(file);
+        } catch (error) {
+          const text = error instanceof Error ? error.message : '图片上传失败';
+          message.error(text);
+          throw error;
+        }
+        const { publicUrl } = await imageService.uploadImage({
+          file,
+          scene: 'PRIVATE_IMAGE_FOR_NOTE',
+          bizTag: `notes/${resourceId}`,
+        });
+        return publicUrl;
       },
-      [imageService, resourceId, editorRef]
+      [imageService, message, resourceId]
     );
 
     const editor = useCreateBlockNote({
@@ -107,17 +79,11 @@ const CustomBlockNote = forwardRef<NoteBodyEditorHandle, CustomBlockNoteProps>(
       setSelectedText(resourceId, editor.getSelectedText());
     }, [editor, resourceId, setSelectedText]);
 
-    // const scheduleSyncSelectionState = useCallback(() => {
-    //   queueMicrotask(syncSelectedText);
-    // }, [syncSelectedText]);
-
     useMount(() => {
-      editorRef.current = editor;
       syncSelectedText();
     });
     useUnmount(() => {
       clearSelectedText(resourceId);
-      editorRef.current = null;
     });
 
     useImperativeHandle(
@@ -133,12 +99,7 @@ const CustomBlockNote = forwardRef<NoteBodyEditorHandle, CustomBlockNoteProps>(
     const onKeyDownCapture = useNoteCaptureKeyEvent(provider);
 
     return (
-      <div
-        className={styles.editorShell}
-        onKeyDownCapture={onKeyDownCapture}
-        // onMouseUpCapture={scheduleSyncSelectionState}
-        // onKeyUpCapture={scheduleSyncSelectionState}
-      >
+      <div className={styles.editorShell} onKeyDownCapture={onKeyDownCapture}>
         <BlockNoteView
           editor={editor}
           theme="light"
