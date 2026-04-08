@@ -150,7 +150,6 @@ const GroupDetail: React.FC = () => {
               targetType={WALLET_TARGET_TYPE.GROUP}
               targetId={gid}
               canRecharge={false}
-              groupDisplayName={group.groupName}
               showOperatorColumn
               ref={walletRef}
             />

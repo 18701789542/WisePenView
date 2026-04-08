@@ -1,5 +1,6 @@
 /**
  * 通用计算点钱包：/user/wallet；个人无参拉余额，小组传 groupId。
+ * 点卡充值仅个人（redeemVoucher）；小组余额由组长通过「token 划拨」转入。
  * 数据请求使用 ahooks（不使用 useEffect）。
  */
 import React, { useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';

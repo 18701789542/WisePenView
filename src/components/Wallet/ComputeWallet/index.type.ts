@@ -18,11 +18,11 @@ export interface ComputeWalletProps {
    */
   targetId?: string;
   /**
-   * 是否展示「充值」入口（POST /user/wallet/redeemVoucher 仅给本人兑换）。
-   * 个人中心为 true；小组 token 明细应为 false。
+   * 是否展示「充值」入口（redeemVoucher 仅给当前登录用户兑换；小组池不能直接点卡充值）。
+   * 个人中心为 true；小组 token 明细恒为 false，组内算力由组长个人账户划入（见 token 划拨）。
    */
   canRecharge: boolean;
-  /** 小组充值弹窗标题：为「为「xxx」充值」；个人不传则弹窗为「个人充值」 */
+  /** 有「充值」按钮时可选，用于弹窗标题；小组场景不传 */
   groupDisplayName?: string;
   /**
    * 是否在表格增加「操作人」列。
