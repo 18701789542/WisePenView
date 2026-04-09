@@ -4,6 +4,7 @@ import type { MenuProps } from 'antd';
 import { useMount, useRequest } from 'ahooks';
 import { useChatService } from '@/contexts/ServicesContext';
 import { useAppMessage } from '@/hooks/useAppMessage';
+import { useChatPanelStore, useCurrentChatSessionStore } from '@/store';
 import type { ChatSession } from '@/services/Chat';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import SessionMenuItem from '../SessionMenuItem';
@@ -23,6 +24,10 @@ export const useSessionListGroup = ({
   const [sessionPage, setSessionPage] = useState(1);
   const [sessionTotalPage, setSessionTotalPage] = useState(1);
   const [loadingMoreSessions, setLoadingMoreSessions] = useState(false);
+  const currentSessionId = useCurrentChatSessionStore((state) => state.currentSessionId);
+  const setCurrentSession = useCurrentChatSessionStore((state) => state.setCurrentSession);
+  const clearCurrentSession = useCurrentChatSessionStore((state) => state.clearCurrentSession);
+  const setChatPanelCollapsed = useChatPanelStore((state) => state.setChatPanelCollapsed);
 
   const { runAsync: runListSessions, loading: sessionListLoading } = useRequest(
     async (page: number) =>
@@ -80,14 +85,21 @@ export const useSessionListGroup = ({
       if (activeSessionMenuKey === `session-${sessionId}`) {
         onActiveSessionMenuKeyChange(undefined);
       }
+      if (currentSessionId === sessionId) {
+        clearCurrentSession();
+      }
     },
-    [activeSessionMenuKey, onActiveSessionMenuKeyChange]
+    [activeSessionMenuKey, clearCurrentSession, currentSessionId, onActiveSessionMenuKeyChange]
   );
 
   const createSessionItem = useCallback(
     (session: ChatSession): MenuItem => ({
       key: `session-${session.id}`,
-      onClick: () => onActiveSessionMenuKeyChange(`session-${session.id}`),
+      onClick: () => {
+        onActiveSessionMenuKeyChange(`session-${session.id}`);
+        setCurrentSession({ id: session.id, title: session.title });
+        setChatPanelCollapsed(false);
+      },
       label: (
         <SessionMenuItem
           session={session}
@@ -98,7 +110,13 @@ export const useSessionListGroup = ({
         />
       ),
     }),
-    [handleDeleted, loadSessionPage, onActiveSessionMenuKeyChange]
+    [
+      handleDeleted,
+      loadSessionPage,
+      onActiveSessionMenuKeyChange,
+      setChatPanelCollapsed,
+      setCurrentSession,
+    ]
   );
 
   const menuItems = useMemo<MenuItem[]>(() => {

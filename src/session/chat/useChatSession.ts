@@ -1,46 +1,46 @@
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useCallback } from 'react';
+import { useNoteSelectionStore } from '@/store';
 import { baseURL } from '@/utils/Axios';
+import type { ChatState, ChatRequestBody, UseChatSessionOptions } from './index.type';
 
 const DEFAULT_COMPLETIONS_API = `${baseURL}chat/completions`;
 
-export interface ChatState {
-  key: string;
-  value: string;
-  disabled?: boolean;
-}
-
-export interface ChatRequestBody {
-  session_id: string;
+const buildRequestBody = ({
+  sessionId,
+  query,
+  model,
+  selected,
+  enableSelected,
+}: {
+  sessionId: string;
   query: string;
   model?: string;
-  states?: ChatState[];
-}
+  selected?: string;
+  enableSelected?: boolean;
+}): ChatRequestBody => {
+  const normalizedStates: ChatState[] = [];
+  const shouldIncludeSelected = Boolean(enableSelected);
+  const selectedValue = selected?.trim();
 
-export interface UseChatSessionOptions {
-  sessionId: string;
-  model?: string;
-  states?: ChatState[];
-  api?: string;
-}
+  if (shouldIncludeSelected && selectedValue) {
+    const selectedIndex = normalizedStates.findIndex((state) => state.key === 'selected');
+    if (selectedIndex >= 0) {
+      normalizedStates[selectedIndex] = {
+        ...normalizedStates[selectedIndex],
+        value: selectedValue,
+      };
+    } else {
+      normalizedStates.push({ key: 'selected', value: selectedValue });
+    }
+  }
 
-export interface SendSessionMessageOptions {
-  model?: string;
-  states?: ChatState[];
-}
-
-const buildRequestBody = (
-  sessionId: string,
-  query: string,
-  model?: string,
-  states?: ChatState[]
-): ChatRequestBody => {
   return {
     session_id: sessionId,
     query,
     ...(model ? { model } : {}),
-    ...(states && states.length > 0 ? { states } : {}),
+    ...(normalizedStates.length > 0 ? { states: normalizedStates } : {}),
   };
 };
 
@@ -48,26 +48,39 @@ const buildRequestBody = (
  * 对 useChat 的薄封装：
  * 1) 统一请求地址到 /chat/completions
  * 2) 统一补齐 ChatRequest 所需字段（session_id/query/model/states）
- * 3) 保留 useChat 原始能力（messages、status、stop 等）
+ * 3) 通过 enableSelected 控制是否自动注入 selected 到 states
+ * 4) 保留 useChat 原始能力（messages、status、stop 等）
  */
-export const useChatSession = ({ sessionId, model, states, api }: UseChatSessionOptions) => {
+export const useChatSession = ({
+  sessionId,
+  model,
+  enableSelected = false,
+}: UseChatSessionOptions) => {
+  const selected = useNoteSelectionStore((state) => state.selectedTextByResourceId[sessionId]);
+
   const chat = useChat({
     transport: new DefaultChatTransport({
-      api: api ?? DEFAULT_COMPLETIONS_API,
+      api: DEFAULT_COMPLETIONS_API,
+      fetch: (input, init) =>
+        fetch(input, {
+          ...init,
+          credentials: 'include',
+        }),
     }),
   });
 
   const sendSessionMessage = useCallback(
-    async (query: string, options?: SendSessionMessageOptions) => {
-      const requestBody = buildRequestBody(
+    async (query: string, options?: { model?: string; enableSelected?: boolean }) => {
+      const requestBody = buildRequestBody({
         sessionId,
         query,
-        options?.model ?? model,
-        options?.states ?? states
-      );
+        model: options?.model ?? model,
+        selected,
+        enableSelected: options?.enableSelected ?? enableSelected,
+      });
       await chat.sendMessage({ text: query }, { body: requestBody });
     },
-    [chat, model, sessionId, states]
+    [chat, enableSelected, model, selected, sessionId]
   );
 
   return {

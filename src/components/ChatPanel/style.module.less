@@ -59,6 +59,23 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+
+  .titleWrap {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 2px;
+  }
+
+  .sessionMeta {
+    font-size: 12px;
+    line-height: 1;
+    color: var(--ant-color-text-tertiary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 260px;
+  }
 }
 
 // 中间内容区 (MessageList)

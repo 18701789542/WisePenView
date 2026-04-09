@@ -33,57 +33,6 @@
   padding: 0;
 }
 
-.chatHandleZone {
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 72px;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  z-index: 20;
-}
-
-.chatExpandHandle {
-  width: 40px;
-  height: 132px;
-  border: 1px solid var(--ant-color-border-secondary);
-  border-right: none;
-  border-radius: 14px 0 0 14px;
-  background: var(--ant-color-bg-container);
-  color: var(--ant-color-text-secondary);
-  box-shadow: var(--ant-box-shadow-secondary);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 22px;
-  opacity: 0;
-  transform: translateX(14px);
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease,
-    color 0.2s ease,
-    background-color 0.2s ease;
-}
-
-.chatHandleZone:hover .chatExpandHandle,
-.chatHandleZone:focus-within .chatExpandHandle {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.chatExpandHandle:hover {
-  color: var(--ant-color-text);
-  background: var(--ant-color-fill-tertiary);
-}
-
-.chatExpandHandle:focus-visible {
-  outline: 2px solid var(--ant-color-primary);
-  outline-offset: 2px;
-}
-
 .rightSider {
   height: 100%;
   flex-shrink: 0;

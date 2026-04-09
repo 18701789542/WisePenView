@@ -2,6 +2,30 @@ import type { ThemeConfig } from 'antd';
 
 /** 基础字号，影响全局限定版排版，可在此调整 */
 const baseFontSize = 15;
+const appFontFamily = [
+  "'Inter'",
+  '-apple-system',
+  'BlinkMacSystemFont',
+  "'Segoe UI'",
+  'Roboto',
+  'Oxygen',
+  'Ubuntu',
+  'Cantarell',
+  "'Fira Sans'",
+  "'Droid Sans'",
+  "'Helvetica Neue'",
+  'Helvetica',
+  'Arial',
+  "'PingFang SC'",
+  "'Hiragino Sans GB'",
+  "'Microsoft YaHei'",
+  "'微软雅黑'",
+  'sans-serif',
+  "'Apple Color Emoji'",
+  "'Segoe UI Emoji'",
+  "'Segoe UI Symbol'",
+  "'Noto Color Emoji'",
+].join(', ');
 
 const appTheme: ThemeConfig = {
   cssVar: {
@@ -18,8 +42,7 @@ const appTheme: ThemeConfig = {
     colorInfo: '#1677ff',
     colorTextBase: '#11181C',
     colorBgBase: '#ffffff',
-    fontFamily:
-      "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial",
+    fontFamily: appFontFamily,
     fontFamilyCode: "'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace",
     fontSize: baseFontSize,
     borderRadius: 6,

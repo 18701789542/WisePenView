@@ -1,11 +1,15 @@
-import React, { useState, useRef } from 'react';
-import { Button } from 'antd';
-import { RiAddLine, RiIndentDecrease, RiIndentIncrease } from 'react-icons/ri';
+import React, { useCallback, useMemo, useState } from 'react';
+import { useMount, useRequest, useUpdateEffect } from 'ahooks';
+import { RiIndentDecrease } from 'react-icons/ri';
 import MessageList from './MessageList';
 import ChatInput from './ChatInput';
-import type { Message, Model } from '@/components/ChatPanel/index.type';
-// 引入刚刚写好的 Service
-import { sendMessageStream } from '@/services/mock/ChatPanel';
+import type { Message, Model, MessageRole } from '@/components/ChatPanel/index.type';
+import { useChatService } from '@/contexts/ServicesContext';
+import { useAppMessage } from '@/hooks/useAppMessage';
+import { useCurrentChatSessionStore } from '@/store';
+import { useChatSession } from '@/session/chat/useChatSession';
+import type { MessageResponse } from '@/services/Chat';
+import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import styles from './style.module.less';
 
 interface ChatPanelProps {
@@ -14,103 +18,210 @@ interface ChatPanelProps {
 }
 
 const ChatPanel: React.FC<ChatPanelProps> = ({ collapsed, onToggle }) => {
+  const chatService = useChatService();
+  const messageApi = useAppMessage();
+  const currentSessionId = useCurrentChatSessionStore((state) => state.currentSessionId);
+  const currentSessionTitle = useCurrentChatSessionStore((state) => state.currentSessionTitle);
   const [currentModel, setCurrentModel] = useState<Model | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [sending, setSending] = useState(false);
+  const [historyMessages, setHistoryMessages] = useState<Message[]>([]);
 
-  // 用于控制中断的 AbortController
-  const abortCtrlRef = useRef<AbortController | null>(null);
+  const {
+    messages: liveMessages,
+    status,
+    setMessages: setLiveMessages,
+    sendSessionMessage,
+  } = useChatSession({
+    sessionId: currentSessionId ?? '',
+    model: currentModel?.id,
+  });
+
+  const { runAsync: runLoadSessionHistory } = useRequest(
+    async (sessionId: string) =>
+      chatService.listHistoryMessages({
+        sessionId,
+        page: 1,
+        size: 100,
+      }),
+    {
+      manual: true,
+    }
+  );
+
+  const mapRole = useCallback((role: string): MessageRole => {
+    if (role === 'user') return 'user';
+    return 'ai';
+  }, []);
+
+  const toTimestamp = useCallback((createdAt: string): number => {
+    const parsed = Date.parse(createdAt);
+    return Number.isNaN(parsed) ? Date.now() : parsed;
+  }, []);
+
+  const getStringValue = useCallback((value: unknown): string => {
+    if (typeof value === 'string') return value;
+    return '';
+  }, []);
+
+  const getErrorMessage = useCallback(
+    (value: unknown): string => {
+      if (typeof value === 'string') return value;
+      if (typeof value !== 'object' || value == null) return '';
+      const typedValue = value as { text?: unknown; message?: unknown; error?: unknown };
+      return (
+        getStringValue(typedValue.message) ||
+        getStringValue(typedValue.text) ||
+        getStringValue(typedValue.error)
+      );
+    },
+    [getStringValue]
+  );
+
+  const parseLiveMessage = useCallback(
+    (message: unknown): { content: string; reasoningContent: string; errorMessage: string } => {
+      if (typeof message !== 'object' || message == null) {
+        return { content: '', reasoningContent: '', errorMessage: '' };
+      }
+
+      const typedMessage = message as {
+        text?: unknown;
+        parts?: unknown;
+        content?: unknown;
+        reasoning?: unknown;
+        error?: unknown;
+      };
+
+      const textChunks: string[] = [];
+      const reasoningChunks: string[] = [];
+      const errorChunks: string[] = [];
+
+      if (Array.isArray(typedMessage.parts)) {
+        typedMessage.parts.forEach((part) => {
+          if (typeof part !== 'object' || part == null) return;
+          const typedPart = part as {
+            type?: unknown;
+            text?: unknown;
+            reasoning?: unknown;
+            error?: unknown;
+            errorText?: unknown;
+            message?: unknown;
+          };
+
+          const partType = getStringValue(typedPart.type);
+          const textValue = getStringValue(typedPart.text);
+
+          if (partType === 'text') {
+            textChunks.push(textValue);
+            return;
+          }
+
+          if (partType === 'reasoning') {
+            reasoningChunks.push(textValue || getStringValue(typedPart.reasoning));
+            return;
+          }
+
+          if (partType === 'error') {
+            errorChunks.push(
+              getErrorMessage(
+                typedPart.errorText || typedPart.error || typedPart.message || typedPart.text
+              )
+            );
+          }
+        });
+      }
+
+      const content =
+        textChunks.join('') ||
+        getStringValue(typedMessage.text) ||
+        getStringValue(typedMessage.content);
+      const reasoningContent = reasoningChunks.join('') || getStringValue(typedMessage.reasoning);
+      const errorMessage = errorChunks.join('') || getErrorMessage(typedMessage.error);
+
+      return { content, reasoningContent, errorMessage };
+    },
+    [getErrorMessage, getStringValue]
+  );
+
+  const mapHistoryMessage = useCallback(
+    (message: MessageResponse): Message => ({
+      id: message.id,
+      role: mapRole(message.role),
+      content: message.content || '',
+      createAt: toTimestamp(message.created_at),
+      meta: {
+        provider: currentModel?.provider || 'openai',
+        modelId: currentModel?.id,
+      },
+    }),
+    [currentModel?.id, currentModel?.provider, mapRole, toTimestamp]
+  );
+
+  const mappedLiveMessages = useMemo<Message[]>(
+    () =>
+      liveMessages.map((message, index) => {
+        const parsedMessage = parseLiveMessage(message);
+        const isLastMessage = message.id === liveMessages[liveMessages.length - 1]?.id;
+        const errorMessage = parsedMessage.errorMessage.trim();
+        const hasError = Boolean(errorMessage);
+        const createAt = index;
+
+        return {
+          id: String(message.id),
+          role: mapRole(String(message.role)),
+          content: parsedMessage.content || (hasError ? errorMessage || '生成失败，请重试。' : ''),
+          reasoningContent: parsedMessage.reasoningContent || undefined,
+          createAt,
+          loading: isLastMessage && status === 'streaming',
+          error: hasError || (isLastMessage && status === 'error'),
+          meta: {
+            provider: currentModel?.provider || 'openai',
+            modelId: currentModel?.id,
+          },
+        };
+      }),
+    [currentModel?.id, currentModel?.provider, liveMessages, mapRole, parseLiveMessage, status]
+  );
+
+  const messages = useMemo<Message[]>(
+    () => [...historyMessages, ...mappedLiveMessages],
+    [historyMessages, mappedLiveMessages]
+  );
+
+  const sending = status === 'submitted' || status === 'streaming';
+  const chatInputModelId = currentSessionId ? (currentModel?.id ?? '') : '';
+
+  const loadHistoryMessages = useCallback(
+    async (sessionId: string) => {
+      try {
+        const payload = await runLoadSessionHistory(sessionId);
+        setHistoryMessages(payload.list.map(mapHistoryMessage));
+      } catch (error) {
+        messageApi.error(parseErrorMessage(error, '拉取历史消息失败'));
+        setHistoryMessages([]);
+      }
+    },
+    [mapHistoryMessage, messageApi, runLoadSessionHistory]
+  );
 
   const handleSend = async (text: string) => {
-    // 校验模型是否就绪
-    if (!currentModel) return;
-
-    // 为本次请求创建控制器
-    abortCtrlRef.current = new AbortController();
-
-    // 构建消息对象
-    const userMsg: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: text,
-      createAt: Date.now(),
-    };
-
-    // 获取当前模型信息，用于头像展示
-    const provider = currentModel.provider || 'openai';
-
-    const aiMsgId = (Date.now() + 1).toString();
-    const aiMsgPlaceholder: Message = {
-      id: aiMsgId,
-      role: 'ai',
-      content: '',
-      reasoningContent: '',
-      createAt: Date.now(),
-      loading: true,
-      meta: {
-        provider: provider,
-      },
-    };
-
-    // 乐观更新 UI
-    setMessages((prev) => [...prev, userMsg, aiMsgPlaceholder]);
-    setSending(true);
-
-    // 调用 Service (核心解耦)
-    await sendMessageStream(
-      text,
-      {
-        // 回调：更新思考过程
-        onReasoning: (delta) => {
-          setMessages((prev) =>
-            // 使用 map 遍历，找到目标 ID 时返回一个【新对象】
-            prev.map((msg) => {
-              if (msg.id === aiMsgId) {
-                // ...msg 复制旧属性，覆盖 reasoningContent
-                return {
-                  ...msg,
-                  reasoningContent: (msg.reasoningContent || '') + delta,
-                };
-              }
-              return msg;
-            })
-          );
-        },
-        // 回调：更新正文
-        onContent: (delta) => {
-          setMessages((prev) =>
-            prev.map((msg) => {
-              if (msg.id === aiMsgId) {
-                return {
-                  ...msg,
-                  content: (msg.content || '') + delta,
-                };
-              }
-              return msg;
-            })
-          );
-        },
-        // 回调：完成
-        onComplete: (totalTime) => {
-          setMessages((prev) => {
-            const newMsgs = [...prev];
-            const target = newMsgs.find((m) => m.id === aiMsgId);
-            if (target) {
-              target.loading = false;
-              target.meta = {
-                ...target.meta,
-                usage: { totalTime: totalTime },
-              };
-            }
-            return newMsgs;
-          });
-          setSending(false);
-          abortCtrlRef.current = null; // 清理引用
-        },
-      },
-      abortCtrlRef.current.signal // 传入信号用于中断
-    );
+    if (!currentSessionId || !currentModel) return;
+    await sendSessionMessage(text, { model: currentModel.id });
   };
+
+  useMount(() => {
+    if (!currentSessionId) return;
+    setLiveMessages([]);
+    void loadHistoryMessages(currentSessionId);
+  });
+
+  useUpdateEffect(() => {
+    if (!currentSessionId) {
+      setHistoryMessages([]);
+      setLiveMessages([]);
+      return;
+    }
+    setLiveMessages([]);
+    void loadHistoryMessages(currentSessionId);
+  }, [currentSessionId, loadHistoryMessages, setLiveMessages]);
 
   return (
     <div className={styles.panel}>
@@ -120,11 +231,18 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ collapsed, onToggle }) => {
             type="button"
             className={styles.triggerBtn}
             onClick={onToggle}
-            aria-label="切换聊天栏"
+            aria-label="收起聊天栏"
           >
-            {collapsed ? <RiIndentIncrease /> : <RiIndentDecrease />}
+            <RiIndentDecrease />
           </button>
-          {!collapsed && <div className={styles.title}>新建对话</div>}
+          {!collapsed && (
+            <div className={styles.titleWrap}>
+              <div className={styles.title}>{currentSessionTitle || '新建对话'}</div>
+              <div className={styles.sessionMeta}>
+                {currentSessionId ? `session_id: ${currentSessionId}` : 'session_id: 未选中'}
+              </div>
+            </div>
+          )}
         </div>
       </div>
       {!collapsed && (
@@ -134,7 +252,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ collapsed, onToggle }) => {
           </div>
           <div className={styles.footer}>
             <ChatInput
-              currentModelId={currentModel?.id || ''}
+              currentModelId={chatInputModelId}
               onModelChange={setCurrentModel}
               onSend={handleSend}
               sending={sending}

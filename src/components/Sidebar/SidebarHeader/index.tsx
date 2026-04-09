@@ -16,7 +16,11 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ collapsed, onToggle, onSe
           className={styles.triggerBtn}
           aria-label="切换侧边栏"
         >
-          {collapsed ? <RiIndentIncrease size={18} /> : <RiIndentDecrease size={18} />}
+          {collapsed ? (
+            <RiIndentIncrease size={18} style={{ transform: 'rotate(180deg)' }} />
+          ) : (
+            <RiIndentDecrease size={18} style={{ transform: 'rotate(180deg)' }} />
+          )}
         </button>
 
         {!collapsed && (

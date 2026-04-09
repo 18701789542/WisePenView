@@ -18,6 +18,11 @@ export {
 } from './usePdfPreviewProgressStore';
 export { useNoteSelectionStore, clearNoteSelectionStore } from './useNoteSelectionStore';
 export {
+  useCurrentChatSessionStore,
+  clearCurrentChatSessionStore,
+} from './useCurrentChatSessionStore';
+export { useChatPanelStore, clearChatPanelStore } from './useChatPanelStore';
+export {
   useRecentFilesStore,
   clearRecentFilesStore,
   type RecentFileItem,
