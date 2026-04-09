@@ -4,6 +4,7 @@ import type { Group, GroupFileOrgLogic, GroupMemberList, GroupResConfig } from '
 export interface IGroupService {
   fetchGroupList(params: FetchGroupListRequest): Promise<{ groups: Group[]; total: number }>;
   fetchGroupInfo(groupId: string): Promise<Group>;
+  getGroupWalletInfo(params: GetGroupWalletInfoRequest): Promise<number>;
   /** GET /resource/groupConfig/getConfig；查不到时后端默认 FOLDER */
   fetchGroupResConfig(groupId: string): Promise<GroupResConfig>;
   /** POST /resource/groupConfig/changeConfig；仅 OWNER/ADMIN */
@@ -24,6 +25,10 @@ export interface IGroupService {
 export interface FetchGroupListResponse {
   total: number;
   list: Group[];
+}
+
+export interface GetGroupWalletInfoRequest {
+  groupId: string;
 }
 
 export interface GroupMemberBaseInfo {

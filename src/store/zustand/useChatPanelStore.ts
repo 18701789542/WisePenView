@@ -7,7 +7,7 @@ interface ChatPanelState {
 }
 
 const DEFAULT_CHAT_PANEL_STATE: Pick<ChatPanelState, 'chatPanelCollapsed'> = {
-  chatPanelCollapsed: false,
+  chatPanelCollapsed: true,
 };
 
 export const useChatPanelStore = create<ChatPanelState>()((set) => ({

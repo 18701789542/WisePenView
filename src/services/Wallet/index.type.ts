@@ -5,10 +5,6 @@ import type { WalletTransactionRecord } from '@/types/wallet';
  */
 
 /** GET /user/wallet/getUserWalletInfo — 无参为当前用户；可选 groupId 查小组池（与后端约定一致时） */
-export interface GetUserWalletInfoRequest {
-  groupId?: string | number | null;
-}
-
 export interface GetWalletInfoResponse {
   tokenBalance: number;
   tokenUsed: number;
@@ -42,7 +38,7 @@ export interface ListWalletTransactionsResponse {
 }
 
 export interface IWalletService {
-  getUserWalletInfo(params?: GetUserWalletInfoRequest): Promise<GetWalletInfoResponse>;
+  getUserWalletInfo(): Promise<GetWalletInfoResponse>;
   redeemVoucher(params: RedeemVoucherRequest): Promise<void>;
   listTransactions(params: ListWalletTransactionsRequest): Promise<ListWalletTransactionsResponse>;
   transferTokenBetweenGroupAndUser(params: TransferTokenBetweenGroupAndUserRequest): Promise<void>;

@@ -5,6 +5,7 @@ import React, { useCallback, useState } from 'react';
 import { Button, InputNumber, Skeleton } from 'antd';
 import { useRequest } from 'ahooks';
 import { useWalletService } from '@/contexts/ServicesContext';
+import { useGroupService } from '@/contexts/ServicesContext';
 import { WALLET_TOKEN_TRANSFER_TYPE } from '@/constants/wallet';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
 import { useAppMessage } from '@/hooks/useAppMessage';
@@ -16,6 +17,7 @@ const OwnerGroupTokenTransfer: React.FC<OwnerGroupTokenTransferProps> = ({
   onTransferSuccess,
 }) => {
   const walletService = useWalletService();
+  const groupService = useGroupService();
   const message = useAppMessage();
 
   const [personalBal, setPersonalBal] = useState(0);
@@ -31,9 +33,9 @@ const OwnerGroupTokenTransfer: React.FC<OwnerGroupTokenTransferProps> = ({
       }
       const [personalRes, groupRes] = await Promise.all([
         walletService.getUserWalletInfo(),
-        walletService.getUserWalletInfo({ groupId: gid }),
+        groupService.getGroupWalletInfo({ groupId: gid }),
       ]);
-      return { personalBal: personalRes.balance, groupBal: groupRes.balance };
+      return { personalBal: personalRes.balance, groupBal: groupRes };
     },
     {
       ready: Boolean(groupId?.trim()),

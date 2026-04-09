@@ -12,15 +12,8 @@ let mockGroupBalance = 800;
 const mockTokenUsed = Number(mockdata.tokenUsed) || 0;
 const allRecords = [...(mockdata.transactions.records as WalletTransactionRecord[])];
 
-const getUserWalletInfo: IWalletService['getUserWalletInfo'] = async (params) => {
+const getUserWalletInfo: IWalletService['getUserWalletInfo'] = async () => {
   await delay(280);
-  if (params?.groupId != null && params.groupId !== '') {
-    return {
-      tokenBalance: mockGroupBalance,
-      tokenUsed: mockTokenUsed,
-      balance: mockGroupBalance,
-    };
-  }
   return {
     tokenBalance: mockPersonalBalance,
     tokenUsed: mockTokenUsed,

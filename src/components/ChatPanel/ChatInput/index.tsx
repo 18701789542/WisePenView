@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Input } from 'antd';
+import { LuX } from 'react-icons/lu';
 import ActionToolbar from './ActionToolbar';
 import type { Model } from '@/components/ChatPanel/index.type';
 import styles from './style.module.less';
@@ -27,6 +28,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
 }) => {
   const [value, setValue] = useState('');
   const [isComposing, setIsComposing] = useState(false);
+  const selectedPreviewChars = Array.from(selectedContextText);
+  const selectedPreview =
+    selectedPreviewChars.length <= 10
+      ? selectedContextText
+      : `${selectedPreviewChars.slice(0, 5).join('')}...${selectedPreviewChars.slice(-5).join('')}`;
 
   const handleSend = () => {
     if (!value.trim() || sending || !currentModelId) return;
@@ -46,17 +52,17 @@ const ChatInput: React.FC<ChatInputProps> = ({
       <div className={styles.inputCard}>
         {hasSelectedContext ? (
           <div className={styles.selectedHint}>
-            <span className={styles.selectedHintText} title={selectedContextText}>
-              已附带选中内容
-            </span>
             <button
               type="button"
               className={styles.clearSelectedHintBtn}
               onClick={onClearSelectedContext}
               aria-label="清除已选内容"
             >
-              清除
+              <LuX size={12} />
             </button>
+            <span className={styles.selectedHintText} title={selectedContextText}>
+              选中内容：“{selectedPreview}”
+            </span>
           </div>
         ) : null}
         <TextArea

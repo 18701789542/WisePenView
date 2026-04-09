@@ -1,6 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { useMount, useRequest, useUpdateEffect } from 'ahooks';
-import { RiIndentDecrease } from 'react-icons/ri';
 import MessageList from './MessageList';
 import ChatInput from './ChatInput';
 import type { Message, Model, MessageRole } from '@/components/ChatPanel/index.type';
@@ -14,15 +13,15 @@ import styles from './style.module.less';
 
 interface ChatPanelProps {
   collapsed: boolean;
-  onToggle: () => void;
 }
 
-const ChatPanel: React.FC<ChatPanelProps> = ({ collapsed, onToggle }) => {
+const ChatPanel: React.FC<ChatPanelProps> = ({ collapsed }) => {
   const chatService = useChatService();
   const messageApi = useAppMessage();
   const currentSessionId = useCurrentChatSessionStore((state) => state.currentSessionId);
   const currentSessionTitle = useCurrentChatSessionStore((state) => state.currentSessionTitle);
   const setCurrentSession = useCurrentChatSessionStore((state) => state.setCurrentSession);
+  const clearCurrentSession = useCurrentChatSessionStore((state) => state.clearCurrentSession);
   const enableSelectedText = useNoteSelectionStore((state) =>
     currentSessionId ? Boolean(state.enableSelectedTextByResourceId[currentSessionId]) : false
   );
@@ -71,6 +70,20 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ collapsed, onToggle }) => {
   const getStringValue = useCallback((value: unknown): string => {
     if (typeof value === 'string') return value;
     return '';
+  }, []);
+
+  const isSessionInvalidMessage = useCallback((message: string): boolean => {
+    const normalizedMessage = message.trim().toLowerCase();
+    if (!normalizedMessage) return false;
+    return (
+      normalizedMessage.includes('会话不存在') ||
+      normalizedMessage.includes('目标会话不存在') ||
+      normalizedMessage.includes('session 不存在') ||
+      (normalizedMessage.includes('session') &&
+        (normalizedMessage.includes('not exist') ||
+          normalizedMessage.includes('not found') ||
+          normalizedMessage.includes('invalid')))
+    );
   }, []);
 
   const getErrorMessage = useCallback(
@@ -207,11 +220,25 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ collapsed, onToggle }) => {
         const payload = await runLoadSessionHistory(sessionId);
         setHistoryMessages(payload.list.map(mapHistoryMessage));
       } catch (error) {
-        messageApi.error(parseErrorMessage(error, '拉取历史消息失败'));
+        const errorMessage = parseErrorMessage(error, '拉取历史消息失败');
+        if (isSessionInvalidMessage(errorMessage)) {
+          clearCurrentSession();
+          setHistoryMessages([]);
+          setLiveMessages([]);
+          return;
+        }
+        messageApi.error(errorMessage);
         setHistoryMessages([]);
       }
     },
-    [mapHistoryMessage, messageApi, runLoadSessionHistory]
+    [
+      clearCurrentSession,
+      isSessionInvalidMessage,
+      mapHistoryMessage,
+      messageApi,
+      runLoadSessionHistory,
+      setLiveMessages,
+    ]
   );
 
   const handleSend = useCallback(
@@ -277,14 +304,6 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ collapsed, onToggle }) => {
     <div className={styles.panel}>
       <div className={`${styles.header} ${collapsed ? styles.collapsedHeader : ''}`}>
         <div className={styles.headerLeft}>
-          <button
-            type="button"
-            className={styles.triggerBtn}
-            onClick={onToggle}
-            aria-label="收起聊天栏"
-          >
-            <RiIndentDecrease />
-          </button>
           {!collapsed && (
             <div className={styles.titleWrap}>
               <div className={styles.title}>{currentSessionTitle || '新建对话'}</div>

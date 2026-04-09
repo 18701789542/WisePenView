@@ -7,7 +7,6 @@ import { checkResponse } from '@/utils/response';
 import type { ApiResponse } from '@/types/api';
 import type { WalletTransactionKind, WalletTransactionRecord } from '@/types/wallet';
 import type {
-  GetUserWalletInfoRequest,
   GetWalletInfoResponse,
   RedeemVoucherRequest,
   ListWalletTransactionsRequest,
@@ -78,17 +77,10 @@ const mapTransactionRow = (row: Record<string, unknown>): WalletTransactionRecor
   };
 };
 
-const getUserWalletInfo = async (
-  params?: GetUserWalletInfoRequest
-): Promise<GetWalletInfoResponse> => {
-  const q: Record<string, string | number> = {};
-  const gid = params?.groupId;
-  if (gid != null && gid !== '') {
-    q.groupId = String(gid);
-  }
-  const res = (await Axios.get('/user/wallet/getUserWalletInfo', {
-    params: q,
-  })) as ApiResponse<Record<string, unknown>>;
+const getUserWalletInfo = async (): Promise<GetWalletInfoResponse> => {
+  const res = (await Axios.get('/user/wallet/getUserWalletInfo')) as ApiResponse<
+    Record<string, unknown>
+  >;
   checkResponse(res);
   const data = res.data ?? {};
   const tokenBalance = toNum(
@@ -96,11 +88,7 @@ const getUserWalletInfo = async (
     0
   );
   const tokenUsed = toNum(data.tokenUsed ?? data.TokenUsed, 0);
-  return {
-    tokenBalance,
-    tokenUsed,
-    balance: tokenBalance,
-  };
+  return { tokenBalance, tokenUsed, balance: tokenBalance };
 };
 
 const redeemVoucher = async (params: RedeemVoucherRequest): Promise<void> => {

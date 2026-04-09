@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Layout } from 'antd';
+import { useUpdateEffect } from 'ahooks';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
 import ChatPanel from '@/components/ChatPanel';
-import { useChatPanelStore } from '@/store';
+import { useChatPanelStore, useCurrentChatSessionStore } from '@/store';
 import styles from './SystemLayout.module.less';
 
 const { Content, Sider } = Layout;
@@ -12,7 +13,17 @@ const SystemLayout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const chatPanelCollapsed = useChatPanelStore((state) => state.chatPanelCollapsed);
   const setChatPanelCollapsed = useChatPanelStore((state) => state.setChatPanelCollapsed);
-  const safeChatPanelCollapsed = chatPanelCollapsed;
+  const currentSessionId = useCurrentChatSessionStore((state) => state.currentSessionId);
+  const hasSessionId = Boolean(currentSessionId);
+  const safeChatPanelCollapsed = !hasSessionId || chatPanelCollapsed;
+
+  useUpdateEffect(() => {
+    if (hasSessionId) {
+      setChatPanelCollapsed(false);
+      return;
+    }
+    setChatPanelCollapsed(true);
+  }, [hasSessionId, setChatPanelCollapsed]);
 
   return (
     <Layout className={styles.root}>
@@ -41,10 +52,7 @@ const SystemLayout: React.FC = () => {
         trigger={null}
       >
         <div className={styles.rightSiderInner}>
-          <ChatPanel
-            collapsed={safeChatPanelCollapsed}
-            onToggle={() => setChatPanelCollapsed(true)}
-          />
+          {hasSessionId ? <ChatPanel collapsed={safeChatPanelCollapsed} /> : null}
         </div>
       </Sider>
     </Layout>

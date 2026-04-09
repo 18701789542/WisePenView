@@ -17,6 +17,7 @@ import type {
   UpdateMemberRoleRequest,
   KickMembersRequest,
   UpdateGroupResConfigRequest,
+  GetGroupWalletInfoRequest,
 } from './index.type';
 import type { IGroupService } from './index.type';
 import { mapGroupMemberRawResponse } from './groupMember.mapper';
@@ -57,6 +58,17 @@ const fetchGroupInfo = async (groupId: string): Promise<Group> => {
   checkResponse(res);
   if (!res.data) throw new Error('获取小组详情失败');
   return normalizeGroup(res.data as unknown as GroupRaw);
+};
+
+const getGroupWalletInfo = async (params: GetGroupWalletInfoRequest): Promise<number> => {
+  const { groupId } = params;
+  if (!groupId) throw new Error('小组 ID 不能为空');
+  const res = (await Axios.get('/group/getGroupDetailInfo', {
+    params: { groupId },
+  })) as ApiResponse<Group>;
+  checkResponse(res);
+  if (!res.data) throw new Error('获取小组钱包信息失败');
+  return res.data.tokenBalance ?? 0;
 };
 
 const fetchGroupResConfig = async (groupId: string): Promise<GroupResConfig> => {
@@ -156,6 +168,7 @@ const kickMembers = async (params: KickMembersRequest) => {
 export const GroupServicesImpl: IGroupService = {
   fetchGroupList,
   fetchGroupInfo,
+  getGroupWalletInfo,
   fetchGroupResConfig,
   updateGroupResConfig,
   createGroup,

@@ -120,22 +120,18 @@ const CustomBlockNote = forwardRef<NoteBodyEditorHandle, CustomBlockNoteProps>(
     const onKeyDownCapture = useNoteCaptureKeyEvent(provider);
     const handleAskAi = useCallback(() => {
       if (!currentSessionId) {
-        message.warning('请先创建或选择一个聊天会话');
         return;
       }
       const selectedSnapshot = editor.getSelectedText().trim() || selectedText.trim();
       if (!selectedSnapshot) {
-        message.warning('请先选中需要提问的文本');
         return;
       }
       setSelectedText(currentSessionId, selectedSnapshot);
       setEnableSelectedText(currentSessionId, true);
       setChatPanelCollapsed(false);
-      message.success('已带上选中文本，请在聊天框输入问题');
     }, [
       currentSessionId,
       editor,
-      message,
       selectedText,
       setChatPanelCollapsed,
       setEnableSelectedText,
@@ -155,7 +151,6 @@ const CustomBlockNote = forwardRef<NoteBodyEditorHandle, CustomBlockNoteProps>(
           <FormattingToolbarController
             formattingToolbar={() => (
               <FormattingToolbar>
-                <BlockTypeSelect key="blockTypeSelect" />
                 <button
                   type="button"
                   className={styles.askAiBtn}
@@ -172,6 +167,7 @@ const CustomBlockNote = forwardRef<NoteBodyEditorHandle, CustomBlockNoteProps>(
                   <RiSparklingLine size={14} />
                   <span>问AI</span>
                 </button>
+                <BlockTypeSelect key="blockTypeSelect" />
                 <FileCaptionButton key="fileCaptionButton" />
                 <FileReplaceButton key="replaceFileButton" />
                 <BasicTextStyleButton basicTextStyle="bold" key="boldStyleButton" />
