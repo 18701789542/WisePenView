@@ -26,6 +26,7 @@ export interface Message {
   content: string; // 正文内容
 
   reasoningContent?: string;
+  toolContent?: string;
 
   createAt: number;
   loading?: boolean;

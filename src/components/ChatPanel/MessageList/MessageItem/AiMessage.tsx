@@ -1,15 +1,17 @@
 import React from 'react';
 import { LuCheck, LuCopy } from 'react-icons/lu';
-import { Button } from 'antd';
+import { Button, Spin } from 'antd';
 import { LogoFactory } from '../../ModelSelector';
 import MessageContent from './MessageContent';
 import ThinkingBlock from './ThinkingBlock';
+import ToolCallBlock from './ToolCallBlock';
 import styles from './AiMessage.module.less';
 import type { Message } from '@/components/ChatPanel/index.type';
 import { useAppMessage } from '@/hooks/useAppMessage';
 
 const AiMessage: React.FC<{ message: Message }> = ({ message }) => {
   const hasReasoning = message.reasoningContent !== undefined;
+  const showLoadingIndicator = Boolean(message.loading && !message.content);
   const messageApi = useAppMessage();
   const [copied, setCopied] = React.useState(false);
   const displayProvider = message.meta?.provider || 'openai';
@@ -47,9 +49,19 @@ const AiMessage: React.FC<{ message: Message }> = ({ message }) => {
             loading={message.loading && !message.content}
           />
         )}
+        <ToolCallBlock
+          content={message.toolContent || ''}
+          loading={Boolean(message.loading && message.toolContent)}
+        />
+        {showLoadingIndicator && (
+          <div className={styles.loadingHint}>
+            <Spin size="small" />
+            <span>正在生成回复...</span>
+          </div>
+        )}
         {/* 正文内容 */}
-        {/* 只有当正文有内容，或者没有思考过程时（避免空白占位），才渲染正文 */}
-        {(message.content || !hasReasoning) && (
+        {/* 只有当正文有内容，或者没有思考过程且非 loading 时（避免空白占位），才渲染正文 */}
+        {(message.content || (!hasReasoning && !showLoadingIndicator)) && (
           <div className={styles.bubble}>
             <MessageContent content={message.content} renderAsMarkdown />
           </div>

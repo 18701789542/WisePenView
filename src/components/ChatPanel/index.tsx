@@ -79,6 +79,55 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ collapsed }) => {
     return '';
   }, []);
 
+  const stringifyValue = useCallback((value: unknown): string => {
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+    if (value == null) return '';
+    try {
+      return JSON.stringify(value, null, 2);
+    } catch {
+      return '';
+    }
+  }, []);
+
+  const formatToolProgressLine = useCallback(
+    (partType: string, payload: Record<string, unknown>): string => {
+      if (partType === 'start-step') return '开始执行步骤';
+      if (partType === 'finish-step') return '步骤执行完成';
+
+      if (partType === 'tool-input-start') {
+        const toolName =
+          getStringValue(payload.toolName) ||
+          getStringValue(payload.tool_name) ||
+          getStringValue(payload.name) ||
+          '未知工具';
+        const toolCallId =
+          getStringValue(payload.toolCallId) || getStringValue(payload.tool_call_id);
+        return toolCallId
+          ? `发起工具调用: ${toolName} (${toolCallId})`
+          : `发起工具调用: ${toolName}`;
+      }
+
+      if (partType === 'tool-input-available') {
+        const inputText = stringifyValue(payload.input ?? payload.args ?? payload.arguments);
+        return inputText ? `工具入参:\n${inputText}` : '工具入参: 无';
+      }
+
+      if (partType === 'tool-output-available') {
+        const outputText = stringifyValue(payload.output ?? payload.result);
+        return outputText ? `工具输出:\n${outputText}` : '工具输出: 无';
+      }
+
+      if (partType.startsWith('tool-')) {
+        const detailText = stringifyValue(payload);
+        return detailText ? `工具事件(${partType}):\n${detailText}` : `工具事件(${partType})`;
+      }
+
+      return '';
+    },
+    [getStringValue, stringifyValue]
+  );
+
   const modelMetaMap = useMemo<Record<string, ModelMeta>>(() => {
     const models = mapApiModelsToFlatModels(modelListData);
     return models.reduce<Record<string, ModelMeta>>((acc, model) => {
@@ -154,9 +203,11 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ collapsed }) => {
   );
 
   const parseLiveMessage = useCallback(
-    (message: unknown): { content: string; reasoningContent: string; errorMessage: string } => {
+    (
+      message: unknown
+    ): { content: string; reasoningContent: string; errorMessage: string; toolContent: string } => {
       if (typeof message !== 'object' || message == null) {
-        return { content: '', reasoningContent: '', errorMessage: '' };
+        return { content: '', reasoningContent: '', errorMessage: '', toolContent: '' };
       }
 
       const typedMessage = message as {
@@ -170,6 +221,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ collapsed }) => {
       const textChunks: string[] = [];
       const reasoningChunks: string[] = [];
       const errorChunks: string[] = [];
+      const toolChunks: string[] = [];
 
       if (Array.isArray(typedMessage.parts)) {
         typedMessage.parts.forEach((part) => {
@@ -202,6 +254,18 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ collapsed }) => {
                 typedPart.errorText || typedPart.error || typedPart.message || typedPart.text
               )
             );
+            return;
+          }
+
+          if (
+            partType.startsWith('tool-') ||
+            partType === 'start-step' ||
+            partType === 'finish-step'
+          ) {
+            const toolLine = formatToolProgressLine(partType, typedPart as Record<string, unknown>);
+            if (toolLine) {
+              toolChunks.push(toolLine);
+            }
           }
         });
       }
@@ -212,10 +276,27 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ collapsed }) => {
         getStringValue(typedMessage.content);
       const reasoningContent = reasoningChunks.join('') || getStringValue(typedMessage.reasoning);
       const errorMessage = errorChunks.join('') || getErrorMessage(typedMessage.error);
+      const toolContent = toolChunks.join('\n');
 
-      return { content, reasoningContent, errorMessage };
+      return { content, reasoningContent, errorMessage, toolContent };
     },
-    [getErrorMessage, getStringValue]
+    [formatToolProgressLine, getErrorMessage, getStringValue]
+  );
+
+  const parseHistoryToolCalls = useCallback(
+    (toolCalls: MessageResponse['tool_calls']): string | undefined => {
+      if (!Array.isArray(toolCalls) || toolCalls.length === 0) return undefined;
+      const entries = toolCalls
+        .map((item, index) => {
+          const itemText = stringifyValue(item);
+          if (!itemText) return `工具调用 ${index + 1}`;
+          return `工具调用 ${index + 1}:\n${itemText}`;
+        })
+        .filter(Boolean);
+
+      return entries.length > 0 ? entries.join('\n\n') : undefined;
+    },
+    [stringifyValue]
   );
 
   const mapHistoryMessage = useCallback(
@@ -226,6 +307,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ collapsed }) => {
         id: message.id,
         role: mapRole(message.role),
         content: message.content || '',
+        toolContent: parseHistoryToolCalls(message.tool_calls),
         createAt: toTimestamp(message.created_at),
         meta: {
           provider: modelMetaFromMap?.provider || currentModel?.provider || 'openai',
@@ -241,6 +323,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ collapsed }) => {
       mapRole,
       modelMetaMap,
       normalizeModelId,
+      parseHistoryToolCalls,
       toTimestamp,
     ]
   );
@@ -259,6 +342,7 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ collapsed }) => {
           role: mapRole(String(message.role)),
           content: parsedMessage.content || (hasError ? errorMessage || '生成失败，请重试。' : ''),
           reasoningContent: parsedMessage.reasoningContent || undefined,
+          toolContent: parsedMessage.toolContent || undefined,
           createAt,
           loading: isLastMessage && status === 'streaming',
           error: hasError || (isLastMessage && status === 'error'),
