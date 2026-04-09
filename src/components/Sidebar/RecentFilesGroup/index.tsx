@@ -26,12 +26,22 @@ export const buildRecentFilesGroupItems = ({
           icon: <FileTypeIcon resourceType={item.resourceType} size={16} />,
           onClick: () => onOpenFile(item.resourceId),
           label: (
-            <div className={styles.fileMenuLabel}>
+            <div
+              className={styles.fileMenuLabel}
+              onMouseDown={(event) => {
+                // Keep chat textarea focused when interacting with sidebar file items.
+                event.preventDefault();
+              }}
+            >
               <span className={styles.fileMenuLabelText}>{item.resourceName || '未命名'}</span>
               <button
                 type="button"
                 className={styles.fileCloseBtn}
                 aria-label={`关闭 ${item.resourceName || '未命名'}`}
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                }}
                 onClick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();

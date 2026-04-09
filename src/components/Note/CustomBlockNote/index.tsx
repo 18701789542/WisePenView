@@ -1,16 +1,31 @@
 import React, { forwardRef, useCallback, useImperativeHandle } from 'react';
-import { SuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
+import {
+  BasicTextStyleButton,
+  BlockTypeSelect,
+  ColorStyleButton,
+  CreateLinkButton,
+  FileCaptionButton,
+  FileReplaceButton,
+  FormattingToolbar,
+  FormattingToolbarController,
+  NestBlockButton,
+  SuggestionMenuController,
+  TextAlignButton,
+  UnnestBlockButton,
+  useCreateBlockNote,
+} from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
 import { zh } from '@blocknote/core/locales';
 import { filterSuggestionItems } from '@blocknote/core/extensions';
 import { useMount, useUnmount } from 'ahooks';
+import { RiSparklingLine } from 'react-icons/ri';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
 
 import { useImageService } from '@/contexts/ServicesContext';
 import { useAppMessage } from '@/hooks/useAppMessage';
 import { assertImageProxyUploadLimit } from '@/services/Image';
-import { useNoteSelectionStore } from '@/store';
+import { useChatPanelStore, useCurrentChatSessionStore, useNoteSelectionStore } from '@/store';
 import type { CustomBlockNoteProps, NoteBodyEditorHandle } from './index.type';
 import { useNoteCaptureKeyEvent } from './useNoteCaptureKeyEvent';
 import { buildNoteSlashMenuItems } from './slashMenuConfig';
@@ -29,7 +44,13 @@ const CustomBlockNote = forwardRef<NoteBodyEditorHandle, CustomBlockNoteProps>(
   ({ resourceId, doc, provider, readOnly = false }, ref) => {
     const imageService = useImageService();
     const message = useAppMessage();
+    const currentSessionId = useCurrentChatSessionStore((state) => state.currentSessionId);
+    const setChatPanelCollapsed = useChatPanelStore((state) => state.setChatPanelCollapsed);
     const setSelectedText = useNoteSelectionStore((state) => state.setSelectedText);
+    const setEnableSelectedText = useNoteSelectionStore((state) => state.setEnableSelectedText);
+    const selectedText = useNoteSelectionStore(
+      (state) => state.selectedTextByResourceId[resourceId] ?? ''
+    );
     const clearSelectedText = useNoteSelectionStore((state) => state.clearSelectedText);
 
     const uploadFile = useCallback(
@@ -97,16 +118,77 @@ const CustomBlockNote = forwardRef<NoteBodyEditorHandle, CustomBlockNoteProps>(
     );
 
     const onKeyDownCapture = useNoteCaptureKeyEvent(provider);
+    const handleAskAi = useCallback(() => {
+      if (!currentSessionId) {
+        message.warning('请先创建或选择一个聊天会话');
+        return;
+      }
+      const selectedSnapshot = editor.getSelectedText().trim() || selectedText.trim();
+      if (!selectedSnapshot) {
+        message.warning('请先选中需要提问的文本');
+        return;
+      }
+      setSelectedText(currentSessionId, selectedSnapshot);
+      setEnableSelectedText(currentSessionId, true);
+      setChatPanelCollapsed(false);
+      message.success('已带上选中文本，请在聊天框输入问题');
+    }, [
+      currentSessionId,
+      editor,
+      message,
+      selectedText,
+      setChatPanelCollapsed,
+      setEnableSelectedText,
+      setSelectedText,
+    ]);
 
     return (
       <div className={styles.editorShell} onKeyDownCapture={onKeyDownCapture}>
         <BlockNoteView
           editor={editor}
           theme="light"
+          formattingToolbar={false}
           slashMenu={false}
           editable={!readOnly}
           onSelectionChange={syncSelectedText}
         >
+          <FormattingToolbarController
+            formattingToolbar={() => (
+              <FormattingToolbar>
+                <BlockTypeSelect key="blockTypeSelect" />
+                <button
+                  type="button"
+                  className={styles.askAiBtn}
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                  }}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    handleAskAi();
+                  }}
+                >
+                  <RiSparklingLine size={14} />
+                  <span>问AI</span>
+                </button>
+                <FileCaptionButton key="fileCaptionButton" />
+                <FileReplaceButton key="replaceFileButton" />
+                <BasicTextStyleButton basicTextStyle="bold" key="boldStyleButton" />
+                <BasicTextStyleButton basicTextStyle="italic" key="italicStyleButton" />
+                <BasicTextStyleButton basicTextStyle="underline" key="underlineStyleButton" />
+                <BasicTextStyleButton basicTextStyle="strike" key="strikeStyleButton" />
+                <BasicTextStyleButton basicTextStyle="code" key="codeStyleButton" />
+                <TextAlignButton textAlignment="left" key="textAlignLeftButton" />
+                <TextAlignButton textAlignment="center" key="textAlignCenterButton" />
+                <TextAlignButton textAlignment="right" key="textAlignRightButton" />
+                <ColorStyleButton key="colorStyleButton" />
+                <NestBlockButton key="nestBlockButton" />
+                <UnnestBlockButton key="unnestBlockButton" />
+                <CreateLinkButton key="createLinkButton" />
+              </FormattingToolbar>
+            )}
+          />
           <SuggestionMenuController
             triggerCharacter="/"
             getItems={async (query) => {

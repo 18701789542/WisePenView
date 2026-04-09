@@ -54,9 +54,6 @@ const SidebarMenu = forwardRef<SidebarMenuRef, SidebarMenuProps>(({ collapsed },
     (resourceId: string) => {
       const found = recentItems.find((i) => i.resourceId === resourceId);
       if (found) {
-        setActiveSessionMenuKey(undefined);
-        clearCurrentSession();
-        setChatPanelCollapsed(true);
         clickFile({
           resourceId: found.resourceId,
           ownerInfo: found.ownerInfo,
@@ -67,7 +64,7 @@ const SidebarMenu = forwardRef<SidebarMenuRef, SidebarMenuProps>(({ collapsed },
         messageApi.warning('文件不存在或已失效');
       }
     },
-    [clearCurrentSession, clickFile, messageApi, recentItems, setChatPanelCollapsed]
+    [clickFile, messageApi, recentItems]
   );
 
   const handleCloseRecentFile = useCallback(

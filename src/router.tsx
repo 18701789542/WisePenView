@@ -20,7 +20,7 @@ const NewPassword = lazy(() => import('@/views/auth/NewPassword'));
 const VerifyEmail = lazy(() => import('@/views/auth/VerifyEmail'));
 const NoteView = lazy(() => import('@/views/note'));
 const PdfPreview = lazy(() => import('@/views/pdf/PdfPreview'));
-const ResourceNotFound = lazy(() => import('@/views/Error/ResourceNotFound'));
+const ResourceNotFound = lazy(() => import('@/views/error/ResourceNotFound'));
 
 const router = createBrowserRouter([
   // ==============================

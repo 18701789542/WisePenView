@@ -3,7 +3,7 @@ import { Layout } from 'antd';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '@/components/Sidebar';
 import ChatPanel from '@/components/ChatPanel';
-import { useChatPanelStore, useCurrentChatSessionStore } from '@/store';
+import { useChatPanelStore } from '@/store';
 import styles from './SystemLayout.module.less';
 
 const { Content, Sider } = Layout;
@@ -11,9 +11,8 @@ const { Content, Sider } = Layout;
 const SystemLayout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const chatPanelCollapsed = useChatPanelStore((state) => state.chatPanelCollapsed);
-  const currentSessionId = useCurrentChatSessionStore((state) => state.currentSessionId);
   const setChatPanelCollapsed = useChatPanelStore((state) => state.setChatPanelCollapsed);
-  const safeChatPanelCollapsed = chatPanelCollapsed || !currentSessionId;
+  const safeChatPanelCollapsed = chatPanelCollapsed;
 
   return (
     <Layout className={styles.root}>

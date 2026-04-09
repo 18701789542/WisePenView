@@ -11,6 +11,9 @@ interface ChatInputProps {
   sending: boolean;
   currentModelId: string;
   onModelChange: (model: Model) => void;
+  hasSelectedContext: boolean;
+  selectedContextText: string;
+  onClearSelectedContext: () => void;
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({
@@ -18,6 +21,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
   sending,
   currentModelId,
   onModelChange,
+  hasSelectedContext,
+  selectedContextText,
+  onClearSelectedContext,
 }) => {
   const [value, setValue] = useState('');
   const [isComposing, setIsComposing] = useState(false);
@@ -38,6 +44,21 @@ const ChatInput: React.FC<ChatInputProps> = ({
   return (
     <div className={styles.container}>
       <div className={styles.inputCard}>
+        {hasSelectedContext ? (
+          <div className={styles.selectedHint}>
+            <span className={styles.selectedHintText} title={selectedContextText}>
+              已附带选中内容
+            </span>
+            <button
+              type="button"
+              className={styles.clearSelectedHintBtn}
+              onClick={onClearSelectedContext}
+              aria-label="清除已选内容"
+            >
+              清除
+            </button>
+          </div>
+        ) : null}
         <TextArea
           value={value}
           onChange={(e) => setValue(e.target.value)}

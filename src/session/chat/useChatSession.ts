@@ -21,18 +21,22 @@ const buildRequestBody = ({
   enableSelected?: boolean;
 }): ChatRequestBody => {
   const normalizedStates: ChatState[] = [];
-  const shouldIncludeSelected = Boolean(enableSelected);
   const selectedValue = selected?.trim();
 
-  if (shouldIncludeSelected && selectedValue) {
-    const selectedIndex = normalizedStates.findIndex((state) => state.key === 'selected');
+  if (selectedValue) {
+    const selectedIndex = normalizedStates.findIndex((state) => state.key === 'selected_text');
     if (selectedIndex >= 0) {
       normalizedStates[selectedIndex] = {
         ...normalizedStates[selectedIndex],
         value: selectedValue,
+        disabled: !enableSelected,
       };
     } else {
-      normalizedStates.push({ key: 'selected', value: selectedValue });
+      normalizedStates.push({
+        key: 'selected_text',
+        value: selectedValue,
+        disabled: !enableSelected,
+      });
     }
   }
 
@@ -56,8 +60,6 @@ export const useChatSession = ({
   model,
   enableSelected = false,
 }: UseChatSessionOptions) => {
-  const selected = useNoteSelectionStore((state) => state.selectedTextByResourceId[sessionId]);
-
   const chat = useChat({
     transport: new DefaultChatTransport({
       api: DEFAULT_COMPLETIONS_API,
@@ -70,9 +72,14 @@ export const useChatSession = ({
   });
 
   const sendSessionMessage = useCallback(
-    async (query: string, options?: { model?: string; enableSelected?: boolean }) => {
+    async (
+      query: string,
+      options?: { model?: string; enableSelected?: boolean; sessionId?: string }
+    ) => {
+      const targetSessionId = options?.sessionId ?? sessionId;
+      const selected = useNoteSelectionStore.getState().selectedTextByResourceId[targetSessionId];
       const requestBody = buildRequestBody({
-        sessionId,
+        sessionId: targetSessionId,
         query,
         model: options?.model ?? model,
         selected,
@@ -80,7 +87,7 @@ export const useChatSession = ({
       });
       await chat.sendMessage({ text: query }, { body: requestBody });
     },
-    [chat, enableSelected, model, selected, sessionId]
+    [chat, enableSelected, model, sessionId]
   );
 
   return {

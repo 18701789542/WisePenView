@@ -33,6 +33,7 @@
     .actions {
       display: flex;
       flex-direction: row;
+      justify-content: flex-end;
       gap: var(--ant-margin-sm);
 
       flex-shrink: 0;
@@ -45,6 +46,10 @@
           color: var(--ant-color-primary);
           transform: scale(1.1);
         }
+      }
+
+      .actionBtnCopied {
+        color: var(--ant-color-success);
       }
     }
   }

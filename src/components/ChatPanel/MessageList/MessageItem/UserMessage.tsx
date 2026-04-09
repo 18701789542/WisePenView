@@ -1,5 +1,5 @@
 import React from 'react';
-import { LuCopy, LuPencil, LuCheck } from 'react-icons/lu';
+import { LuCopy, LuCheck } from 'react-icons/lu';
 import { Button } from 'antd';
 import MessageContent from './MessageContent';
 import styles from './UserMessage.module.less';
@@ -11,7 +11,7 @@ interface UserMessageProps {
   onEdit?: (content: string) => void;
 }
 
-const UserMessage: React.FC<UserMessageProps> = ({ message, onEdit }) => {
+const UserMessage: React.FC<UserMessageProps> = ({ message }) => {
   const messageApi = useAppMessage();
   const [copied, setCopied] = React.useState(false);
 
@@ -26,28 +26,11 @@ const UserMessage: React.FC<UserMessageProps> = ({ message, onEdit }) => {
     }
   };
 
-  const handleEdit = () => {
-    if (onEdit) {
-      onEdit(message.content);
-    } else {
-      messageApi.warning('暂未实现编辑功能');
-    }
-  };
-
   return (
     <div className={styles.userRow}>
       <div className={styles.contentCol}>
         {/* 左侧悬浮操作栏 */}
         <div className={styles.actions}>
-          <Button
-            type="text"
-            shape="circle"
-            size="small"
-            className={styles.actionBtn}
-            icon={<LuPencil size={14} />}
-            onClick={handleEdit}
-            title="编辑"
-          />
           <Button
             type="text"
             shape="circle"

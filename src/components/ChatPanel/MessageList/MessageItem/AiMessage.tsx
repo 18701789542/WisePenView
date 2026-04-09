@@ -1,14 +1,28 @@
 import React from 'react';
-import { LuCopy, LuThumbsUp, LuThumbsDown, LuRotateCw } from 'react-icons/lu';
+import { LuCheck, LuCopy } from 'react-icons/lu';
 import { Button } from 'antd';
 import { LogoFactory } from '../../ModelSelector';
 import MessageContent from './MessageContent';
 import ThinkingBlock from './ThinkingBlock';
 import styles from './AiMessage.module.less';
 import type { Message } from '@/components/ChatPanel/index.type';
+import { useAppMessage } from '@/hooks/useAppMessage';
 
 const AiMessage: React.FC<{ message: Message }> = ({ message }) => {
   const hasReasoning = message.reasoningContent !== undefined;
+  const messageApi = useAppMessage();
+  const [copied, setCopied] = React.useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(message.content || '');
+      messageApi.success('复制成功');
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch (err) {
+      messageApi.error('复制失败');
+    }
+  };
 
   return (
     <div className={styles.aiRow}>
@@ -32,25 +46,34 @@ const AiMessage: React.FC<{ message: Message }> = ({ message }) => {
         {/* 只有当正文有内容，或者没有思考过程时（避免空白占位），才渲染正文 */}
         {(message.content || !hasReasoning) && (
           <div className={styles.bubble}>
-            <MessageContent content={message.content} />
+            <MessageContent content={message.content} renderAsMarkdown />
           </div>
         )}
 
         {/* 底部操作栏 (非 Loading 时显示) */}
         {!message.loading && (
           <div className={styles.actions}>
-            <Button type="text" shape="circle" size="small" className={styles.actionBtn}>
+            {/* 系统当前不支持点赞 */}
+            {/* <Button type="text" shape="circle" size="small" className={styles.actionBtn}>
               <LuThumbsUp size={14} />
-            </Button>
-            <Button type="text" shape="circle" size="small" className={styles.actionBtn}>
+            </Button> */}
+            {/* 系统当前不支持点踩 */}
+            {/* <Button type="text" shape="circle" size="small" className={styles.actionBtn}>
               <LuThumbsDown size={14} />
-            </Button>
-            <Button type="text" shape="circle" size="small" className={styles.actionBtn}>
+            </Button> */}
+            {/* 系统当前不支持重新生成 */}
+            {/* <Button type="text" shape="circle" size="small" className={styles.actionBtn}>
               <LuRotateCw size={14} />
-            </Button>
-            <Button type="text" shape="circle" size="small" className={styles.actionBtn}>
-              <LuCopy size={14} />
-            </Button>
+            </Button> */}
+            <Button
+              type="text"
+              shape="circle"
+              size="small"
+              className={`${styles.actionBtn} ${copied ? styles.actionBtnCopied : ''}`}
+              icon={copied ? <LuCheck size={14} /> : <LuCopy size={14} />}
+              onClick={handleCopy}
+              title="复制"
+            />
           </div>
         )}
       </div>

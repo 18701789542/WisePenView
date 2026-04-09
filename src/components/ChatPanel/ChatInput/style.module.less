@@ -28,6 +28,42 @@
       box-shadow: var(--ant-box-shadow-secondary);
     }
 
+    .selectedHint {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--ant-margin-xs);
+      margin-bottom: var(--ant-margin-sm);
+      border: var(--ant-line-width) solid var(--ant-color-border);
+      border-radius: var(--ant-border-radius-sm);
+      padding: 2px var(--ant-padding-xs);
+      background-color: var(--ant-color-fill-tertiary);
+    }
+
+    .selectedHintText {
+      min-width: 0;
+      font-size: var(--ant-font-size-sm);
+      color: var(--ant-color-text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .clearSelectedHintBtn {
+      border: none;
+      background: transparent;
+      color: var(--ant-color-primary);
+      font-size: var(--ant-font-size-sm);
+      line-height: 1.2;
+      padding: 0;
+      cursor: pointer;
+      flex-shrink: 0;
+
+      &:hover {
+        color: var(--ant-color-primary-hover);
+      }
+    }
+
     // 3. 文本域 (嵌套在 Card 内)
     .textarea {
       resize: none !important;

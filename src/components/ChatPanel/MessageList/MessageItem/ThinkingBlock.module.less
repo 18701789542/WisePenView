@@ -62,6 +62,9 @@
   margin-top: var(--ant-margin-xs) !important;
   padding-block: var(--ant-padding-xs) !important;
   padding-inline: var(--ant-padding-xs) !important;
+  max-height: min(36vh, 260px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   text-align: justify;
 
   color: var(--ant-color-text-secondary);
@@ -71,4 +74,13 @@
 
   white-space: pre-wrap;
   word-break: break-word;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border-radius: 3px;
+    background-color: var(--ant-color-fill-secondary);
+  }
 }

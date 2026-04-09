@@ -6,7 +6,7 @@ import ChatInput from './ChatInput';
 import type { Message, Model, MessageRole } from '@/components/ChatPanel/index.type';
 import { useChatService } from '@/contexts/ServicesContext';
 import { useAppMessage } from '@/hooks/useAppMessage';
-import { useCurrentChatSessionStore } from '@/store';
+import { useCurrentChatSessionStore, useNoteSelectionStore } from '@/store';
 import { useChatSession } from '@/session/chat/useChatSession';
 import type { MessageResponse } from '@/services/Chat';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
@@ -22,6 +22,14 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ collapsed, onToggle }) => {
   const messageApi = useAppMessage();
   const currentSessionId = useCurrentChatSessionStore((state) => state.currentSessionId);
   const currentSessionTitle = useCurrentChatSessionStore((state) => state.currentSessionTitle);
+  const setCurrentSession = useCurrentChatSessionStore((state) => state.setCurrentSession);
+  const enableSelectedText = useNoteSelectionStore((state) =>
+    currentSessionId ? Boolean(state.enableSelectedTextByResourceId[currentSessionId]) : false
+  );
+  const selectedContextText = useNoteSelectionStore((state) =>
+    currentSessionId ? (state.selectedTextByResourceId[currentSessionId] ?? '') : ''
+  );
+  const clearSelectedText = useNoteSelectionStore((state) => state.clearSelectedText);
   const [currentModel, setCurrentModel] = useState<Model | null>(null);
   const [historyMessages, setHistoryMessages] = useState<Message[]>([]);
 
@@ -46,6 +54,9 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ collapsed, onToggle }) => {
       manual: true,
     }
   );
+  const { runAsync: runCreateSession } = useRequest(() => chatService.createSession(), {
+    manual: true,
+  });
 
   const mapRole = useCallback((role: string): MessageRole => {
     if (role === 'user') return 'user';
@@ -187,7 +198,8 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ collapsed, onToggle }) => {
   );
 
   const sending = status === 'submitted' || status === 'streaming';
-  const chatInputModelId = currentSessionId ? (currentModel?.id ?? '') : '';
+  const chatInputModelId = currentModel?.id ?? '';
+  const hasSelectedContext = enableSelectedText && Boolean(selectedContextText.trim());
 
   const loadHistoryMessages = useCallback(
     async (sessionId: string) => {
@@ -202,10 +214,48 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ collapsed, onToggle }) => {
     [mapHistoryMessage, messageApi, runLoadSessionHistory]
   );
 
-  const handleSend = async (text: string) => {
-    if (!currentSessionId || !currentModel) return;
-    await sendSessionMessage(text, { model: currentModel.id });
-  };
+  const handleSend = useCallback(
+    async (text: string) => {
+      if (!currentModel) return;
+      let targetSessionId = currentSessionId;
+
+      if (!targetSessionId) {
+        try {
+          const createdSession = await runCreateSession();
+          targetSessionId = createdSession.id;
+          setCurrentSession({ id: createdSession.id, title: createdSession.title });
+        } catch (error) {
+          messageApi.error(parseErrorMessage(error, '新建聊天失败'));
+          return;
+        }
+      }
+
+      const sendPromise = sendSessionMessage(text, {
+        model: currentModel.id,
+        enableSelected: hasSelectedContext,
+        sessionId: targetSessionId,
+      });
+      if (hasSelectedContext) {
+        clearSelectedText(targetSessionId);
+      }
+      await sendPromise;
+    },
+    [
+      clearSelectedText,
+      currentModel,
+      currentSessionId,
+      hasSelectedContext,
+      messageApi,
+      runCreateSession,
+      sendSessionMessage,
+      setCurrentSession,
+    ]
+  );
+
+  const handleClearSelectedContext = useCallback(() => {
+    if (!currentSessionId) return;
+    clearSelectedText(currentSessionId);
+  }, [clearSelectedText, currentSessionId]);
 
   useMount(() => {
     if (!currentSessionId) return;
@@ -238,9 +288,6 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ collapsed, onToggle }) => {
           {!collapsed && (
             <div className={styles.titleWrap}>
               <div className={styles.title}>{currentSessionTitle || '新建对话'}</div>
-              <div className={styles.sessionMeta}>
-                {currentSessionId ? `session_id: ${currentSessionId}` : 'session_id: 未选中'}
-              </div>
             </div>
           )}
         </div>
@@ -256,6 +303,9 @@ const ChatPanel: React.FC<ChatPanelProps> = ({ collapsed, onToggle }) => {
               onModelChange={setCurrentModel}
               onSend={handleSend}
               sending={sending}
+              hasSelectedContext={hasSelectedContext}
+              selectedContextText={selectedContextText}
+              onClearSelectedContext={handleClearSelectedContext}
             />
           </div>
         </>
