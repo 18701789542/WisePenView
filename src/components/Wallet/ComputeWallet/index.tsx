@@ -12,6 +12,8 @@ import { useWalletService } from '@/contexts/ServicesContext';
 import { WALLET_TARGET_TYPE, WALLET_TOKEN_TX_TYPE } from '@/constants/wallet';
 import type { WalletTransactionKind, WalletTransactionRecord } from '@/types/wallet';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
+import { formatCompactNumber } from '@/utils/number';
+import { formatTimestampToDateTime } from '@/utils/time';
 import { useAppMessage } from '@/hooks/useAppMessage';
 import RechargeModal from '@/components/Wallet/RechargeModal';
 import type { ComputeWalletProps, ComputeWalletRef } from './index.type';
@@ -238,6 +240,8 @@ const ComputeWallet = React.forwardRef<ComputeWalletRef, ComputeWalletProps>(
           dataIndex: 'time',
           key: 'time',
           width: 180,
+          render: (time: unknown) =>
+            formatTimestampToDateTime(time as string | number | null) || '—',
         },
         {
           title: '类型',
@@ -289,7 +293,7 @@ const ComputeWallet = React.forwardRef<ComputeWalletRef, ComputeWalletProps>(
             return (
               <span className={inflow ? styles.amountRecharge : styles.amountSpend}>
                 {prefix}
-                {n}
+                {formatCompactNumber(n)}
               </span>
             );
           },
