@@ -33,40 +33,55 @@
   padding: 0;
 }
 
-.chatExpandTrigger {
-  position: fixed;
+.chatHandleZone {
+  position: absolute;
   right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 50;
-  width: 44px;
-  height: 68px;
-  border: 1px solid var(--ant-color-border);
-  border-right: 0;
-  border-radius: var(--ant-border-radius-sm) 0 0 var(--ant-border-radius-sm);
-  background: var(--ant-color-bg-elevated);
-  color: var(--ant-color-text-secondary);
+  top: 0;
+  width: 72px;
+  height: 100%;
   display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  z-index: 20;
+}
+
+.chatExpandHandle {
+  width: 40px;
+  height: 132px;
+  border: 1px solid var(--ant-color-border);
+  border-right: none;
+  border-radius: 14px 0 0 14px;
+  background: var(--ant-color-bg-container);
+  color: var(--ant-color-text-secondary);
+  box-shadow: var(--ant-box-shadow-secondary);
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  font-size: 22px;
+  opacity: 0;
+  transform: translateX(14px);
   transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    color 0.2s ease,
+    background-color 0.2s ease;
 }
 
-.chatExpandTrigger:hover {
-  background: var(--ant-color-primary-bg-hover);
-  color: var(--ant-color-primary);
+.chatHandleZone:hover .chatExpandHandle,
+.chatHandleZone:focus-within .chatExpandHandle {
+  opacity: 1;
+  transform: translateX(0);
 }
 
-.chatExpandTrigger:focus-visible {
-  outline: 2px solid var(--ant-color-primary-border);
+.chatExpandHandle:hover {
+  color: var(--ant-color-text);
+  background: var(--ant-color-fill-tertiary);
+}
+
+.chatExpandHandle:focus-visible {
+  outline: 2px solid var(--ant-color-primary);
   outline-offset: 2px;
-}
-
-.chatExpandTriggerIcon {
-  font-size: 24px;
 }
 
 .rightSider {
