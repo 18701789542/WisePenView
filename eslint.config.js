@@ -30,7 +30,8 @@ export default defineConfig([
             {
               name: 'react',
               importNames: ['useEffect'],
-              message: '项目约定禁止使用 useEffect，请改为事件驱动、显式回调或更合适的数据流方案。',
+              message:
+                '项目约定禁止使用 useEffect，请改为事件驱动、显式回调或拆解为 ahooks 的 useMount、useUnmount、useUpdateEffect。',
             },
             {
               name: 'antd',
@@ -46,7 +47,8 @@ export default defineConfig([
         {
           object: 'React',
           property: 'useEffect',
-          message: '项目约定禁止使用 useEffect，请改为事件驱动、显式回调或更合适的数据流方案。',
+          message:
+            '项目约定禁止使用 useEffect，请改为事件驱动、显式回调或拆解为 ahooks 的 useMount、useUnmount、useUpdateEffect。',
         },
       ],
       'no-restricted-syntax': [
