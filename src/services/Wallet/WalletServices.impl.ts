@@ -2,7 +2,7 @@
  * 钱包 Service：/user/wallet/*，成功码与全局一致 `code === 200`。
  */
 import Axios from '@/utils/Axios';
-import { WALLET_LIST_TX_TYPE_QUERY_VALUE } from '@/constants/wallet';
+import { WALLET_LIST_TX_TYPE_QUERY_VALUE, WALLET_TX_TAB_MERGE_FETCH_CAP } from '@/constants/wallet';
 import { checkResponse } from '@/utils/response';
 import type { ApiResponse } from '@/types/api';
 import type { WalletTransactionKind, WalletTransactionRecord } from '@/types/wallet';
@@ -11,6 +11,7 @@ import type {
   RedeemVoucherRequest,
   ListWalletTransactionsRequest,
   ListWalletTransactionsResponse,
+  ListMergedWalletTransactionsRequest,
   TransferTokenBetweenGroupAndUserRequest,
   IWalletService,
 } from './index.type';
@@ -165,6 +166,30 @@ const listTransactions = async (
   return { total: toNum(data.total, records.length), records };
 };
 
+const txRecordDedupeKey = (r: WalletTransactionRecord): string =>
+  r.traceId.length > 0 ? r.traceId : `${r.time}\u0000${r.type}\u0000${r.amount}`;
+
+const compareWalletTxTimeDesc = (a: WalletTransactionRecord, b: WalletTransactionRecord): number =>
+  String(b.time).localeCompare(String(a.time));
+
+const listMergedTransactions = async (
+  params: ListMergedWalletTransactionsRequest
+): Promise<ListWalletTransactionsResponse> => {
+  const { groupId, page = 1, size = 20, typeA, typeB } = params;
+  const cap = WALLET_TX_TAB_MERGE_FETCH_CAP;
+  const [ra, rb] = await Promise.all([
+    listTransactions({ groupId, page: 1, size: cap, type: typeA }),
+    listTransactions({ groupId, page: 1, size: cap, type: typeB }),
+  ]);
+  const map = new Map<string, WalletTransactionRecord>();
+  for (const r of ra.records) map.set(txRecordDedupeKey(r), r);
+  for (const r of rb.records) map.set(txRecordDedupeKey(r), r);
+  const merged = [...map.values()].sort(compareWalletTxTimeDesc);
+  const total = ra.total + rb.total;
+  const start = (page - 1) * size;
+  return { total, records: merged.slice(start, start + size) };
+};
+
 const transferTokenBetweenGroupAndUser = async (
   params: TransferTokenBetweenGroupAndUserRequest
 ): Promise<void> => {
@@ -180,5 +205,6 @@ export const WalletServicesImpl: IWalletService = {
   getUserWalletInfo,
   redeemVoucher,
   listTransactions,
+  listMergedTransactions,
   transferTokenBetweenGroupAndUser,
 };

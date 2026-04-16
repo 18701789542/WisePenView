@@ -2,7 +2,7 @@
  * 通用计算点钱包：个人余额走 /user/wallet；小组余额走 groupService.getGroupWalletInfo。
  * 点卡充值仅个人（redeemVoucher）；小组余额由组长通过「token 划拨」转入。
  * 交易明细 Tab：全部 / 充值 / 消费。
- * 个人「充值」仅 REFILL；小组「充值」合并 REFILL+TRANSFER_IN；「消费」合并 SPEND+TRANSFER_OUT；其余走单 type。
+ * 个人「充值」仅 REFILL；小组「充值」与「消费」通过 walletService.listMergedTransactions 合并两类流水；其余走 listTransactions。
  * 数据请求使用 ahooks（不使用 useEffect）。
  */
 import React, { useCallback, useImperativeHandle, useMemo, useRef, useState } from 'react';
@@ -10,14 +10,9 @@ import { usePagination, useRequest, useUnmount } from 'ahooks';
 import { Button, Pagination, Skeleton, Table, Tabs } from 'antd';
 import { RiAddLine, RiArrowDownLine, RiArrowUpLine, RiSubtractLine } from 'react-icons/ri';
 import RechargeModal from '@/components/Wallet/RechargeModal';
-import {
-  WALLET_TARGET_TYPE,
-  WALLET_TOKEN_TX_TYPE,
-  WALLET_TX_TAB_MERGE_FETCH_CAP,
-} from '@/constants/wallet';
+import { WALLET_TARGET_TYPE, WALLET_TOKEN_TX_TYPE } from '@/constants/wallet';
 import { useGroupService, useWalletService } from '@/contexts/ServicesContext';
 import { useAppMessage } from '@/hooks/useAppMessage';
-import type { IWalletService } from '@/services/Wallet';
 import type { WalletTransactionKind, WalletTransactionRecord } from '@/types/wallet';
 import { formatCompactNumber } from '@/utils/number';
 import { parseErrorMessage } from '@/utils/parseErrorMessage';
@@ -28,8 +23,6 @@ import styles from './style.module.less';
 const PAGE_SIZE = 20;
 
 type TxTabKey = 'all' | 'recharge' | 'spend';
-
-type WalletTxTypeQueryCode = (typeof WALLET_TOKEN_TX_TYPE)[keyof typeof WALLET_TOKEN_TX_TYPE];
 
 const tabToListType = (key: TxTabKey): number | undefined => {
   if (key === 'recharge') return WALLET_TOKEN_TX_TYPE.REFILL;
@@ -42,34 +35,6 @@ const isInflowKind = (k: WalletTransactionKind): boolean => k === 'RECHARGE' || 
 /** 掩码行展示：全角 *、- 与半角混排时视觉大小不一，先规范再交给 summarySub 等宽样式 */
 const normalizeMaskDisplayText = (s: string): string =>
   s.replace(/\uFF0A/g, '*').replace(/\uFF0D/g, '-');
-
-const txRecordDedupeKey = (r: WalletTransactionRecord): string =>
-  r.traceId.length > 0 ? r.traceId : `${r.time}\u0000${r.type}\u0000${r.amount}`;
-
-const compareWalletTxTimeDesc = (a: WalletTransactionRecord, b: WalletTransactionRecord): number =>
-  String(b.time).localeCompare(String(a.time));
-
-/** Tab 内合并两类流水：并行 listTransactions，合并去重、时间倒序再本地分页 */
-const mergeTwoTxTypesForTab = async (
-  wallet: IWalletService,
-  args: { groupId?: string; page: number; size: number },
-  typeA: WalletTxTypeQueryCode,
-  typeB: WalletTxTypeQueryCode
-): Promise<{ list: WalletTransactionRecord[]; total: number }> => {
-  const { groupId, page, size } = args;
-  const cap = WALLET_TX_TAB_MERGE_FETCH_CAP;
-  const [ra, rb] = await Promise.all([
-    wallet.listTransactions({ groupId, page: 1, size: cap, type: typeA }),
-    wallet.listTransactions({ groupId, page: 1, size: cap, type: typeB }),
-  ]);
-  const map = new Map<string, WalletTransactionRecord>();
-  for (const r of ra.records) map.set(txRecordDedupeKey(r), r);
-  for (const r of rb.records) map.set(txRecordDedupeKey(r), r);
-  const merged = [...map.values()].sort(compareWalletTxTimeDesc);
-  const total = ra.total + rb.total;
-  const start = (page - 1) * size;
-  return { list: merged.slice(start, start + size), total };
-};
 
 const typeLabel = (k: WalletTransactionKind): string => {
   switch (k) {
@@ -198,21 +163,27 @@ const ComputeWallet = React.forwardRef<ComputeWalletRef, ComputeWalletProps>(
             : undefined;
 
         if (tab === 'spend') {
-          return mergeTwoTxTypesForTab(
-            walletService,
-            { groupId: gid, page: current, size: pageSize },
-            WALLET_TOKEN_TX_TYPE.SPEND,
-            WALLET_TOKEN_TX_TYPE.TRANSFER_OUT
-          );
+          const { total: spendTotal, records: spendRecords } =
+            await walletService.listMergedTransactions({
+              groupId: gid,
+              page: current,
+              size: pageSize,
+              typeA: WALLET_TOKEN_TX_TYPE.SPEND,
+              typeB: WALLET_TOKEN_TX_TYPE.TRANSFER_OUT,
+            });
+          return { list: spendRecords, total: spendTotal };
         }
 
         if (tab === 'recharge' && targetType === WALLET_TARGET_TYPE.GROUP && effectiveGroupId) {
-          return mergeTwoTxTypesForTab(
-            walletService,
-            { groupId: effectiveGroupId, page: current, size: pageSize },
-            WALLET_TOKEN_TX_TYPE.REFILL,
-            WALLET_TOKEN_TX_TYPE.TRANSFER_IN
-          );
+          const { total: rechargeTotal, records: rechargeRecords } =
+            await walletService.listMergedTransactions({
+              groupId: effectiveGroupId,
+              page: current,
+              size: pageSize,
+              typeA: WALLET_TOKEN_TX_TYPE.REFILL,
+              typeB: WALLET_TOKEN_TX_TYPE.TRANSFER_IN,
+            });
+          return { list: rechargeRecords, total: rechargeTotal };
         }
 
         const listType = tabToListType(tab);
